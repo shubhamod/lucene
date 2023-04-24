@@ -20,9 +20,12 @@ package org.apache.lucene.util.hnsw;
 import org.apache.lucene.util.Accountable;
 import org.apache.lucene.util.RamUsageEstimator;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.TreeMap;
+import java.util.concurrent.ConcurrentNavigableMap;
+import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.apache.lucene.search.DocIdSetIterator.NO_MORE_DOCS;
 
@@ -32,8 +35,8 @@ import static org.apache.lucene.search.DocIdSetIterator.NO_MORE_DOCS;
  */
 public final class ConcurrentOnHeapHnswGraph extends HnswGraph implements Accountable {
 
-  private int numLevels; // the current number of levels in the graph
-  private int entryNode; // the current graph entry node on the top level. -1 if not set
+  private AtomicInteger numLevels; // the current number of levels in the graph
+  private volatile int entryNode; // the current graph entry node on the top level. -1 if not set
 
   // Level 0 is represented as List<NeighborArray> – nodes' connections on level 0.
   // Each entry in the list has the top maxConn/maxConn0 neighbors of a node. The nodes correspond
@@ -46,16 +49,13 @@ public final class ConcurrentOnHeapHnswGraph extends HnswGraph implements Accoun
   // it in this list. However, to avoid changing list indexing, we always will make the first
   // element
   // null.
-  private final List<TreeMap<Integer, NeighborArray>> graphUpperLevels;
+  private final List<ConcurrentNavigableMap<Integer, NeighborArray>> graphUpperLevels;
   private final int nsize;
   private final int nsize0;
 
-  // KnnGraphValues iterator members
-  private int upto;
-  private NeighborArray cur;
 
   ConcurrentOnHeapHnswGraph(int M) {
-    this.numLevels = 1; // Implicitly start the graph with a single level
+    this.numLevels = new AtomicInteger(1); // Implicitly start the graph with a single level
     this.graphLevel0 = new ArrayList<>();
     this.entryNode = -1; // Entry node should be negative until a node is added
     // Neighbours' size on upper levels (nsize) and level 0 (nsize0)
@@ -63,7 +63,7 @@ public final class ConcurrentOnHeapHnswGraph extends HnswGraph implements Accoun
     this.nsize = M + 1;
     this.nsize0 = (M * 2 + 1);
 
-    this.graphUpperLevels = new ArrayList<>(numLevels);
+    this.graphUpperLevels = new ArrayList<>(numLevels.get());
     graphUpperLevels.add(null); // we don't need this for 0th level, as it contains all nodes
   }
 
@@ -77,9 +77,10 @@ public final class ConcurrentOnHeapHnswGraph extends HnswGraph implements Accoun
     if (level == 0) {
       return graphLevel0.get(node);
     }
-    TreeMap<Integer, NeighborArray> levelMap = graphUpperLevels.get(level);
-    assert levelMap.containsKey(node);
-    return levelMap.get(node);
+    var levelMap = graphUpperLevels.get(level);
+    var n = levelMap.get(node);
+    assert n != null;
+    return n;
   }
 
   @Override
@@ -102,12 +103,13 @@ public final class ConcurrentOnHeapHnswGraph extends HnswGraph implements Accoun
     if (level > 0) {
       // if the new node introduces a new level, add more levels to the graph,
       // and make this node the graph's new entry point
-      if (level >= numLevels) {
-        for (int i = numLevels; i <= level; i++) {
-          graphUpperLevels.add(new TreeMap<>());
+      int nLevels;
+      while (level >= (nLevels = numLevels.get())) {
+        if (numLevels.compareAndSet(nLevels, nLevels + 1)) {
+          graphUpperLevels.add(new ConcurrentSkipListMap<>());
+          entryNode = node;
+          break;
         }
-        numLevels = level + 1;
-        entryNode = node;
       }
 
       graphUpperLevels.get(level).put(node, new NeighborArray(nsize, true));
@@ -124,17 +126,13 @@ public final class ConcurrentOnHeapHnswGraph extends HnswGraph implements Accoun
   }
 
   @Override
-  public void seek(int level, int targetNode) {
-    cur = getNeighbors(level, targetNode);
-    upto = -1;
+  public void seek(int level, int target) throws IOException {
+    throw new UnsupportedOperationException("use a View");
   }
 
   @Override
-  public int nextNeighbor() {
-    if (++upto < cur.size()) {
-      return cur.node[upto];
-    }
-    return NO_MORE_DOCS;
+  public int nextNeighbor() throws IOException {
+    throw new UnsupportedOperationException("use a View");
   }
 
   /**
@@ -144,7 +142,7 @@ public final class ConcurrentOnHeapHnswGraph extends HnswGraph implements Accoun
    */
   @Override
   public int numLevels() {
-    return numLevels;
+    return numLevels.get();
   }
 
   /**
@@ -180,7 +178,7 @@ public final class ConcurrentOnHeapHnswGraph extends HnswGraph implements Accoun
             + RamUsageEstimator.NUM_BYTES_OBJECT_REF
             + Integer.BYTES * 2;
     long total = 0;
-    for (int l = 0; l < numLevels; l++) {
+    for (int l = 0; l < numLevels.get(); l++) {
       if (l == 0) {
         total +=
             graphLevel0.size() * neighborArrayBytes0
@@ -204,5 +202,55 @@ public final class ConcurrentOnHeapHnswGraph extends HnswGraph implements Accoun
       }
     }
     return total;
+  }
+
+  /**
+   * Returns a view of the graph that is safe to use concurrently with updates performed
+   * on the underlying graph.
+   *
+   * Multiple Views may be searched concurrently.
+   */
+  public HnswGraph getView() {
+    return new OnHeapHnswGraphView();
+  }
+
+  private class OnHeapHnswGraphView extends HnswGraph {
+    @Override
+    public int size() {
+      return ConcurrentOnHeapHnswGraph.this.size();
+    }
+
+    @Override
+    public int numLevels() {
+      return ConcurrentOnHeapHnswGraph.this.numLevels();
+    }
+
+    @Override
+    public int entryNode() {
+      return ConcurrentOnHeapHnswGraph.this.entryNode();
+    }
+
+    @Override
+    public NodesIterator getNodesOnLevel(int level) {
+      return ConcurrentOnHeapHnswGraph.this.getNodesOnLevel(level);
+    }
+
+    // KnnGraphValues iterator members
+    private int upto;
+    private NeighborArray cur;
+
+    @Override
+    public void seek(int level, int targetNode) {
+      cur = getNeighbors(level, targetNode);
+      upto = -1;
+    }
+
+    @Override
+    public int nextNeighbor() {
+      if (++upto < cur.size()) {
+        return cur.node[upto];
+      }
+      return NO_MORE_DOCS;
+    }
   }
 }

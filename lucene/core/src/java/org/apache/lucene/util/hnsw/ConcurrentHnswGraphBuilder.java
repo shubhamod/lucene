@@ -24,6 +24,7 @@ import org.apache.lucene.util.InfoStream;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 
 import static java.lang.Math.log;
@@ -62,10 +63,9 @@ public final class ConcurrentHnswGraphBuilder<T> {
   private final VectorSimilarityFunction similarityFunction;
   private final VectorEncoding vectorEncoding;
   private final RandomAccessVectorValues<T> vectors;
-  private final SplittableRandom random;
-  private final HnswGraphSearcher<T> graphSearcher;
+  private final HnswGraphSearcher<T> graphSearcher; // TODO make this a threadlocal
 
-  final OnHeapHnswGraph hnsw;
+  final ConcurrentOnHeapHnswGraph hnsw;
 
   private InfoStream infoStream = InfoStream.getDefault();
 
@@ -79,10 +79,9 @@ public final class ConcurrentHnswGraphBuilder<T> {
       VectorEncoding vectorEncoding,
       VectorSimilarityFunction similarityFunction,
       int M,
-      int beamWidth,
-      long seed)
+      int beamWidth)
       throws IOException {
-    return new ConcurrentHnswGraphBuilder<>(vectors, vectorEncoding, similarityFunction, M, beamWidth, seed);
+    return new ConcurrentHnswGraphBuilder<>(vectors, vectorEncoding, similarityFunction, M, beamWidth);
   }
 
   public static <T> ConcurrentHnswGraphBuilder<T> create(
@@ -91,12 +90,11 @@ public final class ConcurrentHnswGraphBuilder<T> {
       VectorSimilarityFunction similarityFunction,
       int M,
       int beamWidth,
-      long seed,
       HnswGraph initializerGraph,
       Map<Integer, Integer> oldToNewOrdinalMap)
       throws IOException {
     ConcurrentHnswGraphBuilder<T> hnswGraphBuilder =
-        new ConcurrentHnswGraphBuilder<>(vectors, vectorEncoding, similarityFunction, M, beamWidth, seed);
+        new ConcurrentHnswGraphBuilder<>(vectors, vectorEncoding, similarityFunction, M, beamWidth);
     hnswGraphBuilder.initializeFromGraph(initializerGraph, oldToNewOrdinalMap);
     return hnswGraphBuilder;
   }
@@ -110,16 +108,13 @@ public final class ConcurrentHnswGraphBuilder<T> {
    * @param M – graph fanout parameter used to calculate the maximum number of connections a node
    *     can have – M on upper layers, and M * 2 on the lowest level.
    * @param beamWidth the size of the beam search to use when finding nearest neighbors.
-   * @param seed the seed for a random number generator used during graph construction. Provide this
-   *     to ensure repeatable construction.
    */
   private ConcurrentHnswGraphBuilder(
       RandomAccessVectorValues<T> vectors,
       VectorEncoding vectorEncoding,
       VectorSimilarityFunction similarityFunction,
       int M,
-      int beamWidth,
-      long seed)
+      int beamWidth)
       throws IOException {
     this.vectors = vectors;
     this.vectorsCopy = vectors.copy();
@@ -135,8 +130,7 @@ public final class ConcurrentHnswGraphBuilder<T> {
     this.beamWidth = beamWidth;
     // normalization factor for level generation; currently not configurable
     this.ml = M == 1 ? 1 : 1 / Math.log(1.0 * M);
-    this.random = new SplittableRandom(seed);
-    this.hnsw = new OnHeapHnswGraph(M);
+    this.hnsw = new ConcurrentOnHeapHnswGraph(M);
     this.graphSearcher =
         new HnswGraphSearcher<>(
             vectorEncoding,
@@ -156,7 +150,7 @@ public final class ConcurrentHnswGraphBuilder<T> {
    * @param vectorsToAdd the vectors for which to build a nearest neighbors graph. Must be an
    *     independent accessor for the vectors
    */
-  public OnHeapHnswGraph build(RandomAccessVectorValues<T> vectorsToAdd) throws IOException {
+  public ConcurrentOnHeapHnswGraph build(RandomAccessVectorValues<T> vectorsToAdd) throws IOException {
     if (vectorsToAdd == this.vectors) {
       throw new IllegalArgumentException(
           "Vectors to build must be independent of the source of vectors provided to HnswGraphBuilder()");
@@ -238,14 +232,14 @@ public final class ConcurrentHnswGraphBuilder<T> {
     this.infoStream = infoStream;
   }
 
-  public OnHeapHnswGraph getGraph() {
+  public ConcurrentOnHeapHnswGraph getGraph() {
     return hnsw;
   }
 
   /** Inserts a doc with vector value to the graph */
   public void addGraphNode(int node, T value) throws IOException {
     NeighborQueue candidates;
-    final int nodeLevel = getRandomGraphLevel(ml, random);
+    final int nodeLevel = getRandomGraphLevel(ml);
     int curMaxLevel = hnsw.numLevels() - 1;
 
     // If entrynode is -1, then this should finish without adding neighbors
@@ -256,6 +250,8 @@ public final class ConcurrentHnswGraphBuilder<T> {
       return;
     }
     int[] eps = new int[] {hnsw.entryNode()};
+
+    IDEA: USE ENTRY POINTS AS LOCKS
 
     // if a node introduces new levels to the graph, add this new node on new levels
     for (int level = nodeLevel; level > curMaxLevel; level--) {
@@ -445,10 +441,10 @@ public final class ConcurrentHnswGraphBuilder<T> {
     return false;
   }
 
-  private static int getRandomGraphLevel(double ml, SplittableRandom random) {
+  private static int getRandomGraphLevel(double ml) {
     double randDouble;
     do {
-      randDouble = random.nextDouble(); // avoid 0 value, as log(0) is undefined
+      randDouble = ThreadLocalRandom.current().nextDouble(); // avoid 0 value, as log(0) is undefined
     } while (randDouble == 0.0);
     return ((int) (-log(randDouble) * ml));
   }
