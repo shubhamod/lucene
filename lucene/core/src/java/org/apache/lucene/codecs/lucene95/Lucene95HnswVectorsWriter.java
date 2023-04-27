@@ -702,6 +702,15 @@ public final class Lucene95HnswVectorsWriter extends KnnVectorsWriter {
     return true;
   }
 
+  public static int[] getSortedNodes(NodesIterator nodesOnLevel) {
+    int[] sortedNodes = new int[nodesOnLevel.size()];
+    for (int n = 0; nodesOnLevel.hasNext(); n++) {
+      sortedNodes[n] = nodesOnLevel.nextInt();
+    }
+    Arrays.sort(sortedNodes);
+    return sortedNodes;
+  }
+
   /**
    * @param graph Write the graph in a compressed format
    * @return The non-cumulative offsets for the nodes. Should be used to create cumulative offsets.
@@ -714,10 +723,10 @@ public final class Lucene95HnswVectorsWriter extends KnnVectorsWriter {
     int[][] offsets = new int[graph.numLevels()][];
     for (int level = 0; level < graph.numLevels(); level++) {
       NodesIterator nodesOnLevel = graph.getNodesOnLevel(level);
+      int[] sortedNodes = getSortedNodes(nodesOnLevel);
       offsets[level] = new int[nodesOnLevel.size()];
       int nodeOffsetId = 0;
-      while (nodesOnLevel.hasNext()) {
-        int node = nodesOnLevel.nextInt();
+      for (int node: sortedNodes) {
         NeighborArray neighbors = graph.getNeighbors(level, node);
         int size = neighbors.size();
         // Write size in VInt as the neighbors list is typically small
@@ -810,22 +819,19 @@ public final class Lucene95HnswVectorsWriter extends KnnVectorsWriter {
       meta.writeVInt(graph.numLevels());
       long valueCount = 0;
       for (int level = 0; level < graph.numLevels(); level++) {
-        NodesIterator nodesOnLevel = graph.getNodesOnLevel(level);
-        valueCount += nodesOnLevel.size();
+        int[] sortedNodes = getSortedNodes(graph.getNodesOnLevel(level));
+        valueCount += sortedNodes.length;
         if (level > 0) {
-          int[] nol = new int[nodesOnLevel.size()];
-          int numberConsumed = nodesOnLevel.consume(nol);
-          assert numberConsumed == nodesOnLevel.size();
-          meta.writeVInt(nol.length); // number of nodes on a level
-          for (int i = nodesOnLevel.size() - 1; i > 0; --i) {
-            nol[i] -= nol[i - 1];
+          meta.writeVInt(sortedNodes.length); // number of nodes on a level
+          for (int i = sortedNodes.length - 1; i > 0; --i) {
+            sortedNodes[i] -= sortedNodes[i - 1];
           }
-          for (int n : nol) {
+          for (int n : sortedNodes) {
             assert n >= 0 : "delta encoding for nodes failed; expected nodes to be sorted";
             meta.writeVInt(n);
           }
         } else {
-          assert nodesOnLevel.size() == count : "Level 0 expects to have all nodes";
+          assert sortedNodes.length == count : "Level 0 expects to have all nodes";
         }
       }
       long start = vectorIndex.getFilePointer();

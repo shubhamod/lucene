@@ -22,6 +22,7 @@ import static org.apache.lucene.search.DocIdSetIterator.NO_MORE_DOCS;
 import java.io.IOException;
 import org.apache.lucene.index.VectorEncoding;
 import org.apache.lucene.index.VectorSimilarityFunction;
+import org.apache.lucene.util.AtomicBitSet;
 import org.apache.lucene.util.BitSet;
 import org.apache.lucene.util.Bits;
 import org.apache.lucene.util.FixedBitSet;
@@ -208,6 +209,12 @@ public class HnswGraphSearcher<T> {
     return searchLevel(query, topK, level, eps, vectors, graph, null, Integer.MAX_VALUE);
   }
 
+  /**
+   * @return a priority queue (heap) holding the closest neighbors found. These are returned in
+   *     REVERSE proximity order -- the most distant neighbor of the topK found, i.e. the one with
+   *     the lowest score/comparison value, will be at the top of the heap, while the closest
+   *     neighbor will be the last to be popped.
+   */
   private NeighborQueue searchLevel(
       T query,
       int topK,
@@ -218,7 +225,6 @@ public class HnswGraphSearcher<T> {
       Bits acceptOrds,
       int visitedLimit)
       throws IOException {
-    int size = graph.size();
     NeighborQueue results = new NeighborQueue(topK, false);
     prepareScratchState(vectors.size());
 
@@ -255,7 +261,6 @@ public class HnswGraphSearcher<T> {
       graph.seek(level, topCandidateNode);
       int friendOrd;
       while ((friendOrd = graph.nextNeighbor()) != NO_MORE_DOCS) {
-        assert friendOrd < size : "friendOrd=" + friendOrd + "; size=" + size;
         if (visited.getAndSet(friendOrd)) {
           continue;
         }
@@ -294,7 +299,14 @@ public class HnswGraphSearcher<T> {
   private void prepareScratchState(int capacity) {
     candidates.clear();
     if (visited.length() < capacity) {
-      visited = FixedBitSet.ensureCapacity((FixedBitSet) visited, capacity);
+      // this happens during graph construction; otherwise the size of the vector values should
+      // be constant, and it will be a SparseFixedBitSet instead of FixedBitSet
+      assert (visited instanceof FixedBitSet || visited instanceof AtomicBitSet)
+          : "Unexpected visited type: " + visited.getClass().getName();
+      if (visited instanceof FixedBitSet) {
+        visited = FixedBitSet.ensureCapacity((FixedBitSet) visited, capacity);
+      }
+      // else AtomicBitSet knows how to grow itself safely
     }
     visited.clear(0, visited.length());
   }
