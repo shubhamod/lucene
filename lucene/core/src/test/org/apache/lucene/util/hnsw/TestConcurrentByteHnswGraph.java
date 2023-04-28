@@ -15,19 +15,15 @@
  * limitations under the License.
  */
 
-apply plugin: 'java-library'
+package org.apache.lucene.util.hnsw;
 
-description = 'Lucene core library'
+import org.junit.Before;
 
-dependencies {
-  moduleTestImplementation project(':lucene:codecs')
-  moduleTestImplementation project(':lucene:test-framework')
-}
-
-test {
-  // open jdk classes for inspection by ram usage estimator
-  jvmArgs(
-          '--add-opens', 'java.base/java.lang=ALL-UNNAMED',
-          '--add-opens', 'java.base/java.util.concurrent.atomic=ALL-UNNAMED'
-  )
+public class TestConcurrentByteHnswGraph extends ByteVectorHnswGraphTestCase {
+  @Before
+  @Override
+  public void setUp() throws Exception {
+    super.setUp();
+    this.factory = ConcurrentHnswGraphFactory.instance;
+  }
 }

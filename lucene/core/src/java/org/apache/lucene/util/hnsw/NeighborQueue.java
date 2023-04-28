@@ -17,6 +17,9 @@
 
 package org.apache.lucene.util.hnsw;
 
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import org.apache.lucene.util.LongHeap;
 import org.apache.lucene.util.NumericUtils;
 
@@ -56,6 +59,11 @@ public class NeighborQueue {
   // Whether the search stopped early because it reached the visited nodes limit
   private boolean incomplete;
 
+  /**
+   * @param initialSize the initial size of the heap
+   * @param maxHeap whether the heap should be a max heap or a min heap. Max heaps will return
+   *     closer neighbors (higher score) first.
+   */
   public NeighborQueue(int initialSize, boolean maxHeap) {
     this.heap = new LongHeap(initialSize);
     this.order = maxHeap ? Order.MAX_HEAP : Order.MIN_HEAP;
@@ -66,6 +74,13 @@ public class NeighborQueue {
    */
   public int size() {
     return heap.size();
+  }
+
+  /**
+   * @return the capacity of the heap before it needs to resize
+   */
+  public int capacity() {
+    return heap.capacity();
   }
 
   /**
@@ -156,6 +171,10 @@ public class NeighborQueue {
   public void clear() {
     heap.clear();
     visitedCount = 0;
+  }
+
+  public List<Integer> ordinals() {
+    return IntStream.range(0, heap.size()).map(i -> decodeNodeId(heap.get(i + 1))).boxed().collect(Collectors.toList());
   }
 
   public int visitedCount() {

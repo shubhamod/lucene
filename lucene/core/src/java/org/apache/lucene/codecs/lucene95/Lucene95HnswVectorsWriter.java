@@ -43,9 +43,10 @@ import org.apache.lucene.store.IndexOutput;
 import org.apache.lucene.util.*;
 import org.apache.lucene.util.hnsw.HnswGraph;
 import org.apache.lucene.util.hnsw.HnswGraph.NodesIterator;
-import org.apache.lucene.util.hnsw.HnswGraphBuilder;
 import org.apache.lucene.util.hnsw.NeighborArray;
 import org.apache.lucene.util.hnsw.OnHeapHnswGraph;
+import org.apache.lucene.util.hnsw.HnswGraphBuilder;
+import org.apache.lucene.util.hnsw.OnHeapHnswGraphFactory;
 import org.apache.lucene.util.hnsw.RandomAccessVectorValues;
 import org.apache.lucene.util.packed.DirectMonotonicWriter;
 
@@ -327,9 +328,8 @@ public final class Lucene95HnswVectorsWriter extends KnnVectorsWriter {
     for (int level = 1; level < graph.numLevels(); level++) {
       NodesIterator nodesOnLevel = graph.getNodesOnLevel(level);
       int[] newNodes = new int[nodesOnLevel.size()];
-      int n = 0;
-      while (nodesOnLevel.hasNext()) {
-        newNodes[n++] = oldToNewMap[nodesOnLevel.nextInt()];
+      for (int n = 0; nodesOnLevel.hasNext(); n++) {
+        newNodes[n] = oldToNewMap[nodesOnLevel.nextInt()];
       }
       Arrays.sort(newNodes);
       nodesByLevel.add(newNodes);
@@ -513,7 +513,7 @@ public final class Lucene95HnswVectorsWriter extends KnnVectorsWriter {
       int initializerIndex)
       throws IOException {
     if (initializerIndex == -1) {
-      return HnswGraphBuilder.create(
+      return OnHeapHnswGraphFactory.instance.createBuilder(
           floatVectorValues,
           fieldInfo.getVectorEncoding(),
           fieldInfo.getVectorSimilarityFunction(),
@@ -526,7 +526,7 @@ public final class Lucene95HnswVectorsWriter extends KnnVectorsWriter {
         getHnswGraphFromReader(fieldInfo.name, mergeState.knnVectorsReaders[initializerIndex]);
     Map<Integer, Integer> ordinalMapper =
         getOldToNewOrdinalMap(mergeState, fieldInfo, initializerIndex);
-    return HnswGraphBuilder.create(
+    return OnHeapHnswGraphFactory.instance.createBuilder(
         floatVectorValues,
         fieldInfo.getVectorEncoding(),
         fieldInfo.getVectorSimilarityFunction(),
@@ -713,11 +713,10 @@ public final class Lucene95HnswVectorsWriter extends KnnVectorsWriter {
     int countOnLevel0 = graph.size();
     int[][] offsets = new int[graph.numLevels()][];
     for (int level = 0; level < graph.numLevels(); level++) {
-      NodesIterator nodesOnLevel = graph.getNodesOnLevel(level);
-      offsets[level] = new int[nodesOnLevel.size()];
+      int[] sortedNodes = getSortedNodes(graph.getNodesOnLevel(level));
+      offsets[level] = new int[sortedNodes.length];
       int nodeOffsetId = 0;
-      while (nodesOnLevel.hasNext()) {
-        int node = nodesOnLevel.nextInt();
+      for (int node : sortedNodes) {
         NeighborArray neighbors = graph.getNeighbors(level, node);
         int size = neighbors.size();
         // Write size in VInt as the neighbors list is typically small
@@ -740,6 +739,15 @@ public final class Lucene95HnswVectorsWriter extends KnnVectorsWriter {
       }
     }
     return offsets;
+  }
+
+  public static int[] getSortedNodes(NodesIterator nodesOnLevel) {
+    int[] sortedNodes = new int[nodesOnLevel.size()];
+    for (int n = 0; nodesOnLevel.hasNext(); n++) {
+      sortedNodes[n] = nodesOnLevel.nextInt();
+    }
+    Arrays.sort(sortedNodes);
+    return sortedNodes;
   }
 
   private void writeMeta(
@@ -810,14 +818,11 @@ public final class Lucene95HnswVectorsWriter extends KnnVectorsWriter {
       meta.writeVInt(graph.numLevels());
       long valueCount = 0;
       for (int level = 0; level < graph.numLevels(); level++) {
-        NodesIterator nodesOnLevel = graph.getNodesOnLevel(level);
-        valueCount += nodesOnLevel.size();
+        int[] nol = getSortedNodes(graph.getNodesOnLevel(level));
+        valueCount += nol.length;
         if (level > 0) {
-          int[] nol = new int[nodesOnLevel.size()];
-          int numberConsumed = nodesOnLevel.consume(nol);
-          assert numberConsumed == nodesOnLevel.size();
           meta.writeVInt(nol.length); // number of nodes on a level
-          for (int i = nodesOnLevel.size() - 1; i > 0; --i) {
+          for (int i = nol.length - 1; i > 0; --i) {
             nol[i] -= nol[i - 1];
           }
           for (int n : nol) {
@@ -825,7 +830,7 @@ public final class Lucene95HnswVectorsWriter extends KnnVectorsWriter {
             meta.writeVInt(n);
           }
         } else {
-          assert nodesOnLevel.size() == count : "Level 0 expects to have all nodes";
+          assert nol.length == count : "Level 0 expects to have all nodes";
         }
       }
       long start = vectorIndex.getFilePointer();
@@ -931,7 +936,7 @@ public final class Lucene95HnswVectorsWriter extends KnnVectorsWriter {
       this.docsWithField = new DocsWithFieldSet();
       vectors = new ArrayList<>();
       hnswGraphBuilder =
-          HnswGraphBuilder.create(
+          OnHeapHnswGraphFactory.instance.createBuilder(
               new RAVectorValues<>(vectors, dim),
               fieldInfo.getVectorEncoding(),
               fieldInfo.getVectorSimilarityFunction(),

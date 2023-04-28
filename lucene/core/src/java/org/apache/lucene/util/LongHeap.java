@@ -17,12 +17,13 @@
 package org.apache.lucene.util;
 
 /**
- * A min heap that stores longs; a primitive priority queue that like all priority queues maintains
- * a partial ordering of its elements such that the least element can always be found in constant
- * time. Put()'s and pop()'s require log(size). This heap provides unbounded growth via {@link
- * #push(long)}, and bounded-size insertion based on its nominal maxSize via {@link
- * #insertWithOverflow(long)}. The heap is a min heap, meaning that the top element is the lowest
- * value of the heap.
+ * A min heap that stores longs; The heap is a min heap, meaning that the top element is the LOWEST
+ * value of the heap, and if we overflow we will retain the LARGEST items.
+ *
+ * <p>A heap is a simple priority queue that maintains a partial ordering of its elements such that
+ * the least element can always be found in constant time. Push()'s and pop()'s require log(size).
+ * This heap provides unbounded growth via {@link #push(long)}, and bounded-size insertion based on
+ * its nominal maxSize via {@link #insertWithOverflow(long)}.
  *
  * @lucene.internal
  */
@@ -141,6 +142,14 @@ public final class LongHeap {
   /** Returns the number of elements currently stored in the PriorityQueue. */
   public final int size() {
     return size;
+  }
+
+  /**
+   * Returns the maximum number of elements that can be stored in the PriorityQueue before
+   * overflowing.
+   */
+  public final int capacity() {
+    return maxSize;
   }
 
   /** Removes all entries from the PriorityQueue. */

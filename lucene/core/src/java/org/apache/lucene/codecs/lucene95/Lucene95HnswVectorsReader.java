@@ -46,7 +46,9 @@ import org.apache.lucene.util.Accountable;
 import org.apache.lucene.util.Bits;
 import org.apache.lucene.util.IOUtils;
 import org.apache.lucene.util.RamUsageEstimator;
+import org.apache.lucene.util.SparseFixedBitSet;
 import org.apache.lucene.util.hnsw.HnswGraph;
+import org.apache.lucene.util.hnsw.HnswGraphResumableSearcher;
 import org.apache.lucene.util.hnsw.HnswGraphSearcher;
 import org.apache.lucene.util.hnsw.NeighborQueue;
 import org.apache.lucene.util.packed.DirectMonotonicReader;
@@ -357,6 +359,48 @@ public final class Lucene95HnswVectorsReader extends KnnVectorsReader {
             ? TotalHits.Relation.GREATER_THAN_OR_EQUAL_TO
             : TotalHits.Relation.EQUAL_TO;
     return new TopDocs(new TotalHits(results.visitedCount(), relation), scoreDocs);
+  }
+
+  @Override
+  public HnswGraphResumableSearcher<float[]> getResumableSearcher(
+      String field, float[] target, int k, Bits acceptOrds, int visitedLimit) throws IOException {
+    FieldEntry fieldEntry = fields.get(field);
+
+    // bound k by total number of vectors to prevent oversizing data structures
+    k = Math.min(k, fieldEntry.size());
+    OffHeapFloatVectorValues vectorValues = OffHeapFloatVectorValues.load(fieldEntry, vectorData);
+
+    return new HnswGraphResumableSearcher<>(
+        target,
+        vectorValues,
+        new NeighborQueue(k, true),
+        fieldEntry.vectorEncoding,
+        fieldEntry.similarityFunction,
+        getGraph(fieldEntry),
+        vectorValues.getAcceptOrds(acceptOrds),
+        new SparseFixedBitSet(vectorValues.size()),
+        new SparseFixedBitSet(vectorValues.size()));
+  }
+
+  @Override
+  public HnswGraphResumableSearcher<byte[]> getResumableSearcher(
+      String field, byte[] target, int k, Bits acceptOrds, int visitedLimit) throws IOException {
+    FieldEntry fieldEntry = fields.get(field);
+
+    // bound k by total number of vectors to prevent oversizing data structures
+    k = Math.min(k, fieldEntry.size());
+    OffHeapByteVectorValues vectorValues = OffHeapByteVectorValues.load(fieldEntry, vectorData);
+
+    return new HnswGraphResumableSearcher<>(
+        target,
+        vectorValues,
+        new NeighborQueue(k, true),
+        fieldEntry.vectorEncoding,
+        fieldEntry.similarityFunction,
+        getGraph(fieldEntry),
+        vectorValues.getAcceptOrds(acceptOrds),
+        new SparseFixedBitSet(vectorValues.size()),
+        new SparseFixedBitSet(vectorValues.size()));
   }
 
   /** Get knn graph values; used for testing */

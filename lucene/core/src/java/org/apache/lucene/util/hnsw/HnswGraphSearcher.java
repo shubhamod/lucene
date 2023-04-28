@@ -208,7 +208,13 @@ public class HnswGraphSearcher<T> {
     return searchLevel(query, topK, level, eps, vectors, graph, null, Integer.MAX_VALUE);
   }
 
-  private NeighborQueue searchLevel(
+  /**
+   * @return a priority queue (heap) holding the closest neighbors found. These are returned in
+   *     REVERSE proximity order -- the most distant neighbor of the topK found, i.e. the one with
+   *     the lowest score/comparison value, will be at the top of the heap, while the closest
+   *     neighbor will be the last to be popped.
+   */
+  NeighborQueue searchLevel(
       T query,
       int topK,
       int level,
@@ -218,7 +224,6 @@ public class HnswGraphSearcher<T> {
       Bits acceptOrds,
       int visitedLimit)
       throws IOException {
-    int size = graph.size();
     NeighborQueue results = new NeighborQueue(topK, false);
     prepareScratchState(vectors.size());
 
@@ -255,7 +260,6 @@ public class HnswGraphSearcher<T> {
       graph.seek(level, topCandidateNode);
       int friendOrd;
       while ((friendOrd = graph.nextNeighbor()) != NO_MORE_DOCS) {
-        assert friendOrd < size : "friendOrd=" + friendOrd + "; size=" + size;
         if (visited.getAndSet(friendOrd)) {
           continue;
         }
@@ -276,9 +280,7 @@ public class HnswGraphSearcher<T> {
         }
       }
     }
-    while (results.size() > topK) {
-      results.pop();
-    }
+    assert results.size() <= topK : "results.size()=" + results.size() + "; topK=" + topK;
     results.setVisitedCount(numVisited);
     return results;
   }
@@ -294,8 +296,10 @@ public class HnswGraphSearcher<T> {
   private void prepareScratchState(int capacity) {
     candidates.clear();
     if (visited.length() < capacity) {
+      // this happens during graph construction; otherwise the size of the vector values should
+      // be constant, and it will be a SparseFixedBitSet instead of FixedBitSet
       visited = FixedBitSet.ensureCapacity((FixedBitSet) visited, capacity);
     }
-    visited.clear(0, visited.length());
+    visited.clear();
   }
 }

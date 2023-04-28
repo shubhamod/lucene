@@ -15,19 +15,22 @@
  * limitations under the License.
  */
 
-apply plugin: 'java-library'
+package org.apache.lucene.util.hnsw;
 
-description = 'Lucene core library'
+import java.io.IOException;
+import org.apache.lucene.index.VectorEncoding;
+import org.apache.lucene.index.VectorSimilarityFunction;
 
-dependencies {
-  moduleTestImplementation project(':lucene:codecs')
-  moduleTestImplementation project(':lucene:test-framework')
-}
+/** A factory for HnswGraphs. */
+public interface HnswGraphFactory {
+  public <T> IHnswGraphBuilder<T> createBuilder(
+      RandomAccessVectorValues<T> vectors,
+      VectorEncoding vectorEncoding,
+      VectorSimilarityFunction similarityFunction,
+      int M,
+      int beamWidth,
+      long seed)
+      throws IOException;
 
-test {
-  // open jdk classes for inspection by ram usage estimator
-  jvmArgs(
-          '--add-opens', 'java.base/java.lang=ALL-UNNAMED',
-          '--add-opens', 'java.base/java.util.concurrent.atomic=ALL-UNNAMED'
-  )
+  public HnswGraph create(int maxConnections);
 }
