@@ -23,6 +23,8 @@ import java.io.IOException;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
@@ -57,7 +59,7 @@ public final class ConcurrentHnswGraphBuilder<T> {
   private final ThreadLocal<NeighborArray> scratchNeighbors;
 
   private final VectorSimilarityFunction similarityFunction;
-  private final boolean parallelBuild;
+  private final ExecutorService executors;
   private final VectorEncoding vectorEncoding;
   private final RandomAccessVectorValues<T> vectors;
   private final ThreadLocal<HnswGraphSearcher<T>> graphSearcher;
@@ -98,8 +100,21 @@ public final class ConcurrentHnswGraphBuilder<T> {
       int beamWidth,
       boolean parallelize)
       throws IOException {
+    var executors = Executors.newFixedThreadPool(parallelize ? Runtime.getRuntime().availableProcessors() : 1);
     return new ConcurrentHnswGraphBuilder<>(
-        vectors, vectorEncoding, similarityFunction, M, beamWidth, parallelize);
+        vectors, vectorEncoding, similarityFunction, M, beamWidth, executors);
+  }
+
+  public static <T> ConcurrentHnswGraphBuilder<T> create(
+          RandomAccessVectorValues<T> vectors,
+          VectorEncoding vectorEncoding,
+          VectorSimilarityFunction similarityFunction,
+          int M,
+          int beamWidth,
+          ExecutorService executors)
+          throws IOException {
+    return new ConcurrentHnswGraphBuilder<>(
+            vectors, vectorEncoding, similarityFunction, M, beamWidth, executors);
   }
 
   /**
@@ -111,7 +126,7 @@ public final class ConcurrentHnswGraphBuilder<T> {
    * @param M – graph fanout parameter used to calculate the maximum number of connections a node
    *     can have – M on upper layers, and M * 2 on the lowest level.
    * @param beamWidth the size of the beam search to use when finding nearest neighbors.
-   * @param parallelize use multiple threads to build the graph.
+   * @param executors the ExecutorService to run the build against
    */
   private ConcurrentHnswGraphBuilder(
       RandomAccessVectorValues<T> vectors,
@@ -119,12 +134,13 @@ public final class ConcurrentHnswGraphBuilder<T> {
       VectorSimilarityFunction similarityFunction,
       int M,
       int beamWidth,
-      boolean parallelize)
+      ExecutorService executors)
       throws IOException {
     this.vectors = vectors;
     this.vectorsCopy = vectors.copy();
     this.vectorEncoding = Objects.requireNonNull(vectorEncoding);
     this.similarityFunction = Objects.requireNonNull(similarityFunction);
+    this.executors = executors;
     this.parallelBuild = parallelize;
     if (M <= 0) {
       throw new IllegalArgumentException("maxConn must be positive");
