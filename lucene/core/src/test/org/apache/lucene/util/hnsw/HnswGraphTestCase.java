@@ -23,15 +23,7 @@ import static org.apache.lucene.tests.util.RamUsageTester.ramUsed;
 
 import com.carrotsearch.randomizedtesting.RandomizedTest;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.lucene.codecs.KnnVectorsFormat;
@@ -266,28 +258,36 @@ abstract class HnswGraphTestCase<T> extends LuceneTestCase {
     }
   }
 
+  List<Integer> sortedNodesOnLevel(HnswGraph h, int level) throws IOException {
+    NodesIterator nodesOnLevel = h.getNodesOnLevel(level);
+    return
+            IntStream.iterate(0, i -> nodesOnLevel.hasNext(), i -> nodesOnLevel.next())
+                    .sorted()
+                    .boxed()
+                    .toList();
+  }
+
   void assertGraphEqual(HnswGraph g, HnswGraph h) throws IOException {
+    // construct these up front since they call seek which will mess up our test loop
+    var prettyG = g.prettyPrint();
+    var prettyH = h.prettyPrint();
     var m1 =
         "the number of levels in the graphs are different:%n%s%n%s"
-            .formatted(g.prettyPrint(), h.prettyPrint());
+            .formatted(prettyG, prettyH);
     assertEquals(m1, g.numLevels(), h.numLevels());
     var m2 =
         "the number of nodes in the graphs are different:%n%s%n%s"
-            .formatted(g.prettyPrint(), h.prettyPrint());
+            .formatted(prettyG, prettyH);
     assertEquals(m2, g.size(), h.size());
 
     // assert equal nodes on each level
     for (int level = 0; level < g.numLevels(); level++) {
-      NodesIterator nodesOnLevel = g.getNodesOnLevel(level);
-      NodesIterator nodesOnLevel2 = h.getNodesOnLevel(level);
-      while (nodesOnLevel.hasNext() && nodesOnLevel2.hasNext()) {
-        int node = nodesOnLevel.nextInt();
-        int node2 = nodesOnLevel2.nextInt();
-        var m3 =
-            "nodes in the graphs are different on level %d:%n%s%n%s"
-                .formatted(level, g.prettyPrint(), h.prettyPrint());
-        assertEquals(m3, node, node2);
-      }
+      var hNodes = sortedNodesOnLevel(h, level);
+      var gNodes = sortedNodesOnLevel(g, level);
+      var m3 =
+          "nodes in the graphs are different on level %d:%n%s%n%s"
+              .formatted(level, prettyG, prettyH);
+      assertEquals(m3, gNodes, hNodes);
     }
 
     // assert equal nodes' neighbours on each level
@@ -299,7 +299,7 @@ abstract class HnswGraphTestCase<T> extends LuceneTestCase {
         h.seek(level, node);
         var m4 =
             "arcs differ for node %d on level %d:%n%s%n%s"
-                .formatted(node, level, g.prettyPrint(), h.prettyPrint());
+                .formatted(node, level, prettyG, prettyH);
         assertEquals(m4, getNeighborNodes(g), getNeighborNodes(h));
       }
     }
@@ -450,45 +450,90 @@ abstract class HnswGraphTestCase<T> extends LuceneTestCase {
     }
   }
 
+  private static class MockHnswGraph extends HnswGraph {
+    private List<Map<Integer, Set<Integer>>> nodes = new ArrayList<>();
+    private Iterator<Integer> neighborIterator;
+
+    public void add(int level, int node) {
+      while (nodes.size() <= level) {
+        nodes.add(new HashMap<>());
+      }
+      nodes.get(level).put(node, new HashSet<>());
+    }
+
+    public Set<Integer> rawNodesOnLevel(int level) {
+      return nodes.get(level).keySet();
+    }
+
+    public Set<Integer> rawNeighbors(int level, int node) {
+      return nodes.get(level).get(node);
+    }
+
+    @Override
+    public void seek(int level, int target) {
+      neighborIterator = nodes.get(level).get(target).iterator();
+    }
+
+    @Override
+    public int size() {
+      return nodes.get(0).size();
+    }
+
+    @Override
+    public int nextNeighbor() {
+      return neighborIterator.hasNext() ? neighborIterator.next() : NO_MORE_DOCS;
+    }
+
+    @Override
+    public int numLevels() {
+      return nodes.size();
+    }
+
+    @Override
+    public int entryNode() {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public NodesIterator getNodesOnLevel(int level) {
+      var nodeArray = rawNodesOnLevel(level).stream().mapToInt(Integer::intValue).toArray();
+      return new ArrayNodesIterator(nodeArray, nodeArray.length);
+    }
+  }
+
   public void testBuildOnHeapHnswGraphOutOfOrder() throws IOException {
     int maxNumLevels = randomIntBetween(2, 10);
     int nodeCount = randomIntBetween(1, 100);
 
-    List<List<Integer>> nodesPerLevel = new ArrayList<>();
-    for (int i = 0; i < maxNumLevels; i++) {
-      nodesPerLevel.add(new ArrayList<>());
-    }
-
-    int numLevels = 0;
+    var mock = new MockHnswGraph();
     for (int currNode = 0; currNode < nodeCount; currNode++) {
       int nodeMaxLevel = random().nextInt(1, maxNumLevels + 1);
-      numLevels = Math.max(numLevels, nodeMaxLevel);
       for (int currLevel = 0; currLevel < nodeMaxLevel; currLevel++) {
-        nodesPerLevel.get(currLevel).add(currNode);
+        mock.add(currLevel, currNode);
       }
     }
 
     OnHeapHnswGraph topDownOrderReversedHnsw = new OnHeapHnswGraph(10);
-    for (int currLevel = numLevels - 1; currLevel >= 0; currLevel--) {
-      List<Integer> currLevelNodes = nodesPerLevel.get(currLevel);
+    for (int currLevel = mock.numLevels() - 1; currLevel >= 0; currLevel--) {
+      var currLevelNodes = mock.rawNodesOnLevel(currLevel);
       int currLevelNodesSize = currLevelNodes.size();
       for (int currNodeInd = currLevelNodesSize - 1; currNodeInd >= 0; currNodeInd--) {
-        topDownOrderReversedHnsw.addNode(currLevel, currLevelNodes.get(currNodeInd));
+        topDownOrderReversedHnsw.addNode(currLevel, mock.rawNeighbors(currLevel, currNodeInd));
       }
     }
 
     OnHeapHnswGraph bottomUpOrderReversedHnsw = new OnHeapHnswGraph(10);
-    for (int currLevel = 0; currLevel < numLevels; currLevel++) {
-      List<Integer> currLevelNodes = nodesPerLevel.get(currLevel);
+    for (int currLevel = 0; currLevel < mock.numLevels(); currLevel++) {
+      var currLevelNodes = mock.rawNodesOnLevel(currLevel);
       int currLevelNodesSize = currLevelNodes.size();
       for (int currNodeInd = currLevelNodesSize - 1; currNodeInd >= 0; currNodeInd--) {
-        bottomUpOrderReversedHnsw.addNode(currLevel, currLevelNodes.get(currNodeInd));
+        bottomUpOrderReversedHnsw.addNode(currLevel, mock.rawNodesOnLevel(currLevel, currNodeInd));
       }
     }
 
     OnHeapHnswGraph topDownOrderRandomHnsw = new OnHeapHnswGraph(10);
-    for (int currLevel = numLevels - 1; currLevel >= 0; currLevel--) {
-      List<Integer> currLevelNodes = new ArrayList<>(nodesPerLevel.get(currLevel));
+    for (int currLevel = mock.numLevels() - 1; currLevel >= 0; currLevel--) {
+      List<Integer> currLevelNodes = new ArrayList<>(mock.rawNodesOnLevel(currLevel));
       Collections.shuffle(currLevelNodes, random());
       for (Integer currNode : currLevelNodes) {
         topDownOrderRandomHnsw.addNode(currLevel, currNode);
@@ -496,32 +541,13 @@ abstract class HnswGraphTestCase<T> extends LuceneTestCase {
     }
 
     OnHeapHnswGraph bottomUpExpectedHnsw = new OnHeapHnswGraph(10);
-    for (int currLevel = 0; currLevel < numLevels; currLevel++) {
-      for (Integer currNode : nodesPerLevel.get(currLevel)) {
+    for (int currLevel = 0; currLevel < mock.numLevels(); currLevel++) {
+      for (Integer currNode : mock.rawNodesOnLevel(currLevel)) {
         bottomUpExpectedHnsw.addNode(currLevel, currNode);
       }
     }
 
-    assertEquals(nodeCount, bottomUpExpectedHnsw.getNodesOnLevel(0).size());
-    for (Integer node : nodesPerLevel.get(0)) {
-      assertEquals(0, bottomUpExpectedHnsw.getNeighbors(0, node).size());
-    }
-
-    for (int currLevel = 1; currLevel < numLevels; currLevel++) {
-      var nodesIterator = bottomUpExpectedHnsw.getNodesOnLevel(currLevel);
-      List<Integer> expectedNodesOnLevel = nodesPerLevel.get(currLevel);
-      assertEquals(expectedNodesOnLevel.size(), nodesIterator.size());
-      var sortedNodes =
-          IntStream.iterate(0, i -> nodesIterator.hasNext(), i -> nodesIterator.next())
-              .sorted()
-              .iterator();
-      for (Integer expectedNode : expectedNodesOnLevel) {
-        int currentNode = sortedNodes.nextInt();
-        assertEquals(expectedNode.intValue(), currentNode);
-        assertEquals(0, bottomUpExpectedHnsw.getNeighbors(currLevel, currentNode).size());
-      }
-    }
-
+    assertGraphEqual(mock, bottomUpExpectedHnsw);
     assertGraphEqual(bottomUpExpectedHnsw, topDownOrderReversedHnsw);
     assertGraphEqual(bottomUpExpectedHnsw, bottomUpOrderReversedHnsw);
     assertGraphEqual(bottomUpExpectedHnsw, topDownOrderRandomHnsw);
