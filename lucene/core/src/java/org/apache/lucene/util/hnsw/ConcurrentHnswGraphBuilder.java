@@ -20,9 +20,15 @@ package org.apache.lucene.util.hnsw;
 import static java.lang.Math.log;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
@@ -89,17 +95,22 @@ public final class ConcurrentHnswGraphBuilder<T> {
         vectors, vectorEncoding, similarityFunction, M, beamWidth, true);
   }
 
-  /** This is the "native" factory for ConcurrentHnswGraphBuilder. */
+  /**
+   * This is the "native" factory for ConcurrentHnswGraphBuilder.
+   * `autoParallelize` is a bit of a hack to allow us to conform to the same `build` signature
+   * as HnswGraphBuilder; if true, we'll create an ExecutorService at build time with
+   * one thread per core.
+   */
   public static <T> ConcurrentHnswGraphBuilder<T> create(
       RandomAccessVectorValues<T> vectors,
       VectorEncoding vectorEncoding,
       VectorSimilarityFunction similarityFunction,
       int M,
       int beamWidth,
-      boolean parallelize)
+      boolean autoParallelize)
       throws IOException {
     return new ConcurrentHnswGraphBuilder<>(
-        vectors, vectorEncoding, similarityFunction, M, beamWidth, parallelize);
+        vectors, vectorEncoding, similarityFunction, M, beamWidth, autoParallelize);
   }
 
   /**
@@ -161,30 +172,49 @@ public final class ConcurrentHnswGraphBuilder<T> {
    */
   public ConcurrentOnHeapHnswGraph build(RandomAccessVectorValues<T> vectorsToAdd)
       throws IOException {
+  }
+
+  public ConcurrentOnHeapHnswGraph build(RandomAccessVectorValues<T> vectorsToAdd, ExecutorService executors) {
     if (vectorsToAdd == this.vectors) {
       throw new IllegalArgumentException(
-          "Vectors to build must be independent of the source of vectors provided to HnswGraphBuilder()");
+              "Vectors to build must be independent of the source of vectors provided to HnswGraphBuilder()");
     }
     if (infoStream.isEnabled(HNSW_COMPONENT)) {
       infoStream.message(HNSW_COMPONENT, "build graph from " + vectorsToAdd.size() + " vectors");
     }
-    addVectors(vectorsToAdd);
+    addVectors(vectorsToAdd, executors);
     return hnsw;
   }
 
-  private void addVectors(RandomAccessVectorValues<T> vectorsToAdd) throws IOException {
-    var stream = IntStream.range(0, vectorsToAdd.size());
-    if (parallelBuild) { // TODO
-      stream = stream.parallel();
-    }
-    stream.forEach(
-        node -> {
+  private void addVectors(RandomAccessVectorValues<T> vectorsToAdd, ExecutorService executors) {
+    int concurrentTasks = Runtime.getRuntime().availableProcessors(); // or the number of threads in your executor
+    Semaphore semaphore = new Semaphore(concurrentTasks);
+
+    var futures = ConcurrentHashMap.<CompletableFuture>newKeySet();
+    for (int i = 0; i < vectorsToAdd.size(); i++) {
+      int node = i;
+      try {
+        semaphore.acquire();
+        // Use an array of size 1 to hold the CompletableFuture reference
+        var fHolder = new CompletableFuture[1];
+        fHolder[0] = CompletableFuture.runAsync(() -> {
           try {
+            futures.add(fHolder[0]);
             addGraphNode(node, vectorsToAdd);
           } catch (IOException e) {
             throw new RuntimeException(e);
+          } finally {
+            futures.remove(fHolder[0]);
+            semaphore.release();
           }
-        });
+        }, executors);
+      } catch (InterruptedException e) {
+        throw new RuntimeException(e);
+      }
+    }
+    for (var f : futures) {
+      f.join();
+    }
   }
 
   /** Set info-stream to output debugging information * */
