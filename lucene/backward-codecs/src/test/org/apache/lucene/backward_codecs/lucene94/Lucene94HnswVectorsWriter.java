@@ -49,9 +49,10 @@ import org.apache.lucene.util.InfoStream;
 import org.apache.lucene.util.RamUsageEstimator;
 import org.apache.lucene.util.hnsw.HnswGraph;
 import org.apache.lucene.util.hnsw.HnswGraph.NodesIterator;
-import org.apache.lucene.util.hnsw.HnswGraphBuilder;
 import org.apache.lucene.util.hnsw.NeighborArray;
 import org.apache.lucene.util.hnsw.OnHeapHnswGraph;
+import org.apache.lucene.util.hnsw.HnswGraphBuilder;
+import org.apache.lucene.util.hnsw.OnHeapHnswGraphFactory;
 import org.apache.lucene.util.hnsw.RandomAccessVectorValues;
 import org.apache.lucene.util.packed.DirectMonotonicWriter;
 
@@ -421,7 +422,7 @@ public final class Lucene94HnswVectorsWriter extends KnnVectorsWriter {
                         vectorDataInput,
                         byteSize);
                 HnswGraphBuilder<byte[]> hnswGraphBuilder =
-                    HnswGraphBuilder.create(
+                    OnHeapHnswGraphFactory.instance.createBuilder(
                         vectorValues,
                         fieldInfo.getVectorEncoding(),
                         fieldInfo.getVectorSimilarityFunction(),
@@ -439,7 +440,7 @@ public final class Lucene94HnswVectorsWriter extends KnnVectorsWriter {
                         vectorDataInput,
                         byteSize);
                 HnswGraphBuilder<float[]> hnswGraphBuilder =
-                    HnswGraphBuilder.create(
+                    OnHeapHnswGraphFactory.instance.createBuilder(
                         vectorValues,
                         fieldInfo.getVectorEncoding(),
                         fieldInfo.getVectorSimilarityFunction(),
@@ -662,7 +663,7 @@ public final class Lucene94HnswVectorsWriter extends KnnVectorsWriter {
       vectors = new ArrayList<>();
       RAVectorValues<T> raVectorValues = new RAVectorValues<>(vectors, dim);
       hnswGraphBuilder =
-          HnswGraphBuilder.create(
+          OnHeapHnswGraphFactory.instance.createBuilder(
               raVectorValues,
               fieldInfo.getVectorEncoding(),
               fieldInfo.getVectorSimilarityFunction(),
