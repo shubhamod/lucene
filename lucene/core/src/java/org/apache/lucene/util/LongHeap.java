@@ -17,11 +17,11 @@
 package org.apache.lucene.util;
 
 /**
- * A min heap that stores longs; a primitive priority queue that like all priority queues maintains
- * a partial ordering of its elements such that the least element can always be found in constant
- * time. Put()'s and pop()'s require log(size). This heap provides unbounded growth via {@link
+ * A max heap that stores longs; a primitive priority queue that like all priority queues maintains
+ * a partial ordering of its elements such that the largest element can always be found in constant
+ * time. Push()'s and pop()'s require log(size). This heap provides unbounded growth via {@link
  * #push(long)}, and bounded-size insertion based on its nominal maxSize via {@link
- * #insertWithOverflow(long)}. The heap is a min heap, meaning that the top element is the lowest
+ * #insertWithOverflow(long)}. The heap is a max heap, meaning that the top element is the largest
  * value of the heap.
  *
  * @lucene.internal
@@ -76,7 +76,7 @@ public final class LongHeap {
    */
   public boolean insertWithOverflow(long value) {
     if (size >= maxSize) {
-      if (value < heap[1]) {
+      if (value > heap[1]) {
         return false;
       }
       updateTop(value);
@@ -130,12 +130,10 @@ public final class LongHeap {
    * Calling this method on an empty LongHeap has no visible effect.
    *
    * @param value the new element that is less than the current top.
-   * @return the new 'top' element after shuffling the heap.
    */
-  public final long updateTop(long value) {
+  void updateTop(long value) {
     heap[1] = value;
     downHeap(1);
-    return heap[1];
   }
 
   /** Returns the number of elements currently stored in the PriorityQueue. */
@@ -152,7 +150,7 @@ public final class LongHeap {
     int i = origPos;
     long value = heap[i]; // save bottom value
     int j = i >>> 1;
-    while (j > 0 && value < heap[j]) {
+    while (j > 0 && value > heap[j]) {
       heap[i] = heap[j]; // shift parents down
       i = j;
       j = j >>> 1;
@@ -164,15 +162,15 @@ public final class LongHeap {
     long value = heap[i]; // save top value
     int j = i << 1; // find smaller child
     int k = j + 1;
-    if (k <= size && heap[k] < heap[j]) {
+    if (k <= size && heap[k] > heap[j]) {
       j = k;
     }
-    while (j <= size && heap[j] < value) {
+    while (j <= size && heap[j] > value) {
       heap[i] = heap[j]; // shift up child
       i = j;
       j = i << 1;
       k = j + 1;
-      if (k <= size && heap[k] < heap[j]) {
+      if (k <= size && heap[k] > heap[j]) {
         j = k;
       }
     }

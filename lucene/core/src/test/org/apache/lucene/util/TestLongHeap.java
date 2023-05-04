@@ -45,10 +45,10 @@ public class TestLongHeap extends LuceneTestCase {
       pq.push(next);
     }
 
-    long last = Long.MIN_VALUE;
+    long last = Long.MAX_VALUE;
     for (long i = 0; i < count; i++) {
       long next = pq.pop();
-      assertTrue(next >= last);
+      assertTrue(next <= last);
       last = next;
       sum2 += last;
     }
@@ -68,11 +68,10 @@ public class TestLongHeap extends LuceneTestCase {
 
   public void testExceedBounds() {
     LongHeap pq = new LongHeap(1);
-    pq.push(2);
     pq.push(0);
-    // expectThrows(ArrayIndexOutOfBoundsException.class, () -> pq.push(0));
+    pq.push(2);
     assertEquals(2, pq.size()); // the heap has been extended to a new max size
-    assertEquals(0, pq.top());
+    assertEquals(2, pq.top());
   }
 
   public void testFixedSize() {
@@ -132,7 +131,7 @@ public class TestLongHeap extends LuceneTestCase {
     int initialSize = random().nextInt(10) + 1;
     LongHeap pq = new LongHeap(initialSize);
     int num = random().nextInt(100) + 1;
-    long maxValue = Long.MIN_VALUE;
+    long minValue = Long.MAX_VALUE;
     int count = 0;
     for (int i = 0; i < num; i++) {
       long value = random().nextLong();
@@ -147,19 +146,19 @@ public class TestLongHeap extends LuceneTestCase {
           }
         }
       }
-      maxValue = Math.max(maxValue, value);
+      minValue = Math.min(minValue, value);
     }
     assertEquals(count, pq.size());
-    long last = Long.MIN_VALUE;
+    long last = Long.MAX_VALUE;
     while (pq.size() > 0) {
       long top = pq.top();
       long next = pq.pop();
       assertEquals(top, next);
       --count;
-      assertTrue(next >= last);
+      assertTrue(next <= last);
       last = next;
     }
     assertEquals(0, count);
-    assertEquals(maxValue, last);
+    assertEquals(minValue, last);
   }
 }
