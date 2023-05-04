@@ -27,7 +27,22 @@ public class TestLongHeap extends LuceneTestCase {
     long[] heapArray = heap.getHeapArray();
     for (int i = 2; i <= heap.size(); i++) {
       int parent = i >>> 1;
-      assert heapArray[parent] <= heapArray[i];
+      int level = (int) (Math.log(i) / Math.log(2));
+      int parentLevel = (int) (Math.log(parent) / Math.log(2));
+
+      if (level % 2 == 0) { // On even level
+        if (parentLevel % 2 == 0) { // Parent on even level
+          assert heapArray[parent] <= heapArray[i];
+        } else { // Parent on odd level
+          assert heapArray[parent] >= heapArray[i];
+        }
+      } else { // On odd level
+        if (parentLevel % 2 == 0) { // Parent on even level
+          assert heapArray[parent] >= heapArray[i];
+        } else { // Parent on odd level
+          assert heapArray[parent] <= heapArray[i];
+        }
+      }
     }
   }
 
@@ -45,14 +60,19 @@ public class TestLongHeap extends LuceneTestCase {
       pq.push(next);
     }
 
-    long last = Long.MIN_VALUE;
-    for (long i = 0; i < count; i++) {
-      long next = pq.pop();
-      assertTrue(next >= last);
-      last = next;
-      sum2 += last;
+    // Check the validity of the min-max heap structure
+    checkValidity(pq);
+
+    long totalPopped = 0;
+
+    while (pq.size() > 0) {
+      long minValue = pq.top();
+      pq.pop();
+      totalPopped++;
+      sum2 += minValue;
     }
 
+    assertEquals(count, totalPopped);
     assertEquals(sum, sum2);
   }
 
@@ -133,7 +153,9 @@ public class TestLongHeap extends LuceneTestCase {
     LongHeap pq = new LongHeap(initialSize);
     int num = random().nextInt(100) + 1;
     long maxValue = Long.MIN_VALUE;
+    long minValue = Long.MAX_VALUE;
     int count = 0;
+
     for (int i = 0; i < num; i++) {
       long value = random().nextLong();
       if (random().nextBoolean()) {
@@ -148,18 +170,12 @@ public class TestLongHeap extends LuceneTestCase {
         }
       }
       maxValue = Math.max(maxValue, value);
+      minValue = Math.min(minValue, value);
     }
+
     assertEquals(count, pq.size());
-    long last = Long.MIN_VALUE;
-    while (pq.size() > 0) {
-      long top = pq.top();
-      long next = pq.pop();
-      assertEquals(top, next);
-      --count;
-      assertTrue(next >= last);
-      last = next;
-    }
-    assertEquals(0, count);
-    assertEquals(maxValue, last);
+    assertEquals(minValue, pq.top());
+    assertEquals(maxValue, pq.bottom());
+    checkValidity(pq);
   }
 }

@@ -61,15 +61,10 @@ final class PForUtil {
   void encode(long[] longs, DataOutput out) throws IOException {
     // Determine the top MAX_EXCEPTIONS + 1 values
     final LongHeap top = new LongHeap(MAX_EXCEPTIONS + 1);
-    for (int i = 0; i <= MAX_EXCEPTIONS; ++i) {
-      top.push(longs[i]);
+    for (int i = 0; i <= longs.length; ++i) {
+      top.insertWithOverflow(longs[i]);
     }
     long topValue = top.top();
-    for (int i = MAX_EXCEPTIONS + 1; i < ForUtil.BLOCK_SIZE; ++i) {
-      if (longs[i] > topValue) {
-        topValue = top.updateTop(longs[i]);
-      }
-    }
 
     long max = 0L;
     for (int i = 1; i <= top.size(); ++i) {

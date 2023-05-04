@@ -17,12 +17,12 @@
 package org.apache.lucene.util;
 
 /**
- * A min heap that stores longs; a primitive priority queue that like all priority queues maintains
- * a partial ordering of its elements such that the least element can always be found in constant
+ * A min-max heap that stores longs; a primitive priority queue that maintains
+ * a partial ordering of its elements such that the least and greatest element can always be found in constant
  * time. Put()'s and pop()'s require log(size). This heap provides unbounded growth via {@link
  * #push(long)}, and bounded-size insertion based on its nominal maxSize via {@link
- * #insertWithOverflow(long)}. The heap is a min heap, meaning that the top element is the lowest
- * value of the heap.
+ * #insertWithOverflow(long)}. The heap is a min-max heap, meaning that the top element is the lowest
+ * value of the heap, and the bottom element is the highest value of the heap.
  *
  * @lucene.internal
  */
@@ -57,10 +57,12 @@ public final class LongHeap {
    *
    * @return the new 'top' element in the queue.
    */
-  public final long push(long element) {
+  public long push(long element) {
     size++;
     if (size == heap.length) {
-      heap = ArrayUtil.grow(heap, (size * 3 + 1) / 2);
+      long[] newHeap = ArrayUtil.grow(heap, (size * 3 + 1) / 2);
+      System.arraycopy(heap, 0, newHeap, 0, heap.length);
+      heap = newHeap;
     }
     heap[size] = element;
     upHeap(size);
@@ -76,11 +78,12 @@ public final class LongHeap {
    */
   public boolean insertWithOverflow(long value) {
     if (size >= maxSize) {
-      if (value < heap[1]) {
-        return false;
+      long worst = bottom();
+      if (value < worst) {
+        updateBottom(value);
+        return true;
       }
-      updateTop(value);
-      return true;
+      return false;
     }
     push(value);
     return true;
@@ -91,7 +94,7 @@ public final class LongHeap {
    * that the heap is not empty; no checking is done, and if no elements have been added, 0 is
    * returned.
    */
-  public final long top() {
+  public long top() {
     return heap[1];
   }
 
@@ -100,7 +103,7 @@ public final class LongHeap {
    *
    * @throws IllegalStateException if the LongHeap is empty.
    */
-  public final long pop() {
+  public long pop() {
     if (size > 0) {
       long result = heap[1]; // save first value
       heap[1] = heap[size]; // move last to first
@@ -132,7 +135,7 @@ public final class LongHeap {
    * @param value the new element that is less than the current top.
    * @return the new 'top' element after shuffling the heap.
    */
-  public final long updateTop(long value) {
+  public long updateTop(long value) {
     heap[1] = value;
     downHeap(1);
     return heap[1];
@@ -151,32 +154,99 @@ public final class LongHeap {
   private void upHeap(int origPos) {
     int i = origPos;
     long value = heap[i]; // save bottom value
-    int j = i >>> 1;
-    while (j > 0 && value < heap[j]) {
-      heap[i] = heap[j]; // shift parents down
-      i = j;
-      j = j >>> 1;
+
+    while (i > 1) {
+      int parent = i >>> 1;
+      if (isMinLevel(i)) {
+        if (value < heap[parent]) {
+          heap[i] = heap[parent];
+          i = parent;
+        } else {
+          break;
+        }
+      } else {
+        if (value > heap[parent]) {
+          heap[i] = heap[parent];
+          i = parent;
+        } else {
+          break;
+        }
+      }
     }
+
     heap[i] = value; // install saved value
+  }
+
+  private boolean isMinLevel(int pos) {
+    int level = 31 - Integer.numberOfLeadingZeros(pos);
+    return (level & 1) == 0;
   }
 
   private void downHeap(int i) {
     long value = heap[i]; // save top value
-    int j = i << 1; // find smaller child
-    int k = j + 1;
-    if (k <= size && heap[k] < heap[j]) {
-      j = k;
-    }
-    while (j <= size && heap[j] < value) {
-      heap[i] = heap[j]; // shift up child
-      i = j;
-      j = i << 1;
-      k = j + 1;
+    int level = (int) (Math.log(i) / Math.log(2));
+    int j;
+    if (level % 2 == 0) { // On even level
+      j = i << 1; // find smaller child
+      int k = j + 1;
       if (k <= size && heap[k] < heap[j]) {
         j = k;
       }
+      while (j <= size && heap[j] < value) {
+        heap[i] = heap[j]; // shift up child
+        i = j;
+        j = i << 1;
+        k = j + 1;
+        if (k <= size && heap[k] < heap[j]) {
+          j = k;
+        }
+      }
+    } else { // On odd level
+      j = i << 1; // find greater child
+      int k = j + 1;
+      if (k <= size && heap[k] > heap[j]) {
+        j = k;
+      }
+      while (j <= size && heap[j] > value) {
+        heap[i] = heap[j]; // shift up child
+        i = j;
+        j = i << 1;
+        k = j + 1;
+        if (k <= size && heap[k] > heap[j]) {
+          j = k;
+        }
+      }
     }
     heap[i] = value; // install saved value
+  }
+
+  /**
+
+   Returns the greatest element of the LongMinMaxHeap in constant time.
+   */
+  public long bottom() {
+    if (size == 1) {
+      return heap[1];
+    }
+    return Math.max(heap[2], heap[3]);
+  }
+  /**
+
+   Replace the bottom of the pq with {@code newBottom}. Should be called when the bottom value changes.
+   @param value the new element that is greater than the current bottom.
+   @return the new 'bottom' element after shuffling the heap.
+   */
+  private long updateBottom(long value) {
+    if (size == 1) {
+      heap[1] = value;
+    } else if (heap[2] > heap[3]) {
+      heap[2] = value;
+      downHeap(2);
+    } else {
+      heap[3] = value;
+      downHeap(3);
+    }
+    return bottom();
   }
 
   public void pushAll(LongHeap other) {
