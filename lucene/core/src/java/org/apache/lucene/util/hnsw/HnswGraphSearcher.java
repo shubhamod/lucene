@@ -64,6 +64,96 @@ public class HnswGraphSearcher<T> {
   }
 
   /**
+   * Searches HNSW graph for the nearest neighbors of a query vector.  This API is intended
+   * to be used in a "microbatching" query pipeline that includes non-HNSW predicates.  The
+   * goal is to be able to "resume" a search if the first call does not find enough results,
+   * without having to re-scan the same nodes again.
+   * <p>
+   * As a consequence, `searchOrResume` can't optimize as aggressively as `search`.  In
+   * particular, it needs to keep track of candidates that are worse than the best topK
+   * found so far, because it might need to use those in a subsequent call.
+   * <p>
+   * In pseudocode, searchOrResume looks like this:
+   * <p>
+   * {@code
+   * # visited: a set of already-visited nodes in the search space
+   * # candidates: priority queue of nodes to consider for topK
+   * # searchSpace: priority queue of nodes that we know about in the area of our target
+   * # visitLimit: consider at least this many nodes
+   * searchOrResume(topK, visited, candidates, searchSpace, visitLimit):
+   *   nVisited = 0
+   *   while nVisited < visitLimit:
+   *     N = searchSpace.pop()
+   *     if N not in visited:
+   *       nVisited++
+   *       visited.add(N)
+   *       candidates.push(N)
+   *       searchSpace.pushAll(N.neighbors())
+   *   pop topK elements from candidates and return them
+   * }
+   *
+   * @param query search query vector
+   * @param candidates the priority queue of candidate nodes found so far, caller can pop as
+   *                   many off as they want (but the farther down you go, the less accurate it gets)
+   * @param searchSpace the priority queue of
+   * @param vectors the vector values
+   * @param similarityFunction the similarity function to compare vectors
+   * @param graph the graph values. May represent the entire graph, or a level in a hierarchical
+   *     graph.
+   * @param acceptOrds {@link Bits} that represents the allowed document ordinals to match, or
+   *     {@code null} if they are all allowed to match.
+   * @param visitedLimit the maximum number of nodes that the search is allowed to visit
+   * @return a priority queue holding the closest neighbors found
+   */
+  public static NeighborQueue searchOrResume(
+          float[] query,
+          NeighborQueue candidates,
+          NeighborQueue searchSpace,
+          RandomAccessVectorValues<float[]> vectors,
+          VectorEncoding vectorEncoding,
+          VectorSimilarityFunction similarityFunction,
+          HnswGraph graph,
+          Bits acceptOrds,
+          int visitedLimit)
+          throws IOException {
+    if (query.length != vectors.dimension()) {
+      throw new IllegalArgumentException(
+              "vector query dimension: "
+                      + query.length
+                      + " differs from field dimension: "
+                      + vectors.dimension());
+    }
+    HnswGraphSearcher<float[]> graphSearcher =
+            new HnswGraphSearcher<>(
+                    vectorEncoding,
+                    similarityFunction,
+                    new NeighborQueue(topK, true),
+                    new SparseFixedBitSet(vectors.size()));
+    NeighborQueue results;
+
+    int initialEp = graph.entryNode();
+    if (initialEp == -1) {
+      return new NeighborQueue(1, true);
+    }
+    int[] eps = new int[] {initialEp};
+    int numVisited = 0;
+    for (int level = graph.numLevels() - 1; level >= 1; level--) {
+      results = graphSearcher.searchLevel(query, 1, level, eps, vectors, graph, null, visitedLimit);
+      numVisited += results.visitedCount();
+      visitedLimit -= results.visitedCount();
+      if (results.incomplete()) {
+        results.setVisitedCount(numVisited);
+        return results;
+      }
+      eps[0] = results.pop();
+    }
+    results =
+            graphSearcher.searchLevel(query, topK, 0, eps, vectors, graph, acceptOrds, visitedLimit);
+    results.setVisitedCount(results.visitedCount() + numVisited);
+    return results;
+  }
+
+  /**
    * Searches HNSW graph for the nearest neighbors of a query vector.
    *
    * @param query search query vector
@@ -75,7 +165,10 @@ public class HnswGraphSearcher<T> {
    * @param acceptOrds {@link Bits} that represents the allowed document ordinals to match, or
    *     {@code null} if they are all allowed to match.
    * @param visitedLimit the maximum number of nodes that the search is allowed to visit
-   * @return a priority queue holding the closest neighbors found
+   * @return a priority queue holding the closest neighbors found.  These are returned in
+   *     REVERSE proximity order -- the most distant neighbor of the topK found, i.e. the one with
+   *     the lowest score/comparison value, will be at the top of the heap, while the closest
+   *     neighbor will be the last to be popped.
    */
   public static NeighborQueue search(
       float[] query,
@@ -136,7 +229,10 @@ public class HnswGraphSearcher<T> {
    * @param acceptOrds {@link Bits} that represents the allowed document ordinals to match, or
    *     {@code null} if they are all allowed to match.
    * @param visitedLimit the maximum number of nodes that the search is allowed to visit
-   * @return a priority queue holding the closest neighbors found
+   * @return a priority queue holding the closest neighbors found.  These are returned in
+   *     REVERSE proximity order -- the most distant neighbor of the topK found, i.e. the one with
+   *     the lowest score/comparison value, will be at the top of the heap, while the closest
+   *     neighbor will be the last to be popped.
    */
   public static NeighborQueue search(
       byte[] query,
@@ -209,10 +305,7 @@ public class HnswGraphSearcher<T> {
   }
 
   /**
-   * @return a priority queue (heap) holding the closest neighbors found. These are returned in
-   *     REVERSE proximity order -- the most distant neighbor of the topK found, i.e. the one with
-   *     the lowest score/comparison value, will be at the top of the heap, while the closest
-   *     neighbor will be the last to be popped.
+   * @return a priority queue (heap) holding the closest neighbors found, in REVERSE proximity order.
    */
   private NeighborQueue searchLevel(
       T query,
