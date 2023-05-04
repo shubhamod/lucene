@@ -24,7 +24,10 @@ import org.apache.lucene.util.Bits;
 import org.apache.lucene.util.SparseFixedBitSet;
 
 import java.io.IOException;
+import java.lang.reflect.Array;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import static org.apache.lucene.search.DocIdSetIterator.NO_MORE_DOCS;
 
@@ -57,9 +60,7 @@ public class HnswGraphResumableSearcher<T> {
   /**
    * Creates a new graph searcher.
    *
-   * @param candidates the priority queue of candidate nodes found so far, caller can pop as
-   *                   many off as they want (but the farther down you go, the less accurate it gets)
-   * @param searchSpace the priority queue of
+   * @param searchSpace the priority queue of nodes remaining to search
    * @param similarityFunction the similarity function to compare vectors
    * @param graph the graph values. May represent the entire graph, or a level in a hierarchical
    *     graph.
@@ -104,7 +105,7 @@ public class HnswGraphResumableSearcher<T> {
    * Stops searching when the next-best node is worse than the `topK` found so far,
    * or when it hits `visitLimit`.
    */
-  public void search(int topK, int visitLimit) throws IOException {
+  public List<Integer> search(int topK, int visitLimit) throws IOException {
     // first, follow the index until we get to level 0
     HnswGraphSearcher<T> levelSearcher = new HnswGraphSearcher<>(vectorEncoding,
             similarityFunction,
@@ -112,16 +113,16 @@ public class HnswGraphResumableSearcher<T> {
             new SparseFixedBitSet(graph.size()));
     int initialEp = graph.entryNode();
     if (initialEp == -1) {
-      return;
+      return List.of();
     }
     int[] eps = new int[] {graph.entryNode()};
     for (int level = graph.numLevels() - 1; level >= 1; level--) {
-      var results = levelSearcher.searchLevel(query, 1, level, eps, vectors, graph, null, visitLimit);
+      levelSearcher.searchLevel(query, 1, level, eps, vectors, graph, null, visitLimit);
       eps[0] = results.pop();
     }
 
     // level 0 search
-    resume(topK, visitLimit);
+    return resume(topK, visitLimit);
   }
 
   /**
@@ -130,7 +131,7 @@ public class HnswGraphResumableSearcher<T> {
    * Stops searching when the next-best node is worse than the `topK` found so far,
    * or when it hits `visitLimit`.
    */
-  public void resume(int topK, int visitLimit) throws IOException {
+  public List<Integer> resume(int topK, int visitLimit) throws IOException {
     // In pseudocode, resume looks like this:
     //
     // # visited: a set of already-visited nodes in the search space
@@ -153,28 +154,46 @@ public class HnswGraphResumableSearcher<T> {
       results.clear();
     }
 
+    float minAcceptedSimilarity = Float.NEGATIVE_INFINITY;
     ArrayList<Integer> discarded = new ArrayList<>();
     int numVisited = 0;
-    while (numVisited < visitLimit && searchSpace.size() > 0) {
-      int next = searchSpace.pop();
-      numVisited++;
-      visited.set(next);
-      float nodeSimilarity = compare(query, vectors, next);
-      if (acceptOrds == null || acceptOrds.get(next)) {
+    while (numVisited++ < visitLimit && searchSpace.size() > 0) {
+      int friendOrd = searchSpace.pop();
+      visited.set(friendOrd);
+      float friendSimilarity = compare(query, vectors, friendOrd);
+      if (acceptOrds == null || acceptOrds.get(friendOrd)) {
         var oldTop = results.topNode();
-        if (results.insertWithOverflow(next, nodeSimilarity)) {
+        if (friendSimilarity > minAcceptedSimilarity) {
+          var r = results.insertWithOverflow(friendOrd, friendSimilarity);
+          assert r : "thought we were higher priority than the worst on the heap, but were not";
           discarded.add(oldTop);
+          if (results.size() == topK) {
+            minAcceptedSimilarity = results.topScore();
+          }
+        } else {
+            discarded.add(friendOrd);
         }
       }
 
-      graph.seek(0, next);
-      int friendOrd;
+      graph.seek(0, friendOrd);
       while ((friendOrd = graph.nextNeighbor()) != NO_MORE_DOCS) {
         if (!visited.get(friendOrd)) {
           searchSpace.add(friendOrd, compare(query, vectors, friendOrd));
         }
       }
     }
+
+    // add nodes that weren't good enough back to the search space for next time
+    for (int discardedOrd : discarded) {
+      searchSpace.add(discardedOrd, compare(query, vectors, discardedOrd));
+    }
+
+    // pop the results off the queue so that we can return them in the correct order
+    var prioritized = new ArrayList<Integer>();
+    while (results.size() > 0) {
+      prioritized.add(results.pop());
+    }
+    return prioritized;
   }
 
   public static <T> NeighborQueue search(
@@ -194,14 +213,13 @@ public class HnswGraphResumableSearcher<T> {
     HnswGraphResumableSearcher<T> resumableSearcher = new HnswGraphResumableSearcher<>(
             query,
             vectors,
-            candidates,
             searchSpace,
             vectorEncoding,
             similarityFunction,
             graph,
             acceptOrds,
             visited);
-    resumableSearcher.search(visitedLimit);
+    resumableSearcher.search(topK, visitedLimit);
 
     while (candidates.size() > topK) {
       candidates.pop();
