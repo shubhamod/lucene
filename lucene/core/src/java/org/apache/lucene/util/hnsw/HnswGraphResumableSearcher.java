@@ -24,10 +24,7 @@ import org.apache.lucene.util.Bits;
 import org.apache.lucene.util.SparseFixedBitSet;
 
 import java.io.IOException;
-import java.lang.reflect.Array;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
 import static org.apache.lucene.search.DocIdSetIterator.NO_MORE_DOCS;
 
@@ -101,11 +98,14 @@ public class HnswGraphResumableSearcher<T> {
 
   /**
    * Perform the initial search for a query vector.
-   *
+   * <p>
    * Stops searching when the next-best node is worse than the `topK` found so far,
    * or when it hits `visitLimit`.
+   *
+   * Neighbors are returned with the WORST of the topK neighbors at the top of the queue;
+   * pop() them off to get them sorted worst-to-best.
    */
-  public List<Integer> search(int topK, int visitLimit) throws IOException {
+  public NeighborQueue search(int topK, int visitLimit) throws IOException {
     // first, follow the index until we get to level 0
     HnswGraphSearcher<T> levelSearcher = new HnswGraphSearcher<>(vectorEncoding,
             similarityFunction,
@@ -113,7 +113,7 @@ public class HnswGraphResumableSearcher<T> {
             new SparseFixedBitSet(graph.size()));
     int initialEp = graph.entryNode();
     if (initialEp == -1) {
-      return List.of();
+      return new NeighborQueue(1, true);
     }
     int[] eps = new int[] {graph.entryNode()};
     for (int level = graph.numLevels() - 1; level >= 1; level--) {
@@ -127,11 +127,11 @@ public class HnswGraphResumableSearcher<T> {
 
   /**
    * Resume a search after the initial call to `search`.
-   *
+   * <p>
    * Stops searching when the next-best node is worse than the `topK` found so far,
    * or when it hits `visitLimit`.
    */
-  public List<Integer> resume(int topK, int visitLimit) throws IOException {
+  public NeighborQueue resume(int topK, int visitLimit) throws IOException {
     // In pseudocode, resume looks like this:
     //
     // # visited: a set of already-visited nodes in the search space
@@ -188,12 +188,7 @@ public class HnswGraphResumableSearcher<T> {
       searchSpace.add(discardedOrd, compare(query, vectors, discardedOrd));
     }
 
-    // pop the results off the queue so that we can return them in the correct order
-    var prioritized = new ArrayList<Integer>();
-    while (results.size() > 0) {
-      prioritized.add(results.pop());
-    }
-    return prioritized;
+    return results;
   }
 
   public static <T> NeighborQueue search(
@@ -206,8 +201,7 @@ public class HnswGraphResumableSearcher<T> {
           Bits acceptOrds,
           int visitedLimit)
           throws IOException {
-    NeighborQueue candidates = new NeighborQueue(topK, false);
-    NeighborQueue searchSpace = new NeighborQueue(visitedLimit, true);
+    NeighborQueue searchSpace = new NeighborQueue(topK, true);
     BitSet visited = new SparseFixedBitSet(graph.size());
 
     HnswGraphResumableSearcher<T> resumableSearcher = new HnswGraphResumableSearcher<>(
@@ -219,12 +213,7 @@ public class HnswGraphResumableSearcher<T> {
             graph,
             acceptOrds,
             visited);
-    resumableSearcher.search(topK, visitedLimit);
-
-    while (candidates.size() > topK) {
-      candidates.pop();
-    }
-    return candidates;
+    return resumableSearcher.search(topK, visitedLimit);
   }
 
   private float compare(T query, RandomAccessVectorValues<T> vectors, int ord) throws IOException {
