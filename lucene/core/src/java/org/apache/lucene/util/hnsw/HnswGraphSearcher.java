@@ -280,9 +280,7 @@ public class HnswGraphSearcher<T> {
         }
       }
     }
-    while (results.size() > topK) {
-      results.pop();
-    }
+    assert results.size() <= topK : "results.size()=" + results.size() + "; topK=" + topK;
     results.setVisitedCount(numVisited);
     return results;
   }
