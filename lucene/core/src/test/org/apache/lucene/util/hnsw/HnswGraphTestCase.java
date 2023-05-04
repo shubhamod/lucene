@@ -298,7 +298,7 @@ abstract class HnswGraphTestCase<T> extends LuceneTestCase {
     // run some searches
     NeighborQueue nn =
         switch (getVectorEncoding()) {
-          case BYTE -> HnswGraphSearcher.search(
+          case BYTE -> HnswGraphResumableSearcher.search(
               (byte[]) getTargetVector(),
               10,
               (RandomAccessVectorValues<byte[]>) vectors.copy(),
@@ -307,7 +307,7 @@ abstract class HnswGraphTestCase<T> extends LuceneTestCase {
               hnsw,
               null,
               Integer.MAX_VALUE);
-          case FLOAT32 -> HnswGraphSearcher.search(
+          case FLOAT32 -> HnswGraphResumableSearcher.search(
               (float[]) getTargetVector(),
               10,
               (RandomAccessVectorValues<float[]>) vectors.copy(),
@@ -350,7 +350,7 @@ abstract class HnswGraphTestCase<T> extends LuceneTestCase {
     Bits acceptOrds = createRandomAcceptOrds(10, nDoc);
     NeighborQueue nn =
         switch (getVectorEncoding()) {
-          case BYTE -> HnswGraphSearcher.search(
+          case BYTE -> HnswGraphResumableSearcher.search(
               (byte[]) getTargetVector(),
               10,
               (RandomAccessVectorValues<byte[]>) vectors.copy(),
@@ -359,7 +359,7 @@ abstract class HnswGraphTestCase<T> extends LuceneTestCase {
               hnsw,
               acceptOrds,
               Integer.MAX_VALUE);
-          case FLOAT32 -> HnswGraphSearcher.search(
+          case FLOAT32 -> HnswGraphResumableSearcher.search(
               (float[]) getTargetVector(),
               10,
               (RandomAccessVectorValues<float[]>) vectors.copy(),
@@ -400,7 +400,7 @@ abstract class HnswGraphTestCase<T> extends LuceneTestCase {
     int numAccepted = acceptOrds.cardinality();
     NeighborQueue nn =
         switch (getVectorEncoding()) {
-          case FLOAT32 -> HnswGraphSearcher.search(
+          case FLOAT32 -> HnswGraphResumableSearcher.search(
               (float[]) getTargetVector(),
               numAccepted,
               (RandomAccessVectorValues<float[]>) vectors.copy(),
@@ -409,7 +409,7 @@ abstract class HnswGraphTestCase<T> extends LuceneTestCase {
               hnsw,
               acceptOrds,
               Integer.MAX_VALUE);
-          case BYTE -> HnswGraphSearcher.search(
+          case BYTE -> HnswGraphResumableSearcher.search(
               (byte[]) getTargetVector(),
               numAccepted,
               (RandomAccessVectorValues<byte[]>) vectors.copy(),
@@ -541,7 +541,7 @@ abstract class HnswGraphTestCase<T> extends LuceneTestCase {
     int visitedLimit = topK + random().nextInt(5);
     NeighborQueue nn =
         switch (getVectorEncoding()) {
-          case FLOAT32 -> HnswGraphSearcher.search(
+          case FLOAT32 -> HnswGraphResumableSearcher.search(
               (float[]) getTargetVector(),
               topK,
               (RandomAccessVectorValues<float[]>) vectors.copy(),
@@ -550,7 +550,7 @@ abstract class HnswGraphTestCase<T> extends LuceneTestCase {
               hnsw,
               createRandomAcceptOrds(0, nDoc),
               visitedLimit);
-          case BYTE -> HnswGraphSearcher.search(
+          case BYTE -> HnswGraphResumableSearcher.search(
               (byte[]) getTargetVector(),
               topK,
               (RandomAccessVectorValues<byte[]>) vectors.copy(),
@@ -761,7 +761,7 @@ abstract class HnswGraphTestCase<T> extends LuceneTestCase {
       T query = randomVector(dim);
       actual =
           switch (getVectorEncoding()) {
-            case BYTE -> HnswGraphSearcher.search(
+            case BYTE -> HnswGraphResumableSearcher.search(
                 (byte[]) query,
                 100,
                 (RandomAccessVectorValues<byte[]>) vectors,
@@ -770,7 +770,7 @@ abstract class HnswGraphTestCase<T> extends LuceneTestCase {
                 hnsw,
                 acceptOrds,
                 Integer.MAX_VALUE);
-            case FLOAT32 -> HnswGraphSearcher.search(
+            case FLOAT32 -> HnswGraphResumableSearcher.search(
                 (float[]) query,
                 100,
                 (RandomAccessVectorValues<float[]>) vectors,
