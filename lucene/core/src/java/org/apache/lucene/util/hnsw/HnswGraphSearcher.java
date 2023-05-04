@@ -298,6 +298,8 @@ public class HnswGraphSearcher<T> {
   private void prepareScratchState(int capacity) {
     candidates.clear();
     if (visited.length() < capacity) {
+      // this happens during graph construction; otherwise the size of the vector values should
+      // be constant, and it will be a SparseFixedBitSet instead of FixedBitSet
       visited = FixedBitSet.ensureCapacity((FixedBitSet) visited, capacity);
     }
     visited.clear(0, visited.length());
