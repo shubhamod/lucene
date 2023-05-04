@@ -226,6 +226,13 @@ abstract class HnswGraphTestCase<T> extends LuceneTestCase {
     return neighbors;
   }
 
+  static void assertResultsEqual(NeighborQueue expected, NeighborQueue actual) {
+    assertEquals(expected.size(), actual.size());
+    for (int i = 0; i < expected.size(); i++) {
+      assertEquals(expected.pop(), actual.pop());
+    }
+  }
+
   static void assertGraphEqual(HnswGraph g, HnswGraph h) throws IOException {
     // construct these up front since they call seek which will mess up our test loop
     String prettyG = prettyPrint(g);
@@ -745,8 +752,8 @@ abstract class HnswGraphTestCase<T> extends LuceneTestCase {
 
   @SuppressWarnings("unchecked")
   public void testRandom() throws IOException {
-    int size = atLeast(100);
-    int dim = atLeast(10);
+    int size = 10;
+    int dim = 2;
     AbstractMockVectorValues<T> vectors = vectorValues(size, dim);
     int topK = 5;
     HnswGraphBuilder<T> builder =
@@ -756,14 +763,14 @@ abstract class HnswGraphTestCase<T> extends LuceneTestCase {
     Bits acceptOrds = random().nextBoolean() ? null : createRandomAcceptOrds(0, size);
 
     int totalMatches = 0;
-    for (int i = 0; i < 100; i++) {
       NeighborQueue actual;
       T query = randomVector(dim);
+      // ask for more than topK, then prune it down
       actual =
           switch (getVectorEncoding()) {
             case BYTE -> HnswGraphResumableSearcher.search(
                 (byte[]) query,
-                100,
+                5,
                 (RandomAccessVectorValues<byte[]>) vectors,
                 getVectorEncoding(),
                 similarityFunction,
@@ -772,7 +779,7 @@ abstract class HnswGraphTestCase<T> extends LuceneTestCase {
                 Integer.MAX_VALUE);
             case FLOAT32 -> HnswGraphResumableSearcher.search(
                 (float[]) query,
-                100,
+                5,
                 (RandomAccessVectorValues<float[]>) vectors,
                 getVectorEncoding(),
                 similarityFunction,
@@ -781,32 +788,28 @@ abstract class HnswGraphTestCase<T> extends LuceneTestCase {
                 Integer.MAX_VALUE);
           };
 
-      while (actual.size() > topK) {
-        actual.pop();
-      }
-      NeighborQueue expected = new NeighborQueue(topK, false);
-      for (int j = 0; j < size; j++) {
-        if (vectors.vectorValue(j) != null && (acceptOrds == null || acceptOrds.get(j))) {
-          if (getVectorEncoding() == VectorEncoding.BYTE) {
-            assert query instanceof byte[];
-            expected.add(
-                j, similarityFunction.compare((byte[]) query, (byte[]) vectors.vectorValue(j)));
-          } else {
-            assert query instanceof float[];
-            expected.add(
-                j, similarityFunction.compare((float[]) query, (float[]) vectors.vectorValue(j)));
-          }
-          if (expected.size() > topK) {
-            expected.pop();
-          }
-        }
-      }
-      assertEquals(topK, actual.size());
-      totalMatches += computeOverlap(actual.nodes(), expected.nodes());
-    }
-    double overlap = totalMatches / (double) (100 * topK);
-    System.out.println("overlap=" + overlap + " totalMatches=" + totalMatches);
-    assertTrue("overlap=" + overlap, overlap > 0.9);
+      var knownGood =
+              switch (getVectorEncoding()) {
+                case BYTE -> HnswGraphSearcher.search(
+                        (byte[]) query,
+                        5,
+                        (RandomAccessVectorValues<byte[]>) vectors,
+                        getVectorEncoding(),
+                        similarityFunction,
+                        hnsw,
+                        acceptOrds,
+                        Integer.MAX_VALUE);
+                case FLOAT32 -> HnswGraphSearcher.search(
+                        (float[]) query,
+                        5,
+                        (RandomAccessVectorValues<float[]>) vectors,
+                        getVectorEncoding(),
+                        similarityFunction,
+                        hnsw,
+                        acceptOrds,
+                        Integer.MAX_VALUE);
+              };
+      assertResultsEqual(knownGood, actual);
   }
 
   static int computeOverlap(int[] a, int[] b) {

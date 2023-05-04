@@ -17,7 +17,10 @@
 
 package org.apache.lucene.util.hnsw;
 
+import com.carrotsearch.randomizedtesting.annotations.Seed;
 import org.junit.Before;
+
+import java.io.IOException;
 
 public class TestSerialFloatHnswGraph extends FloatVectorHnswGraphTestCase
     implements SerialHnswGraphTest<float[]> {
@@ -26,5 +29,10 @@ public class TestSerialFloatHnswGraph extends FloatVectorHnswGraphTestCase
   public void setUp() throws Exception {
     super.setUp();
     this.factory = OnHeapHnswGraphFactory.instance;
+  }
+
+  @Seed("8C60F47E5C54CBB4")
+  public void testFoo() throws IOException {
+    testRandom();
   }
 }

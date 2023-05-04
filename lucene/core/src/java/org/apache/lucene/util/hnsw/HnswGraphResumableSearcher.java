@@ -46,7 +46,6 @@ public class HnswGraphResumableSearcher<T> {
   private final HnswGraph graph;
   private final Bits acceptOrds;
   private final NeighborQueue searchSpace;
-  private NeighborQueue results;
 
   // initialized in search because it's easier to make Java's generics happy there
   private final T query;
@@ -67,8 +66,8 @@ public class HnswGraphResumableSearcher<T> {
    */
   public HnswGraphResumableSearcher(
           T query,
-            RandomAccessVectorValues<T> vectors,
-        NeighborQueue searchSpace,
+          RandomAccessVectorValues<T> vectors,
+          NeighborQueue searchSpace,
           VectorEncoding vectorEncoding,
           VectorSimilarityFunction similarityFunction,
           HnswGraph graph,
@@ -96,101 +95,7 @@ public class HnswGraphResumableSearcher<T> {
     this.visited = visited;
   }
 
-  /**
-   * Perform the initial search for a query vector.
-   * <p>
-   * Stops searching when the next-best node is worse than the `topK` found so far,
-   * or when it hits `visitLimit`.
-   *
-   * Neighbors are returned with the WORST of the topK neighbors at the top of the queue;
-   * pop() them off to get them sorted worst-to-best.
-   */
-  public NeighborQueue search(int topK, int visitLimit) throws IOException {
-    // first, follow the index until we get to level 0
-    HnswGraphSearcher<T> levelSearcher = new HnswGraphSearcher<>(vectorEncoding,
-            similarityFunction,
-            new NeighborQueue(1, true),
-            new SparseFixedBitSet(graph.size()));
-    int initialEp = graph.entryNode();
-    if (initialEp == -1) {
-      return new NeighborQueue(1, true);
-    }
-    int[] eps = new int[] {graph.entryNode()};
-    for (int level = graph.numLevels() - 1; level >= 1; level--) {
-      levelSearcher.searchLevel(query, 1, level, eps, vectors, graph, null, visitLimit);
-      eps[0] = results.pop();
-    }
-
-    // level 0 search
-    return resume(topK, visitLimit);
-  }
-
-  /**
-   * Resume a search after the initial call to `search`.
-   * <p>
-   * Stops searching when the next-best node is worse than the `topK` found so far,
-   * or when it hits `visitLimit`.
-   */
-  public NeighborQueue resume(int topK, int visitLimit) throws IOException {
-    // In pseudocode, resume looks like this:
-    //
-    // # visited: a set of already-visited nodes in the search space
-    // # candidates: priority queue of nodes to consider for topK
-    // # searchSpace: priority queue of nodes that we know about in the area of our target
-    // # visitLimit: consider at least this many nodes
-    // resume(topK, visited, candidates, searchSpace, visitLimit):
-    //   nVisited = 0
-    //   while nVisited < visitLimit:
-    //    N = searchSpace.pop()
-    //    if N not in visited:
-    //      nVisited++
-    //      visited.add(N)
-    //      candidates.push(N)
-    //      searchSpace.pushAll(N.neighbors())
-    //    [caller can retrieve top candidates from the queue]
-    if (results == null || results.capacity() != topK) {
-        results = new NeighborQueue(topK, true);
-    } else {
-      results.clear();
-    }
-
-    float minAcceptedSimilarity = Float.NEGATIVE_INFINITY;
-    ArrayList<Integer> discarded = new ArrayList<>();
-    int numVisited = 0;
-    while (numVisited++ < visitLimit && searchSpace.size() > 0) {
-      int friendOrd = searchSpace.pop();
-      visited.set(friendOrd);
-      float friendSimilarity = compare(query, vectors, friendOrd);
-      if (acceptOrds == null || acceptOrds.get(friendOrd)) {
-        var oldTop = results.topNode();
-        if (friendSimilarity > minAcceptedSimilarity) {
-          var r = results.insertWithOverflow(friendOrd, friendSimilarity);
-          assert r : "thought we were higher priority than the worst on the heap, but were not";
-          discarded.add(oldTop);
-          if (results.size() == topK) {
-            minAcceptedSimilarity = results.topScore();
-          }
-        } else {
-            discarded.add(friendOrd);
-        }
-      }
-
-      graph.seek(0, friendOrd);
-      while ((friendOrd = graph.nextNeighbor()) != NO_MORE_DOCS) {
-        if (!visited.get(friendOrd)) {
-          searchSpace.add(friendOrd, compare(query, vectors, friendOrd));
-        }
-      }
-    }
-
-    // add nodes that weren't good enough back to the search space for next time
-    for (int discardedOrd : discarded) {
-      searchSpace.add(discardedOrd, compare(query, vectors, discardedOrd));
-    }
-
-    return results;
-  }
-
+  // for testing
   public static <T> NeighborQueue search(
           T query,
           int topK,
@@ -214,6 +119,90 @@ public class HnswGraphResumableSearcher<T> {
             acceptOrds,
             visited);
     return resumableSearcher.search(topK, visitedLimit);
+  }
+
+  /**
+   * Perform the initial search for a query vector.
+   * <p>
+   * Stops searching when the next-best node is worse than the `topK` found so far,
+   * or when it hits `visitLimit`.
+   *
+   * Neighbors are returned with the WORST of the topK neighbors at the top of the queue;
+   * pop() them off to get them sorted worst-to-best.
+   */
+  public NeighborQueue search(int topK, int visitLimit) throws IOException {
+    // empty graph
+    int initialEp = graph.entryNode();
+    if (initialEp == -1) {
+      return new NeighborQueue(1, true);
+    }
+
+    // first, follow the index until we get to level 0
+    HnswGraphSearcher<T> levelSearcher = new HnswGraphSearcher<>(vectorEncoding,
+            similarityFunction,
+            new NeighborQueue(1, true),
+            new SparseFixedBitSet(graph.size()));
+    int[] eps = new int[] {initialEp};
+    for (int level = graph.numLevels() - 1; level >= 1; level--) {
+      var results = levelSearcher.searchLevel(query, 1, level, eps, vectors, graph, null, visitLimit);
+      eps[0] = results.pop();
+    }
+
+    // level 0 search
+    searchSpace.clear();
+    searchSpace.add(eps[0], compare(query, vectors, eps[0]));
+    return resume(topK, visitLimit);
+  }
+
+  /**
+   * Resume a search after the initial call to `search`.
+   * <p>
+   * Stops searching when the next-best node is worse than the `topK` found so far,
+   * or when it hits `visitLimit`.
+   */
+  public NeighborQueue resume(int topK, int visitLimit) throws IOException {
+    var results = new NeighborQueue(topK, false);
+    float minAcceptedSimilarity = Float.NEGATIVE_INFINITY;
+    ArrayList<Integer> discarded = new ArrayList<>();
+    int numVisited = 0;
+    while (numVisited++ < visitLimit && searchSpace.size() > 0) {
+      int friendOrd = searchSpace.pop();
+      assert friendOrd >= 0;
+
+      float friendSimilarity = compare(query, vectors, friendOrd);
+      if (acceptOrds == null || acceptOrds.get(friendOrd)) {
+        if (friendSimilarity > minAcceptedSimilarity) {
+          int oldTop = results.size() == topK ? results.topNode() : -1;
+          var r = results.insertWithOverflow(friendOrd, friendSimilarity);
+          assert r : "thought we were higher priority than the worst on the heap, but were not";
+          if (oldTop >= 0) {
+            discarded.add(oldTop);
+          }
+          if (results.size() == topK) {
+            minAcceptedSimilarity = results.topScore();
+          }
+        } else {
+            discarded.add(friendOrd);
+            break;
+        }
+      }
+
+      if (!visited.getAndSet(friendOrd)) {
+        graph.seek(0, friendOrd);
+        while ((friendOrd = graph.nextNeighbor()) != NO_MORE_DOCS) {
+          if (!visited.get(friendOrd)) {
+            searchSpace.add(friendOrd, compare(query, vectors, friendOrd));
+          }
+        }
+      }
+    }
+
+    // add nodes that weren't good enough back to the search space for next time
+    for (int discardedOrd : discarded) {
+      searchSpace.add(discardedOrd, compare(query, vectors, discardedOrd));
+    }
+
+    return results;
   }
 
   private float compare(T query, RandomAccessVectorValues<T> vectors, int ord) throws IOException {
