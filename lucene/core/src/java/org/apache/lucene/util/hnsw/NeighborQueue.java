@@ -74,6 +74,13 @@ public class NeighborQueue {
   }
 
   /**
+   * @return the capacity of the heap before it needs to resize
+   */
+    public int capacity() {
+      return heap.capacity();
+    }
+
+  /**
    * Adds a new graph arc, extending the storage as needed.
    *
    * @param newNode the neighbor node id

@@ -24,6 +24,7 @@ import org.apache.lucene.util.Bits;
 import org.apache.lucene.util.SparseFixedBitSet;
 
 import java.io.IOException;
+import java.util.ArrayList;
 
 import static org.apache.lucene.search.DocIdSetIterator.NO_MORE_DOCS;
 
@@ -42,10 +43,10 @@ public class HnswGraphResumableSearcher<T> {
   private final VectorSimilarityFunction similarityFunction;
   private final VectorEncoding vectorEncoding;
 
-  private final NeighborQueue candidates;
   private final HnswGraph graph;
   private final Bits acceptOrds;
   private final NeighborQueue searchSpace;
+  private NeighborQueue results;
 
   // initialized in search because it's easier to make Java's generics happy there
   private final T query;
@@ -69,7 +70,6 @@ public class HnswGraphResumableSearcher<T> {
   public HnswGraphResumableSearcher(
           T query,
             RandomAccessVectorValues<T> vectors,
-      NeighborQueue candidates,
         NeighborQueue searchSpace,
           VectorEncoding vectorEncoding,
           VectorSimilarityFunction similarityFunction,
@@ -93,7 +93,6 @@ public class HnswGraphResumableSearcher<T> {
     this.searchSpace = searchSpace;
     this.vectorEncoding = vectorEncoding;
     this.similarityFunction = similarityFunction;
-    this.candidates = candidates;
     this.graph = graph;
     this.acceptOrds = acceptOrds;
     this.visited = visited;
@@ -102,9 +101,10 @@ public class HnswGraphResumableSearcher<T> {
   /**
    * Perform the initial search for a query vector.
    *
-   * @param visitLimit the maximum number of nodes to visit this call
+   * Stops searching when the next-best node is worse than the `topK` found so far,
+   * or when it hits `visitLimit`.
    */
-  public void search(int visitLimit) throws IOException {
+  public void search(int topK, int visitLimit) throws IOException {
     // first, follow the index until we get to level 0
     HnswGraphSearcher<T> levelSearcher = new HnswGraphSearcher<>(vectorEncoding,
             similarityFunction,
@@ -121,15 +121,16 @@ public class HnswGraphResumableSearcher<T> {
     }
 
     // level 0 search
-    resume(visitLimit);
+    resume(topK, visitLimit);
   }
 
   /**
    * Resume a search after the initial call to `search`.
    *
-   * @param visitLimit the maximum number of nodes to visit this call
+   * Stops searching when the next-best node is worse than the `topK` found so far,
+   * or when it hits `visitLimit`.
    */
-  public void resume(int visitLimit) throws IOException {
+  public void resume(int topK, int visitLimit) throws IOException {
     // In pseudocode, resume looks like this:
     //
     // # visited: a set of already-visited nodes in the search space
@@ -146,6 +147,13 @@ public class HnswGraphResumableSearcher<T> {
     //      candidates.push(N)
     //      searchSpace.pushAll(N.neighbors())
     //    [caller can retrieve top candidates from the queue]
+    if (results == null || results.capacity() != topK) {
+        results = new NeighborQueue(topK, true);
+    } else {
+      results.clear();
+    }
+
+    ArrayList<Integer> discarded = new ArrayList<>();
     int numVisited = 0;
     while (numVisited < visitLimit && searchSpace.size() > 0) {
       int next = searchSpace.pop();
@@ -153,7 +161,10 @@ public class HnswGraphResumableSearcher<T> {
       visited.set(next);
       float nodeSimilarity = compare(query, vectors, next);
       if (acceptOrds == null || acceptOrds.get(next)) {
-        candidates.add(next, nodeSimilarity);
+        var oldTop = results.topNode();
+        if (results.insertWithOverflow(next, nodeSimilarity)) {
+          discarded.add(oldTop);
+        }
       }
 
       graph.seek(0, next);
