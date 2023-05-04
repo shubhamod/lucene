@@ -41,26 +41,26 @@ public class HnswGraphSearcher<T> {
    * Scratch data structures that are used in each {@link #searchLevel} call. These can be expensive
    * to allocate, so they're cleared and reused across calls.
    */
-  private final NeighborQueue candidates;
+  private final NeighborQueue scratchCandidates;
 
-  private BitSet visited;
+  private BitSet scratchVisited;
 
   /**
    * Creates a new graph searcher.
    *
    * @param similarityFunction the similarity function to compare vectors
-   * @param candidates max heap that will track the candidate nodes to explore
-   * @param visited bit set that will track nodes that have already been visited
+   * @param scratchCandidates max heap that will track the candidate nodes to explore
+   * @param scratchVisited bit set that will track nodes that have already been visited
    */
   public HnswGraphSearcher(
       VectorEncoding vectorEncoding,
       VectorSimilarityFunction similarityFunction,
-      NeighborQueue candidates,
-      BitSet visited) {
+      NeighborQueue scratchCandidates,
+      BitSet scratchVisited) {
     this.vectorEncoding = vectorEncoding;
     this.similarityFunction = similarityFunction;
-    this.candidates = candidates;
-    this.visited = visited;
+    this.scratchCandidates = scratchCandidates;
+    this.scratchVisited = scratchVisited;
   }
 
   /**
@@ -226,6 +226,8 @@ public class HnswGraphSearcher<T> {
       throws IOException {
     NeighborQueue results = new NeighborQueue(topK, false);
     prepareScratchState(vectors.size());
+    NeighborQueue candidates = scratchCandidates;
+    BitSet visited = scratchVisited;
 
     int numVisited = 0;
     for (int ep : eps) {
@@ -296,10 +298,10 @@ public class HnswGraphSearcher<T> {
   }
 
   private void prepareScratchState(int capacity) {
-    candidates.clear();
-    if (visited.length() < capacity) {
-      visited = FixedBitSet.ensureCapacity((FixedBitSet) visited, capacity);
+    scratchCandidates.clear();
+    if (scratchVisited.length() < capacity) {
+      scratchVisited = FixedBitSet.ensureCapacity((FixedBitSet) scratchVisited, capacity);
     }
-    visited.clear(0, visited.length());
+    scratchVisited.clear(0, scratchVisited.length());
   }
 }
