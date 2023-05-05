@@ -355,17 +355,15 @@ public final class Lucene95HnswVectorsReader extends KnnVectorsReader {
 
   @Override
   public HnswGraphResumableSearcher<float[]> getResumableSearcher(
-      String field, float[] target, int k, Bits acceptOrds, int visitedLimit) throws IOException {
+      String field, float[] target, Bits acceptOrds) throws IOException {
     FieldEntry fieldEntry = fields.get(field);
 
-    // bound k by total number of vectors to prevent oversizing data structures
-    k = Math.min(k, fieldEntry.size());
     OffHeapFloatVectorValues vectorValues = OffHeapFloatVectorValues.load(fieldEntry, vectorData);
 
     return new HnswGraphResumableSearcher<>(
         target,
         vectorValues,
-        new NeighborQueue(k, true),
+        new NeighborQueue(16, true),
         fieldEntry.vectorEncoding,
         fieldEntry.similarityFunction,
         getGraph(fieldEntry),
@@ -376,17 +374,15 @@ public final class Lucene95HnswVectorsReader extends KnnVectorsReader {
 
   @Override
   public HnswGraphResumableSearcher<byte[]> getResumableSearcher(
-      String field, byte[] target, int k, Bits acceptOrds, int visitedLimit) throws IOException {
+      String field, byte[] target, Bits acceptOrds) throws IOException {
     FieldEntry fieldEntry = fields.get(field);
 
-    // bound k by total number of vectors to prevent oversizing data structures
-    k = Math.min(k, fieldEntry.size());
     OffHeapByteVectorValues vectorValues = OffHeapByteVectorValues.load(fieldEntry, vectorData);
 
     return new HnswGraphResumableSearcher<>(
         target,
         vectorValues,
-        new NeighborQueue(k, true),
+        new NeighborQueue(16, true),
         fieldEntry.vectorEncoding,
         fieldEntry.similarityFunction,
         getGraph(fieldEntry),
