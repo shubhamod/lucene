@@ -83,13 +83,13 @@ public class TestHnswGraphResumableSearcher extends FloatVectorHnswGraphTestCase
   }
 
   public void testSearchAndResume() throws IOException {
-    int nDoc = 1000;
-    int topK = 10;
+    int nDoc = atLeast(1000);
+    int topK = atLeast(10);
 
     RandomAccessVectorValues<float[]> vectors = circularVectorValues(nDoc);
     HnswGraphBuilder<float[]> builder =
             factory.createBuilder(
-                    vectors, getVectorEncoding(), similarityFunction, 10, 100, random().nextInt());
+                    vectors, getVectorEncoding(), similarityFunction, atLeast(8), atLeast(50), random().nextInt());
     HnswGraph hnsw = builder.build(vectors.copy());
 
     float[] queryVector = vectors.vectorValue(0);
