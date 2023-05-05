@@ -1082,4 +1082,39 @@ abstract class HnswGraphTestCase<T> extends LuceneTestCase {
 
     return sb.toString();
   }
+
+  static class EmptyVectorValues<T> implements RandomAccessVectorValues<T> {
+    private final int dimension;
+
+    public EmptyVectorValues(int dimension) {
+      this.dimension = dimension;
+    }
+    @Override
+    public int size() {
+      return 0;
+    }
+
+    @Override
+    public int dimension() {
+      return dimension;
+    }
+
+    @Override
+    public T vectorValue(int targetOrd) {
+      return null;
+    }
+
+    @Override
+    public RandomAccessVectorValues<T> copy() {
+      return this;
+    }
+  }
+
+  public static EmptyVectorValues<float[]> emptyFloatValues(int dimension) {
+    return new EmptyVectorValues<>(dimension);
+  }
+
+  public static EmptyVectorValues<byte[]> emptyByteValues(int dimension) {
+    return new EmptyVectorValues<>(dimension);
+  }
 }

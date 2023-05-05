@@ -33,6 +33,55 @@ public class TestHnswGraphResumableSearcher extends FloatVectorHnswGraphTestCase
     this.factory = OnHeapHnswGraphFactory.instance;
   }
 
+  public void testEmptyGraph() throws IOException {
+    HnswGraph hnsw = new OnHeapHnswGraph(1);
+    var vectors = emptyFloatValues(10);
+    float[] query = randomVector(10);
+    var topK = 1;
+    HnswGraphResumableSearcher<float[]> resumableSearcher = new HnswGraphResumableSearcher<>(
+        query,
+        vectors,
+        new NeighborQueue(topK, true),
+        getVectorEncoding(),
+        similarityFunction,
+        hnsw,
+        null,
+        new SparseFixedBitSet(1),
+        new SparseFixedBitSet(1));
+
+    NeighborQueue searchResults = resumableSearcher.search(topK, Integer.MAX_VALUE);
+    assertEquals(0, searchResults.size());
+    searchResults = resumableSearcher.resume(topK, Integer.MAX_VALUE);
+    assertEquals(0, searchResults.size());
+  }
+
+  public void testSingleNodeGraph() throws IOException {
+    var vectors = circularVectorValues(1);
+    HnswGraphBuilder<float[]> builder =
+        factory.createBuilder(
+            vectors, getVectorEncoding(), similarityFunction, 10, 100, random().nextInt());
+    HnswGraph hnsw = builder.build(vectors.copy());
+
+    float[] query = randomVector(2);
+    var topK = 1;
+    HnswGraphResumableSearcher<float[]> resumableSearcher = new HnswGraphResumableSearcher<>(
+        query,
+        vectors,
+        new NeighborQueue(topK, true),
+        getVectorEncoding(),
+        similarityFunction,
+        hnsw,
+        null,
+        new SparseFixedBitSet(1),
+        new SparseFixedBitSet(1));
+
+    NeighborQueue searchResults = resumableSearcher.search(topK, Integer.MAX_VALUE);
+    assertEquals(1, searchResults.size());
+    assertArrayEquals(vectors.vectorValue(0), vectors.vectorValue(searchResults.topNode()), 0.000001f);
+    searchResults = resumableSearcher.resume(topK, Integer.MAX_VALUE);
+    assertEquals(0, searchResults.size());
+  }
+
   public void testSearchAndResume() throws IOException {
     int nDoc = 1000;
     int topK = 10;
@@ -43,21 +92,17 @@ public class TestHnswGraphResumableSearcher extends FloatVectorHnswGraphTestCase
                     vectors, getVectorEncoding(), similarityFunction, 10, 100, random().nextInt());
     HnswGraph hnsw = builder.build(vectors.copy());
 
-    NeighborQueue searchSpace = new NeighborQueue(topK, true);
-    BitSet evaluated = new SparseFixedBitSet(nDoc);
-    BitSet seen = new SparseFixedBitSet(nDoc);
-
     float[] queryVector = vectors.vectorValue(0);
     HnswGraphResumableSearcher<float[]> resumableSearcher = new HnswGraphResumableSearcher<>(
             queryVector,
             vectors,
-            searchSpace,
+        new NeighborQueue(topK, true),
             getVectorEncoding(),
             similarityFunction,
             hnsw,
             null,
-            evaluated,
-            seen);
+        new SparseFixedBitSet(nDoc),
+        new SparseFixedBitSet(nDoc));
 
     // simple test that we get the same topK with a vanilla search
     NeighborQueue classicResults = HnswGraphSearcher.search(queryVector, topK, vectors, getVectorEncoding(), similarityFunction, hnsw, null, Integer.MAX_VALUE);
