@@ -18,7 +18,6 @@ package org.apache.lucene.util;
 
 import java.io.IOException;
 import java.util.Arrays;
-
 import org.apache.lucene.search.DocIdSetIterator;
 
 /**
@@ -81,9 +80,9 @@ public class SparseFixedBitSet extends BitSet {
     Arrays.fill(indices, 0L);
     nonZeroLongCount = 0;
     ramBytesUsed =
-            BASE_RAM_BYTES_USED
-                    + RamUsageEstimator.sizeOf(indices)
-                    + RamUsageEstimator.shallowSizeOf(bits);
+        BASE_RAM_BYTES_USED
+            + RamUsageEstimator.sizeOf(indices)
+            + RamUsageEstimator.shallowSizeOf(bits);
   }
 
   @Override

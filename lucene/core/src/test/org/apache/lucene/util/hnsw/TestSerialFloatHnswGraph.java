@@ -17,10 +17,7 @@
 
 package org.apache.lucene.util.hnsw;
 
-import com.carrotsearch.randomizedtesting.annotations.Seed;
 import org.junit.Before;
-
-import java.io.IOException;
 
 public class TestSerialFloatHnswGraph extends FloatVectorHnswGraphTestCase
     implements SerialHnswGraphTest<float[]> {

@@ -96,8 +96,8 @@ public abstract class KnnVectorsReader implements Closeable, Accountable {
    * @param field the vector field to search
    * @param target the vector-valued query
    * @param k the number of docs to return
-   * @param acceptOrds {@link Bits} that represents the allowed vector ordinals to match, or {@code null}
-   *     if they are all allowed to match.
+   * @param acceptOrds {@link Bits} that represents the allowed vector ordinals to match, or {@code
+   *     null} if they are all allowed to match.
    * @param visitedLimit the maximum number of nodes that the search is allowed to visit
    * @return an {@link HnswGraphResumableSearcher} object
    */
@@ -113,8 +113,8 @@ public abstract class KnnVectorsReader implements Closeable, Accountable {
    * @param field the vector field to search
    * @param target the vector-valued query
    * @param k the number of docs to return
-   * @param acceptOrds {@link Bits} that represents the allowed vector ordinals to match, or {@code null}
-   *     if they are all allowed to match.
+   * @param acceptOrds {@link Bits} that represents the allowed vector ordinals to match, or {@code
+   *     null} if they are all allowed to match.
    * @param visitedLimit the maximum number of nodes that the search is allowed to visit
    * @return an {@link HnswGraphResumableSearcher} object
    */

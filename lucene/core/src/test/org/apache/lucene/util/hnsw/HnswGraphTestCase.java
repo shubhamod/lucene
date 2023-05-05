@@ -1089,6 +1089,7 @@ abstract class HnswGraphTestCase<T> extends LuceneTestCase {
     public EmptyVectorValues(int dimension) {
       this.dimension = dimension;
     }
+
     @Override
     public int size() {
       return 0;

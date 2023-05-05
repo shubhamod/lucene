@@ -144,10 +144,13 @@ public final class LongHeap {
     return size;
   }
 
-  /** Returns the maximum number of elements that can be stored in the PriorityQueue before overflowing. */
-    public final int capacity() {
-        return maxSize;
-    }
+  /**
+   * Returns the maximum number of elements that can be stored in the PriorityQueue before
+   * overflowing.
+   */
+  public final int capacity() {
+    return maxSize;
+  }
 
   /** Removes all entries from the PriorityQueue. */
   public final void clear() {

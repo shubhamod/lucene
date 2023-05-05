@@ -17,27 +17,26 @@
 
 package org.apache.lucene.util.hnsw;
 
+import static org.apache.lucene.search.DocIdSetIterator.NO_MORE_DOCS;
+
+import java.io.IOException;
+import java.util.ArrayList;
 import org.apache.lucene.index.VectorEncoding;
 import org.apache.lucene.index.VectorSimilarityFunction;
 import org.apache.lucene.util.BitSet;
 import org.apache.lucene.util.Bits;
 import org.apache.lucene.util.SparseFixedBitSet;
 
-import java.io.IOException;
-import java.util.ArrayList;
-
-import static org.apache.lucene.search.DocIdSetIterator.NO_MORE_DOCS;
-
 /**
- * Searches HNSW graph for the nearest neighbors of a query vector.  This API is intended
- * to be used in a "microbatching" streaming query pipeline that includes non-HNSW predicates.  The
- * goal is to be able to "resume" a search if the first call does not find enough results,
- * without having to re-scan the same nodes again.
- * <p>
- * If you can always get the results you need in a single search call, it will be more
- * efficient to use HnswGraphSearcher instead, because this class can't optimize as aggressively. In
- * particular, it needs to keep track of candidates that are worse than the best topK
- * found so far, because it might need to use those in a subsequent call.
+ * Searches HNSW graph for the nearest neighbors of a query vector. This API is intended to be used
+ * in a "microbatching" streaming query pipeline that includes non-HNSW predicates. The goal is to
+ * be able to "resume" a search if the first call does not find enough results, without having to
+ * re-scan the same nodes again.
+ *
+ * <p>If you can always get the results you need in a single search call, it will be more efficient
+ * to use HnswGraphSearcher instead, because this class can't optimize as aggressively. In
+ * particular, it needs to keep track of candidates that are worse than the best topK found so far,
+ * because it might need to use those in a subsequent call.
  */
 public class HnswGraphResumableSearcher<T> {
   private final VectorSimilarityFunction similarityFunction;
@@ -68,31 +67,33 @@ public class HnswGraphResumableSearcher<T> {
    * @param evaluated bitset to track visited nodes across calls
    */
   public HnswGraphResumableSearcher(
-          T query,
-          RandomAccessVectorValues<T> vectors,
-          NeighborQueue searchSpace,
-          VectorEncoding vectorEncoding,
-          VectorSimilarityFunction similarityFunction,
-          HnswGraph graph,
-          Bits acceptOrds,
-          BitSet evaluated,
-          BitSet seen) {
+      T query,
+      RandomAccessVectorValues<T> vectors,
+      NeighborQueue searchSpace,
+      VectorEncoding vectorEncoding,
+      VectorSimilarityFunction similarityFunction,
+      HnswGraph graph,
+      Bits acceptOrds,
+      BitSet evaluated,
+      BitSet seen) {
     if (query instanceof float[]) {
       if (((float[]) query).length != vectors.dimension()) {
-        throw new IllegalArgumentException("query vector dimension " + ((float[]) query).length + " != " + vectors.dimension());
+        throw new IllegalArgumentException(
+            "query vector dimension " + ((float[]) query).length + " != " + vectors.dimension());
       }
       if (vectorEncoding != VectorEncoding.FLOAT32) {
         throw new IllegalArgumentException("vector encoding must be FLOAT32 for float[] vectors");
       }
     } else if (query instanceof byte[]) {
       if (((byte[]) query).length != vectors.dimension()) {
-        throw new IllegalArgumentException("query vector dimension " + ((byte[]) query).length + " != " + vectors.dimension());
+        throw new IllegalArgumentException(
+            "query vector dimension " + ((byte[]) query).length + " != " + vectors.dimension());
       }
       if (vectorEncoding != VectorEncoding.BYTE) {
         throw new IllegalArgumentException("vector encoding must be BYTE for float[] vectors");
       }
     } else {
-        throw new IllegalArgumentException("vectors must be float[] or byte[]");
+      throw new IllegalArgumentException("vectors must be float[] or byte[]");
     }
 
     this.query = query;
@@ -108,18 +109,19 @@ public class HnswGraphResumableSearcher<T> {
 
   // for testing
   public static <T> NeighborQueue search(
-          T query,
-          int topK,
-          RandomAccessVectorValues<T> vectors,
-          VectorEncoding vectorEncoding,
-          VectorSimilarityFunction similarityFunction,
-          HnswGraph graph,
-          Bits acceptOrds,
-          int visitedLimit)
-          throws IOException {
+      T query,
+      int topK,
+      RandomAccessVectorValues<T> vectors,
+      VectorEncoding vectorEncoding,
+      VectorSimilarityFunction similarityFunction,
+      HnswGraph graph,
+      Bits acceptOrds,
+      int visitedLimit)
+      throws IOException {
     NeighborQueue searchSpace = new NeighborQueue(topK, true);
 
-    HnswGraphResumableSearcher<T> resumableSearcher = new HnswGraphResumableSearcher<>(
+    HnswGraphResumableSearcher<T> resumableSearcher =
+        new HnswGraphResumableSearcher<>(
             query,
             vectors,
             searchSpace,
@@ -134,15 +136,15 @@ public class HnswGraphResumableSearcher<T> {
 
   /**
    * Perform the initial search for a query vector.
-   * <p>
-   * Stops searching when the next-best node is worse than the `topK` found so far,
-   * or when it hits `visitLimit`.
    *
-   * Neighbors are returned with the WORST of the topK neighbors at the top of the queue;
-   * pop() them off to get them sorted worst-to-best.
+   * <p>Stops searching when the next-best node is worse than the `topK` found so far, or when it
+   * hits `visitLimit`.
    *
-   * It is okay to call search() a second time against the
-   * same instance of this class; this will restart the search.
+   * <p>Neighbors are returned with the WORST of the topK neighbors at the top of the queue; pop()
+   * them off to get them sorted worst-to-best.
+   *
+   * <p>It is okay to call search() a second time against the same instance of this class; this will
+   * restart the search.
    */
   public NeighborQueue search(int topK, int visitLimit) throws IOException {
     searchSpace.clear();
@@ -156,13 +158,16 @@ public class HnswGraphResumableSearcher<T> {
     }
 
     // first, follow the index until we get to level 0
-    HnswGraphSearcher<T> levelSearcher = new HnswGraphSearcher<>(vectorEncoding,
+    HnswGraphSearcher<T> levelSearcher =
+        new HnswGraphSearcher<>(
+            vectorEncoding,
             similarityFunction,
             new NeighborQueue(1, true),
             new SparseFixedBitSet(graph.size()));
     int[] eps = new int[] {initialEp};
     for (int level = graph.numLevels() - 1; level >= 1; level--) {
-      var results = levelSearcher.searchLevel(query, 1, level, eps, vectors, graph, null, visitLimit);
+      var results =
+          levelSearcher.searchLevel(query, 1, level, eps, vectors, graph, null, visitLimit);
       eps[0] = results.pop();
     }
 
@@ -174,9 +179,9 @@ public class HnswGraphResumableSearcher<T> {
 
   /**
    * Resume a search after the initial call to `search`.
-   * <p>
-   * Stops searching when the next-best node is worse than the `topK` found so far,
-   * or when it hits `visitLimit`.
+   *
+   * <p>Stops searching when the next-best node is worse than the `topK` found so far, or when it
+   * hits `visitLimit`.
    */
   public NeighborQueue resume(int topK, int visitLimit) throws IOException {
     var results = new NeighborQueue(topK, false);
@@ -200,8 +205,8 @@ public class HnswGraphResumableSearcher<T> {
             minAcceptedSimilarity = results.topScore();
           }
         } else {
-            discarded.add(topCandidateOrd);
-            break;
+          discarded.add(topCandidateOrd);
+          break;
         }
       }
 

@@ -17,11 +17,10 @@
 
 package org.apache.lucene.util.hnsw;
 
-import org.apache.lucene.util.LongHeap;
-import org.apache.lucene.util.NumericUtils;
-
 import java.util.List;
 import java.util.stream.IntStream;
+import org.apache.lucene.util.LongHeap;
+import org.apache.lucene.util.NumericUtils;
 
 /**
  * NeighborQueue uses a {@link LongHeap} to store lists of arcs in an HNSW graph, represented as a
@@ -61,8 +60,8 @@ public class NeighborQueue {
 
   /**
    * @param initialSize the initial size of the heap
-   * @param maxHeap whether the heap should be a max heap or a min heap.  Max heaps
-   *                will return closer neighbors (higher score) first.
+   * @param maxHeap whether the heap should be a max heap or a min heap. Max heaps will return
+   *     closer neighbors (higher score) first.
    */
   public NeighborQueue(int initialSize, boolean maxHeap) {
     this.heap = new LongHeap(initialSize);
@@ -79,9 +78,9 @@ public class NeighborQueue {
   /**
    * @return the capacity of the heap before it needs to resize
    */
-    public int capacity() {
-      return heap.capacity();
-    }
+  public int capacity() {
+    return heap.capacity();
+  }
 
   /**
    * Adds a new graph arc, extending the storage as needed.
