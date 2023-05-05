@@ -27,6 +27,7 @@ import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.TotalHits;
 import org.apache.lucene.util.Accountable;
 import org.apache.lucene.util.Bits;
+import org.apache.lucene.util.hnsw.HnswGraphResumableSearcher;
 
 /** Reads vectors from an index. */
 public abstract class KnnVectorsReader implements Closeable, Accountable {
@@ -87,6 +88,40 @@ public abstract class KnnVectorsReader implements Closeable, Accountable {
    */
   public abstract TopDocs search(
       String field, float[] target, int k, Bits acceptDocs, int visitedLimit) throws IOException;
+
+  /**
+   * Return a {@link HnswGraphResumableSearcher} that can be used to search and resume a previous
+   * search for the k nearest neighbor vectors.
+   *
+   * @param field the vector field to search
+   * @param target the vector-valued query
+   * @param k the number of docs to return
+   * @param acceptOrds {@link Bits} that represents the allowed vector ordinals to match, or {@code null}
+   *     if they are all allowed to match.
+   * @param visitedLimit the maximum number of nodes that the search is allowed to visit
+   * @return an {@link HnswGraphResumableSearcher} object
+   */
+  public HnswGraphResumableSearcher<float[]> getResumableSearcher(
+      String field, float[] target, int k, Bits acceptOrds, int visitedLimit) throws IOException {
+    throw new UnsupportedOperationException();
+  }
+
+  /**
+   * Return a {@link HnswGraphResumableSearcher} that can be used to search and resume a previous
+   * search for the k nearest neighbor vectors.
+   *
+   * @param field the vector field to search
+   * @param target the vector-valued query
+   * @param k the number of docs to return
+   * @param acceptOrds {@link Bits} that represents the allowed vector ordinals to match, or {@code null}
+   *     if they are all allowed to match.
+   * @param visitedLimit the maximum number of nodes that the search is allowed to visit
+   * @return an {@link HnswGraphResumableSearcher} object
+   */
+  public HnswGraphResumableSearcher<byte[]> getResumableSearcher(
+      String field, byte[] target, int k, Bits acceptOrds, int visitedLimit) throws IOException {
+    throw new UnsupportedOperationException();
+  }
 
   /**
    * Return the k nearest neighbor documents as determined by comparison of their vector values for
