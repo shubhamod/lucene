@@ -30,9 +30,4 @@ public class TestSerialFloatHnswGraph extends FloatVectorHnswGraphTestCase
     super.setUp();
     this.factory = OnHeapHnswGraphFactory.instance;
   }
-
-  @Seed("8C60F47E5C54CBB4")
-  public void testFoo() throws IOException {
-    testRandom();
-  }
 }
