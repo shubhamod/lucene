@@ -226,6 +226,13 @@ abstract class HnswGraphTestCase<T> extends LuceneTestCase {
     return neighbors;
   }
 
+  static void assertResultsEqual(NeighborQueue expected, NeighborQueue actual) {
+    assertEquals(expected.size(), actual.size());
+    for (int i = 0; i < expected.size(); i++) {
+      assertEquals(expected.pop(), actual.pop());
+    }
+  }
+
   static void assertGraphEqual(HnswGraph g, HnswGraph h) throws IOException {
     // construct these up front since they call seek which will mess up our test loop
     String prettyG = prettyPrint(g);
