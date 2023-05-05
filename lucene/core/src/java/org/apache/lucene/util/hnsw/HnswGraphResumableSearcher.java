@@ -51,7 +51,11 @@ public class HnswGraphResumableSearcher<T> {
   private final T query;
   private final RandomAccessVectorValues<T> vectors;
 
-  private BitSet visited;
+  // evaluated is a bitset for which nodes have been evaluated in the current search
+  // and had their neighbors added to the searchSpace
+  private BitSet evaluated;
+  // seen is all nodes that have been added to the searchSpace
+  private final BitSet seen;
 
   /**
    * Creates a new graph searcher.
@@ -62,7 +66,7 @@ public class HnswGraphResumableSearcher<T> {
    *     graph.
    * @param acceptOrds {@link Bits} that represents the allowed document ordinals to match, or
    *     {@code null} if they are all allowed to match.
-   * @param visited bitset to track visited nodes across calls
+   * @param evaluated bitset to track visited nodes across calls
    */
   public HnswGraphResumableSearcher(
           T query,
@@ -72,7 +76,8 @@ public class HnswGraphResumableSearcher<T> {
           VectorSimilarityFunction similarityFunction,
           HnswGraph graph,
           Bits acceptOrds,
-          BitSet visited) {
+          BitSet evaluated,
+          BitSet seen) {
     if (query instanceof float[]) {
       if (((float[]) query).length != vectors.dimension()) {
         throw new IllegalArgumentException("query vector dimension " + ((float[]) query).length + " != " + vectors.dimension());
@@ -92,7 +97,8 @@ public class HnswGraphResumableSearcher<T> {
     this.similarityFunction = similarityFunction;
     this.graph = graph;
     this.acceptOrds = acceptOrds;
-    this.visited = visited;
+    this.evaluated = evaluated;
+    this.seen = seen;
   }
 
   // for testing
@@ -107,7 +113,6 @@ public class HnswGraphResumableSearcher<T> {
           int visitedLimit)
           throws IOException {
     NeighborQueue searchSpace = new NeighborQueue(topK, true);
-    BitSet visited = new SparseFixedBitSet(graph.size());
 
     HnswGraphResumableSearcher<T> resumableSearcher = new HnswGraphResumableSearcher<>(
             query,
@@ -117,7 +122,8 @@ public class HnswGraphResumableSearcher<T> {
             similarityFunction,
             graph,
             acceptOrds,
-            visited);
+            new SparseFixedBitSet(graph.size()),
+            new SparseFixedBitSet(graph.size()));
     return resumableSearcher.search(topK, visitedLimit);
   }
 
@@ -151,6 +157,7 @@ public class HnswGraphResumableSearcher<T> {
     // level 0 search
     searchSpace.clear();
     searchSpace.add(eps[0], compare(query, vectors, eps[0]));
+    seen.set(eps[0]);
     return resume(topK, visitLimit);
   }
 
@@ -166,14 +173,14 @@ public class HnswGraphResumableSearcher<T> {
     ArrayList<Integer> discarded = new ArrayList<>();
     int numVisited = 0;
     while (numVisited++ < visitLimit && searchSpace.size() > 0) {
-      int friendOrd = searchSpace.pop();
-      assert friendOrd >= 0;
+      float topCandidateSimilarity = searchSpace.topScore();
+      int topCandidateOrd = searchSpace.pop();
+      assert topCandidateOrd >= 0;
 
-      float friendSimilarity = compare(query, vectors, friendOrd);
-      if (acceptOrds == null || acceptOrds.get(friendOrd)) {
-        if (friendSimilarity > minAcceptedSimilarity) {
+      if (acceptOrds == null || acceptOrds.get(topCandidateOrd)) {
+        if (topCandidateSimilarity > minAcceptedSimilarity) {
           int oldTop = results.size() == topK ? results.topNode() : -1;
-          var r = results.insertWithOverflow(friendOrd, friendSimilarity);
+          var r = results.insertWithOverflow(topCandidateOrd, topCandidateSimilarity);
           assert r : "thought we were higher priority than the worst on the heap, but were not";
           if (oldTop >= 0) {
             discarded.add(oldTop);
@@ -182,15 +189,18 @@ public class HnswGraphResumableSearcher<T> {
             minAcceptedSimilarity = results.topScore();
           }
         } else {
-            discarded.add(friendOrd);
+            discarded.add(topCandidateOrd);
             break;
         }
       }
 
-      if (!visited.getAndSet(friendOrd)) {
-        graph.seek(0, friendOrd);
+      // we want to evaluate the discarded nodes multiple times, but we don't need to re-scan
+      // their neighbors again
+      if (!evaluated.getAndSet(topCandidateOrd)) {
+        graph.seek(0, topCandidateOrd);
+        int friendOrd;
         while ((friendOrd = graph.nextNeighbor()) != NO_MORE_DOCS) {
-          if (!visited.get(friendOrd)) {
+          if (!seen.getAndSet(friendOrd)) {
             searchSpace.add(friendOrd, compare(query, vectors, friendOrd));
           }
         }
