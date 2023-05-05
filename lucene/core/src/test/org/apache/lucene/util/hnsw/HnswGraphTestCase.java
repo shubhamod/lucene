@@ -298,7 +298,7 @@ abstract class HnswGraphTestCase<T> extends LuceneTestCase {
     int nDoc = 100;
     similarityFunction = VectorSimilarityFunction.DOT_PRODUCT;
     RandomAccessVectorValues<T> vectors = circularVectorValues(nDoc);
-    HnswGraphBuilder<T> builder =
+    IHnswGraphBuilder<T> builder =
         factory.createBuilder(
             vectors, getVectorEncoding(), similarityFunction, 10, 100, random().nextInt());
     HnswGraph hnsw = builder.build(vectors.copy());
@@ -349,7 +349,7 @@ abstract class HnswGraphTestCase<T> extends LuceneTestCase {
     int nDoc = 100;
     RandomAccessVectorValues<T> vectors = circularVectorValues(nDoc);
     similarityFunction = VectorSimilarityFunction.DOT_PRODUCT;
-    HnswGraphBuilder<T> builder =
+    IHnswGraphBuilder<T> builder =
         factory.createBuilder(
             vectors, getVectorEncoding(), similarityFunction, 16, 100, random().nextInt());
     HnswGraph hnsw = builder.build(vectors.copy());
@@ -393,7 +393,7 @@ abstract class HnswGraphTestCase<T> extends LuceneTestCase {
     int nDoc = 100;
     RandomAccessVectorValues<T> vectors = circularVectorValues(nDoc);
     similarityFunction = VectorSimilarityFunction.DOT_PRODUCT;
-    HnswGraphBuilder<T> builder =
+    IHnswGraphBuilder<T> builder =
         factory.createBuilder(
             vectors, getVectorEncoding(), similarityFunction, 16, 100, random().nextInt());
     HnswGraph hnsw = builder.build(vectors.copy());
@@ -539,7 +539,7 @@ abstract class HnswGraphTestCase<T> extends LuceneTestCase {
     int nDoc = 500;
     similarityFunction = VectorSimilarityFunction.DOT_PRODUCT;
     RandomAccessVectorValues<T> vectors = circularVectorValues(nDoc);
-    HnswGraphBuilder<T> builder =
+    IHnswGraphBuilder<T> builder =
         factory.createBuilder(
             vectors, getVectorEncoding(), similarityFunction, 16, 100, random().nextInt());
     HnswGraph hnsw = builder.build(vectors.copy());
@@ -609,7 +609,7 @@ abstract class HnswGraphTestCase<T> extends LuceneTestCase {
         RandomizedTest.randomFrom(VectorSimilarityFunction.values());
     RandomAccessVectorValues<T> vectors = vectorValues(size, dim);
 
-    HnswGraphBuilder<T> builder =
+    IHnswGraphBuilder<T> builder =
         factory.createBuilder(
             vectors, getVectorEncoding(), similarityFunction, M, M * 2, random().nextLong());
     HnswGraph hnsw = builder.build(vectors.copy());
@@ -634,7 +634,7 @@ abstract class HnswGraphTestCase<T> extends LuceneTestCase {
     };
     AbstractMockVectorValues<T> vectors = vectorValues(values);
     // First add nodes until everybody gets a full neighbor list
-    HnswGraphBuilder<T> builder =
+    IHnswGraphBuilder<T> builder =
         factory.createBuilder(
             vectors, getVectorEncoding(), similarityFunction, 2, 10, random().nextInt());
     // node 0 is added by the builder constructor
@@ -690,7 +690,7 @@ abstract class HnswGraphTestCase<T> extends LuceneTestCase {
     };
     AbstractMockVectorValues<T> vectors = vectorValues(values);
     // First add nodes until everybody gets a full neighbor list
-    HnswGraphBuilder<T> builder =
+    IHnswGraphBuilder<T> builder =
         factory.createBuilder(
             vectors, getVectorEncoding(), similarityFunction, 1, 10, random().nextInt());
     RandomAccessVectorValues<T> vectorsCopy = vectors.copy();
@@ -722,7 +722,7 @@ abstract class HnswGraphTestCase<T> extends LuceneTestCase {
     };
     AbstractMockVectorValues<T> vectors = vectorValues(values);
     // First add nodes until everybody gets a full neighbor list
-    HnswGraphBuilder<T> builder =
+    IHnswGraphBuilder<T> builder =
         factory.createBuilder(
             vectors, getVectorEncoding(), similarityFunction, 1, 10, random().nextInt());
     RandomAccessVectorValues<T> vectorsCopy = vectors.copy();
@@ -756,7 +756,7 @@ abstract class HnswGraphTestCase<T> extends LuceneTestCase {
     int dim = atLeast(10);
     AbstractMockVectorValues<T> vectors = vectorValues(size, dim);
     int topK = 5;
-    HnswGraphBuilder<T> builder =
+    IHnswGraphBuilder<T> builder =
         factory.createBuilder(
             vectors, getVectorEncoding(), similarityFunction, 10, 30, random().nextLong());
     HnswGraph hnsw = builder.build(vectors.copy());

@@ -56,7 +56,7 @@ public class TestHnswGraphResumableSearcher extends FloatVectorHnswGraphTestCase
 
   public void testSingleNodeGraph() throws IOException {
     var vectors = circularVectorValues(1);
-    HnswGraphBuilder<float[]> builder =
+    IHnswGraphBuilder<float[]> builder =
         factory.createBuilder(
             vectors, getVectorEncoding(), similarityFunction, 10, 100, random().nextInt());
     HnswGraph hnsw = builder.build(vectors.copy());
@@ -88,7 +88,7 @@ public class TestHnswGraphResumableSearcher extends FloatVectorHnswGraphTestCase
     int topK = atLeast(10);
 
     RandomAccessVectorValues<float[]> vectors = circularVectorValues(nDoc);
-    HnswGraphBuilder<float[]> builder =
+    IHnswGraphBuilder<float[]> builder =
         factory.createBuilder(
             vectors,
             getVectorEncoding(),
