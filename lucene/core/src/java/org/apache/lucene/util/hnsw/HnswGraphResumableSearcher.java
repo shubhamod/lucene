@@ -45,15 +45,14 @@ public class HnswGraphResumableSearcher<T> {
 
   private final HnswGraph graph;
   private final Bits acceptOrds;
-  private final NeighborQueue searchSpace;
 
-  // initialized in search because it's easier to make Java's generics happy there
   private final T query;
   private final RandomAccessVectorValues<T> vectors;
 
+  private final NeighborQueue searchSpace;
   // evaluated is a bitset for which nodes have been evaluated in the current search
   // and had their neighbors added to the searchSpace
-  private BitSet evaluated;
+  private final BitSet evaluated;
   // seen is all nodes that have been added to the searchSpace
   private final BitSet seen;
 
@@ -82,9 +81,15 @@ public class HnswGraphResumableSearcher<T> {
       if (((float[]) query).length != vectors.dimension()) {
         throw new IllegalArgumentException("query vector dimension " + ((float[]) query).length + " != " + vectors.dimension());
       }
+      if (vectorEncoding != VectorEncoding.FLOAT32) {
+        throw new IllegalArgumentException("vector encoding must be FLOAT32 for float[] vectors");
+      }
     } else if (query instanceof byte[]) {
       if (((byte[]) query).length != vectors.dimension()) {
         throw new IllegalArgumentException("query vector dimension " + ((byte[]) query).length + " != " + vectors.dimension());
+      }
+      if (vectorEncoding != VectorEncoding.BYTE) {
+        throw new IllegalArgumentException("vector encoding must be BYTE for float[] vectors");
       }
     } else {
         throw new IllegalArgumentException("vectors must be float[] or byte[]");
@@ -135,8 +140,15 @@ public class HnswGraphResumableSearcher<T> {
    *
    * Neighbors are returned with the WORST of the topK neighbors at the top of the queue;
    * pop() them off to get them sorted worst-to-best.
+   *
+   * It is okay to call search() a second time against the
+   * same instance of this class; this will restart the search.
    */
   public NeighborQueue search(int topK, int visitLimit) throws IOException {
+    searchSpace.clear();
+    evaluated.clear();
+    seen.clear();
+
     // empty graph
     int initialEp = graph.entryNode();
     if (initialEp == -1) {
@@ -155,7 +167,6 @@ public class HnswGraphResumableSearcher<T> {
     }
 
     // level 0 search
-    searchSpace.clear();
     searchSpace.add(eps[0], compare(query, vectors, eps[0]));
     seen.set(eps[0]);
     return resume(topK, visitLimit);

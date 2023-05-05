@@ -300,6 +300,6 @@ public class HnswGraphSearcher<T> {
       // be constant, and it will be a SparseFixedBitSet instead of FixedBitSet
       visited = FixedBitSet.ensureCapacity((FixedBitSet) visited, capacity);
     }
-    visited.clear(0, visited.length());
+    visited.clear();
   }
 }

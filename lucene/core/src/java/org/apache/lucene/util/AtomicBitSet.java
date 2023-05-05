@@ -46,6 +46,13 @@ public class AtomicBitSet extends BitSet {
   }
 
   @Override
+  public void clear() {
+    for (int i = 0; i < storage.length(); i++) {
+      storage.getAndAccumulate(i, 0L, (prev, ignore) -> 0L);
+    }
+  }
+
+  @Override
   public int length() {
     return numBits;
   }
