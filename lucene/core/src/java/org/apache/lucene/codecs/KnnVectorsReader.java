@@ -93,16 +93,14 @@ public abstract class KnnVectorsReader implements Closeable, Accountable {
    * Return a {@link HnswGraphResumableSearcher} that can be used to search and resume a previous
    * search for the k nearest neighbor vectors.
    *
-   * @param field the vector field to search
-   * @param target the vector-valued query
-   * @param k the number of docs to return
+   * @param field      the vector field to search
+   * @param target     the vector-valued query
    * @param acceptOrds {@link Bits} that represents the allowed vector ordinals to match, or {@code
-   *     null} if they are all allowed to match.
-   * @param visitedLimit the maximum number of nodes that the search is allowed to visit
+   *                   null} if they are all allowed to match.
    * @return an {@link HnswGraphResumableSearcher} object
    */
   public HnswGraphResumableSearcher<float[]> getResumableSearcher(
-      String field, float[] target, int k, Bits acceptOrds, int visitedLimit) throws IOException {
+      String field, float[] target, Bits acceptOrds) throws IOException {
     throw new UnsupportedOperationException();
   }
 
@@ -112,14 +110,11 @@ public abstract class KnnVectorsReader implements Closeable, Accountable {
    *
    * @param field the vector field to search
    * @param target the vector-valued query
-   * @param k the number of docs to return
    * @param acceptOrds {@link Bits} that represents the allowed vector ordinals to match, or {@code
    *     null} if they are all allowed to match.
-   * @param visitedLimit the maximum number of nodes that the search is allowed to visit
-   * @return an {@link HnswGraphResumableSearcher} object
    */
   public HnswGraphResumableSearcher<byte[]> getResumableSearcher(
-      String field, byte[] target, int k, Bits acceptOrds, int visitedLimit) throws IOException {
+      String field, byte[] target, Bits acceptOrds) throws IOException {
     throw new UnsupportedOperationException();
   }
 
