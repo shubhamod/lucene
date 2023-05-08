@@ -21,6 +21,8 @@ import static org.apache.lucene.search.DocIdSetIterator.NO_MORE_DOCS;
 
 import com.carrotsearch.randomizedtesting.RandomizedTest;
 import java.io.IOException;
+import java.util.Arrays;
+
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.KnnFloatVectorField;
 import org.apache.lucene.index.FloatVectorValues;
@@ -30,6 +32,7 @@ import org.apache.lucene.index.VectorSimilarityFunction;
 import org.apache.lucene.search.KnnFloatVectorQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.util.ArrayUtil;
+import org.apache.lucene.util.Bits;
 import org.apache.lucene.util.FixedBitSet;
 import org.junit.Before;
 
@@ -159,5 +162,46 @@ public abstract class FloatVectorHnswGraphTestCase extends HnswGraphTestCase<flo
     // We still expect to get reasonable recall. The lowest non-skipped docIds
     // are closest to the query vector: sum(500,509) = 5045
     assertTrue("sum(result docs)=" + sum, sum < 5100);
+  }
+
+  public void testBigRandom() throws IOException {
+    for (int k = 0; k < 10; k++) {
+      int size = atLeast(40000);
+      int dim = atLeast(1500);
+      AbstractMockVectorValues<float[]> vectors = vectorValues(size, dim);
+      int topK = 100;
+      IHnswGraphBuilder<float[]> builder =
+          factory.createBuilder(
+              vectors, getVectorEncoding(), similarityFunction, 10, 30, random().nextLong());
+      HnswGraph hnsw = builder.build(vectors.copy());
+
+      for (int i = 0; i < 10; i++) {
+        NeighborQueue actual;
+        float[] query = randomVector(dim);
+        actual =
+            HnswGraphSearcher.search(
+                query,
+                topK,
+                vectors,
+                getVectorEncoding(),
+                similarityFunction,
+                hnsw,
+                null,
+                Integer.MAX_VALUE);
+
+        // pop them to a temp array so we can print them out
+        float[] results = new float[topK];
+        for (int j = 0; actual.size() > 0; j++) {
+          results[j] = actual.topScore();
+          actual.pop();
+        }
+
+        float lastScore = results[0];
+        for (int j = 1; j < results.length; j++) {
+          assert results[j] >= lastScore : "results are not sorted at position " + j + " for " + Arrays.toString(results);
+          lastScore = results[j];
+        }
+      }
+    }
   }
 }
