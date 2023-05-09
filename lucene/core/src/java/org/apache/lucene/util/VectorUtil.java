@@ -17,6 +17,8 @@
 
 package org.apache.lucene.util;
 
+import java.util.Arrays;
+
 /** Utilities for computations with numeric arrays */
 public final class VectorUtil {
 
@@ -118,7 +120,16 @@ public final class VectorUtil {
       norm1 += elem1 * elem1;
       norm2 += elem2 * elem2;
     }
-    return (float) (sum / Math.sqrt(norm1 * norm2));
+    var r = (float) (sum / Math.sqrt(norm1 * norm2));
+    if (!Float.isFinite(r)) {
+      for (int i = 0; i < dim; i++) {
+        assert Float.isFinite(v1[i]) : "v1[" + i + "]=" + v1[i];
+        assert Float.isFinite(v2[i]) : "v2[" + i + "]=" + v2[i];
+      }
+      throw new AssertionError(String.format("Somehow got a non-finite cosine similarity from %s and %s",
+          Arrays.toString(v1), Arrays.toString(v2)));
+    }
+    return r;
   }
 
   /** Returns the cosine similarity between the two vectors. */
