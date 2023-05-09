@@ -22,6 +22,7 @@ import static org.apache.lucene.search.DocIdSetIterator.NO_MORE_DOCS;
 import java.io.IOException;
 import org.apache.lucene.index.VectorEncoding;
 import org.apache.lucene.index.VectorSimilarityFunction;
+import org.apache.lucene.util.AtomicBitSet;
 import org.apache.lucene.util.BitSet;
 import org.apache.lucene.util.Bits;
 import org.apache.lucene.util.FixedBitSet;
@@ -298,7 +299,12 @@ public class HnswGraphSearcher<T> {
     if (visited.length() < capacity) {
       // this happens during graph construction; otherwise the size of the vector values should
       // be constant, and it will be a SparseFixedBitSet instead of FixedBitSet
-      visited = FixedBitSet.ensureCapacity((FixedBitSet) visited, capacity);
+      assert (visited instanceof FixedBitSet || visited instanceof AtomicBitSet)
+          : "Unexpected visited type: " + visited.getClass().getName();
+      if (visited instanceof FixedBitSet) {
+        visited = FixedBitSet.ensureCapacity((FixedBitSet) visited, capacity);
+      }
+      // else AtomicBitSet knows how to grow itself safely
     }
     visited.clear();
   }
