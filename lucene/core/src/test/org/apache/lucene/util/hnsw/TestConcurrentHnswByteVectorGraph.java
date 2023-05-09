@@ -17,10 +17,7 @@
 
 package org.apache.lucene.util.hnsw;
 
-import static org.apache.lucene.search.DocIdSetIterator.NO_MORE_DOCS;
-
 import com.carrotsearch.randomizedtesting.RandomizedTest;
-import java.io.IOException;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.KnnByteVectorField;
 import org.apache.lucene.index.ByteVectorValues;
@@ -32,8 +29,12 @@ import org.apache.lucene.search.Query;
 import org.apache.lucene.util.ArrayUtil;
 import org.junit.Before;
 
+import java.io.IOException;
+
+import static org.apache.lucene.search.DocIdSetIterator.NO_MORE_DOCS;
+
 /** Tests HNSW KNN graphs */
-public abstract class ByteVectorHnswGraphTestCase extends HnswGraphTestCase<byte[]> {
+public class TestConcurrentHnswByteVectorGraph extends ConcurrentHnswGraphTestCase<byte[]> {
 
   @Before
   public void setup() {
@@ -41,7 +42,7 @@ public abstract class ByteVectorHnswGraphTestCase extends HnswGraphTestCase<byte
   }
 
   @Override
-  public VectorEncoding getVectorEncoding() {
+  VectorEncoding getVectorEncoding() {
     return VectorEncoding.BYTE;
   }
 
@@ -56,7 +57,7 @@ public abstract class ByteVectorHnswGraphTestCase extends HnswGraphTestCase<byte
   }
 
   @Override
-  public AbstractMockVectorValues<byte[]> vectorValues(int size, int dimension) {
+  AbstractMockVectorValues<byte[]> vectorValues(int size, int dimension) {
     return MockByteVectorValues.fromValues(createRandomByteVectors(size, dimension, random()));
   }
 
@@ -65,7 +66,7 @@ public abstract class ByteVectorHnswGraphTestCase extends HnswGraphTestCase<byte
   }
 
   @Override
-  public AbstractMockVectorValues<byte[]> vectorValues(float[][] values) {
+  AbstractMockVectorValues<byte[]> vectorValues(float[][] values) {
     byte[][] bValues = new byte[values.length][];
     // The case when all floats fit within a byte already.
     boolean scaleSimple = fitsInByte(values[0][0]);
@@ -86,7 +87,7 @@ public abstract class ByteVectorHnswGraphTestCase extends HnswGraphTestCase<byte
   }
 
   @Override
-  public AbstractMockVectorValues<byte[]> vectorValues(
+  AbstractMockVectorValues<byte[]> vectorValues(
       int size,
       int dimension,
       AbstractMockVectorValues<byte[]> pregeneratedVectorValues,
@@ -114,7 +115,7 @@ public abstract class ByteVectorHnswGraphTestCase extends HnswGraphTestCase<byte
   }
 
   @Override
-  public AbstractMockVectorValues<byte[]> vectorValues(LeafReader reader, String fieldName)
+  AbstractMockVectorValues<byte[]> vectorValues(LeafReader reader, String fieldName)
       throws IOException {
     ByteVectorValues vectorValues = reader.getByteVectorValues(fieldName);
     byte[][] vectors = new byte[reader.maxDoc()][];
@@ -127,8 +128,7 @@ public abstract class ByteVectorHnswGraphTestCase extends HnswGraphTestCase<byte
   }
 
   @Override
-  public Field knnVectorField(
-      String name, byte[] vector, VectorSimilarityFunction similarityFunction) {
+  Field knnVectorField(String name, byte[] vector, VectorSimilarityFunction similarityFunction) {
     return new KnnByteVectorField(name, vector, similarityFunction);
   }
 

@@ -50,7 +50,7 @@ import org.apache.lucene.util.hnsw.ConcurrentOnHeapHnswGraph.NodeAtLevel;
  *
  * @param <T> the type of vector
  */
-public final class ConcurrentHnswGraphBuilder<T> implements IHnswGraphBuilder<T> {
+public final class ConcurrentHnswGraphBuilder<T> {
 
   /** Default number of maximum connections per node */
   public static final int DEFAULT_MAX_CONN = 16;
@@ -81,6 +81,18 @@ public final class ConcurrentHnswGraphBuilder<T> implements IHnswGraphBuilder<T>
   // we need two sources of vectors in order to perform diversity check comparisons without
   // colliding
   private final RandomAccessVectorValues<T> vectorsCopy;
+
+  /** This is the "native" factory for ConcurrentHnswGraphBuilder. */
+  public static <T> ConcurrentHnswGraphBuilder<T> create(
+      RandomAccessVectorValues<T> vectors,
+      VectorEncoding vectorEncoding,
+      VectorSimilarityFunction similarityFunction,
+      int M,
+      int beamWidth)
+      throws IOException {
+    return new ConcurrentHnswGraphBuilder<>(
+        vectors, vectorEncoding, similarityFunction, M, beamWidth);
+  }
 
   /**
    * Reads all the vectors from vector values, builds a graph connecting them by their dense
@@ -181,7 +193,6 @@ public final class ConcurrentHnswGraphBuilder<T> implements IHnswGraphBuilder<T>
     }
   }
 
-  @Override
   public ConcurrentOnHeapHnswGraph build(RandomAccessVectorValues<T> vectorsToAdd)
       throws IOException {
     return build(vectorsToAdd, true);
@@ -260,17 +271,26 @@ public final class ConcurrentHnswGraphBuilder<T> implements IHnswGraphBuilder<T>
         });
   }
 
+  public void addGraphNode(int node, RandomAccessVectorValues<T> values) throws IOException {
+    addGraphNode(node, values.vectorValue(node));
+  }
+
   /** Set info-stream to output debugging information * */
   public void setInfoStream(InfoStream infoStream) {
     this.infoStream = infoStream;
   }
 
-  @Override
   public ConcurrentOnHeapHnswGraph getGraph() {
     return hnsw;
   }
 
-  @Override
+  /**
+   * Inserts a doc with vector value to the graph.
+   *
+   * <p>To allow correctness under concurrency, we track in-progress updates in a
+   * ConcurrentSkipListSet. After adding ourselves, we take a snapshot of this set, and consider all
+   * other in-progress updates as neighbor candidates (subject to normal level constraints).
+   */
   public void addGraphNode(int node, T value) throws IOException {
     // do this before adding to in-progress, so a concurrent writer checking
     // the in-progress set doesn't have to worry about uninitialized neighbor sets
@@ -279,10 +299,6 @@ public final class ConcurrentHnswGraphBuilder<T> implements IHnswGraphBuilder<T>
       hnsw.addNode(level, node);
     }
 
-    // To allow correctness under concurrency, we track in-progress updates in a
-    // ConcurrentSkipListSet. After adding ourselves, we take a snapshot of this set, and consider
-    // all
-    // other in-progress updates as neighbor candidates (subject to normal level constraints).
     NodeAtLevel progressMarker = new NodeAtLevel(nodeLevel, node);
     insertionsInProgress.add(progressMarker);
     ConcurrentSkipListSet<NodeAtLevel> inProgressBefore = insertionsInProgress.clone();
