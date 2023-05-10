@@ -28,10 +28,9 @@ import org.apache.lucene.index.VectorSimilarityFunction;
 import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.TermAndBoost;
 import org.apache.lucene.util.hnsw.HnswGraph;
+import org.apache.lucene.util.hnsw.HnswGraphBuilder;
 import org.apache.lucene.util.hnsw.HnswGraphSearcher;
 import org.apache.lucene.util.hnsw.NeighborQueue;
-import org.apache.lucene.util.hnsw.HnswGraphBuilder;
-import org.apache.lucene.util.hnsw.OnHeapHnswGraphFactory;
 
 /**
  * The Word2VecSynonymProvider generates the list of sysnonyms of a term.
@@ -55,7 +54,7 @@ public class Word2VecSynonymProvider {
     word2VecModel = model;
 
     HnswGraphBuilder<float[]> builder =
-        OnHeapHnswGraphFactory.instance.createBuilder(
+        HnswGraphBuilder.create(
             word2VecModel,
             VECTOR_ENCODING,
             SIMILARITY_FUNCTION,

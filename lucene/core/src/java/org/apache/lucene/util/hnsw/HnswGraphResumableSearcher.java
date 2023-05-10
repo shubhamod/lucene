@@ -165,9 +165,10 @@ public class HnswGraphResumableSearcher<T> {
             new NeighborQueue(1, true),
             new SparseFixedBitSet(graph.size()));
     int[] eps = new int[] {initialEp};
+    NeighborQueue results = new NeighborQueue(topK, false);
     for (int level = graph.numLevels() - 1; level >= 1; level--) {
-      var results =
-          levelSearcher.searchLevel(query, 1, level, eps, vectors, graph, null, visitLimit);
+      results.clear();
+      levelSearcher.searchLevel(results, query, 1, level, eps, vectors, graph, null, visitLimit);
       eps[0] = results.pop();
     }
 
