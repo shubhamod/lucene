@@ -16,6 +16,8 @@
  */
 package org.apache.lucene.util;
 
+import static org.apache.lucene.util.VectorTestConstants.largeVector;
+
 import java.util.Random;
 import org.apache.lucene.tests.util.LuceneTestCase;
 import org.apache.lucene.tests.util.TestUtil;
@@ -101,6 +103,20 @@ public class TestVectorUtil extends LuceneTestCase {
   public void testCosineThrowsForDimensionMismatch() {
     float[] v = {1, 0, 0}, u = {0, 1};
     expectThrows(IllegalArgumentException.class, () -> VectorUtil.cosine(u, v));
+  }
+
+  public void testCosineThrowsForNaN() {
+    float[] v = {1, 0, Float.NaN}, u = {0, 0, 0};
+    expectThrows(IllegalArgumentException.class, () -> VectorUtil.cosine(u, v));
+  }
+
+  public void testCosineThrowsForInfinity() {
+    float[] v = {1, 0, Float.NEGATIVE_INFINITY}, u = {0, 0, 0};
+    expectThrows(IllegalArgumentException.class, () -> VectorUtil.cosine(u, v));
+  }
+
+  public void testCosineEqualVectors() {
+    assertEquals(1.0f, VectorUtil.cosine(largeVector, largeVector), DELTA);
   }
 
   public void testNormalize() {

@@ -17,6 +17,8 @@
 
 package org.apache.lucene.util;
 
+import java.util.Arrays;
+
 /** Utilities for computations with numeric arrays */
 public final class VectorUtil {
 
@@ -92,6 +94,7 @@ public final class VectorUtil {
               + b[i + 6] * a[i + 6]
               + b[i + 7] * a[i + 7];
     }
+    checkFinite(res, a, b, "dot product");
     return res;
   }
 
@@ -118,7 +121,29 @@ public final class VectorUtil {
       norm1 += elem1 * elem1;
       norm2 += elem2 * elem2;
     }
-    return (float) (sum / Math.sqrt(norm1 * norm2));
+    var r = (float) (sum / Math.sqrt(norm1 * norm2));
+    checkFinite(r, v1, v2, "cosine");
+    return r;
+  }
+
+  private static void checkFinite(float r, float[] v1, float[] v2, String optype) {
+    if (!Float.isFinite(r)) {
+      for (int i = 0; i < v1.length; i++) {
+        if (!Float.isFinite(v1[i])) {
+          throw new IllegalArgumentException("v1[" + i + "]=" + v1[i]);
+        }
+        if (!Float.isFinite(v2[i])) {
+          throw new IllegalArgumentException("v2[" + i + "]=" + v2[i]);
+        }
+      }
+      throw new IllegalArgumentException(
+          "Non-finite "
+              + optype
+              + " similarity from "
+              + Arrays.toString(v1)
+              + " and "
+              + Arrays.toString(v2));
+    }
   }
 
   /** Returns the cosine similarity between the two vectors. */
@@ -158,6 +183,7 @@ public final class VectorUtil {
       float diff = v1[i] - v2[i];
       squareSum += diff * diff;
     }
+    checkFinite(squareSum, v1, v2, "square distance");
     return squareSum;
   }
 
