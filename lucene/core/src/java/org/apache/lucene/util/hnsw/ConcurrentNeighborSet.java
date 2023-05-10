@@ -72,6 +72,12 @@ public class ConcurrentNeighborSet {
     }
   }
 
+  public void forEachDescending(ThrowingBiConsumer<Integer, Float> consumer) throws IOException {
+    for (Long encoded : neighbors.descendingSet()) {
+      consumer.accept(decodeNodeId(encoded), decodeScore(encoded));
+    }
+  }
+
   /**
    * For each candidate (going from best to worst), select it only if it is closer to target than it
    * is to any of the already-selected neighbors. This is maintained whether those other neighbors
