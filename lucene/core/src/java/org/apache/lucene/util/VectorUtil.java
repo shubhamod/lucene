@@ -33,7 +33,7 @@ public final class VectorUtil {
     if (a.length != b.length) {
       throw new IllegalArgumentException("vector dimensions differ: " + a.length + "!=" + b.length);
     }
-    float res = 0f;
+    double res = 0;
     /*
      * If length of vector is larger than 8, we use unrolled dot product to accelerate the
      * calculation.
@@ -43,7 +43,7 @@ public final class VectorUtil {
       res += b[i] * a[i];
     }
     if (a.length < 8) {
-      return res;
+      return (float) res;
     }
     for (; i + 31 < a.length; i += 32) {
       res +=
@@ -94,8 +94,9 @@ public final class VectorUtil {
               + b[i + 6] * a[i + 6]
               + b[i + 7] * a[i + 7];
     }
-    checkFinite(res, a, b, "dot product");
-    return res;
+    float resF = (float) res;
+    checkFinite(resF, a, b, "dot product");
+    return resF;
   }
 
   /**
@@ -109,21 +110,21 @@ public final class VectorUtil {
           "vector dimensions differ: " + v1.length + "!=" + v2.length);
     }
 
-    float sum = 0.0f;
-    float norm1 = 0.0f;
-    float norm2 = 0.0f;
+    double sum = 0.0f;
+    double norm1 = 0.0f;
+    double norm2 = 0.0f;
     int dim = v1.length;
 
     for (int i = 0; i < dim; i++) {
-      float elem1 = v1[i];
-      float elem2 = v2[i];
+      double elem1 = v1[i];
+      double elem2 = v2[i];
       sum += elem1 * elem2;
       norm1 += elem1 * elem1;
       norm2 += elem2 * elem2;
     }
-    var r = (float) (sum / Math.sqrt(norm1 * norm2));
-    checkFinite(r, v1, v2, "cosine");
-    return r;
+    float res = (float) (sum / Math.sqrt(norm1 * norm2));
+    checkFinite(res, v1, v2, "cosine");
+    return res;
   }
 
   private static void checkFinite(float r, float[] v1, float[] v2, String optype) {
@@ -173,18 +174,19 @@ public final class VectorUtil {
       throw new IllegalArgumentException(
           "vector dimensions differ: " + v1.length + "!=" + v2.length);
     }
-    float squareSum = 0.0f;
+    double squareSum = 0.0f;
     int dim = v1.length;
     int i;
     for (i = 0; i + 8 <= dim; i += 8) {
       squareSum += squareDistanceUnrolled(v1, v2, i);
     }
     for (; i < dim; i++) {
-      float diff = v1[i] - v2[i];
+      double diff = v1[i] - v2[i];
       squareSum += diff * diff;
     }
-    checkFinite(squareSum, v1, v2, "square distance");
-    return squareSum;
+    float resF = (float) squareSum;
+    checkFinite(resF, v1, v2, "square distance");
+    return resF;
   }
 
   private static float squareDistanceUnrolled(float[] v1, float[] v2, int index) {
