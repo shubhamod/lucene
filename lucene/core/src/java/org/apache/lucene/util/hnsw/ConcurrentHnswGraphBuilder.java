@@ -287,7 +287,7 @@ public final class ConcurrentHnswGraphBuilder<T> implements IHnswGraphBuilder<T>
     }
   }
 
-  private void addDiverseNeighbors(int level, int newNode, NeighborQueue candidates) {
+  private void addDiverseNeighbors(int level, int newNode, NeighborQueue candidates) throws IOException {
     // Add links from new node -> candidates.
     // See ConcurrentNeighborSet for an explanation of "diverse."
     ConcurrentNeighborSet neighbors = hnsw.getNeighbors(level, newNode);
@@ -302,27 +302,10 @@ public final class ConcurrentHnswGraphBuilder<T> implements IHnswGraphBuilder<T>
         });
   }
 
-  private NeighborArray popToScratch(NeighborQueue candidates) {
-    NeighborArray scratch = this.scratchNeighbors.get();
-    scratch.clear();
-    int candidateCount = candidates.size();
-    // extract all the Neighbors from the queue into an array; these will now be
-    // sorted from worst to best
-    for (int i = 0; i < candidateCount; i++) {
-      float maxSimilarity = candidates.topScore();
-      scratch.add(candidates.pop(), maxSimilarity);
-    }
-    return scratch;
-  }
-
-  private float scoreBetween(int i, int j) {
-    try {
-      final T v1 = vectorsCopy.vectorValue(i);
-      final T v2 = vectorsCopy.vectorValue(j);
-      return scoreBetween(v1, v2);
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
+  private float scoreBetween(int i, int j) throws IOException {
+    final T v1 = vectorsCopy.vectorValue(i);
+    final T v2 = vectorsCopy.vectorValue(j);
+    return scoreBetween(v1, v2);
   }
 
   private float scoreBetween(T v1, T v2) {
@@ -334,6 +317,19 @@ public final class ConcurrentHnswGraphBuilder<T> implements IHnswGraphBuilder<T>
       default:
         throw new IllegalArgumentException();
     }
+  }
+
+  private NeighborArray popToScratch(NeighborQueue candidates) {
+    NeighborArray scratch = this.scratchNeighbors.get();
+    scratch.clear();
+    int candidateCount = candidates.size();
+    // extract all the Neighbors from the queue into an array; these will now be
+    // sorted from worst to best
+    for (int i = 0; i < candidateCount; i++) {
+      float maxSimilarity = candidates.topScore();
+      scratch.add(candidates.pop(), maxSimilarity);
+    }
+    return scratch;
   }
 
   private static int getRandomGraphLevel(double ml) {

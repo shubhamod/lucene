@@ -26,9 +26,10 @@ import java.util.function.BiFunction;
 import java.util.stream.IntStream;
 import org.apache.lucene.index.VectorSimilarityFunction;
 import org.apache.lucene.tests.util.LuceneTestCase;
+import org.apache.lucene.util.hnsw.ConcurrentNeighborSet.ThrowingBiFunction;
 
 public class TestConcurrentNeighborSet extends LuceneTestCase {
-  private static final BiFunction<Integer, Integer, Float> simpleScore =
+  private static final ThrowingBiFunction<Integer, Integer, Float> simpleScore =
       (a, b) -> {
         return VectorSimilarityFunction.EUCLIDEAN.compare(new float[] {a}, new float[] {b});
       };

@@ -17,6 +17,7 @@
 
 package org.apache.lucene.util.hnsw;
 
+import java.io.IOException;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.NavigableSet;
@@ -78,7 +79,7 @@ public class ConcurrentNeighborSet {
    * that chose this one as a neighbor.
    */
   public void insertDiverse(
-      NeighborArray candidates, BiFunction<Integer, Integer, Float> scoreBetween) {
+      NeighborArray candidates, ThrowingBiFunction<Integer, Integer, Float> scoreBetween) throws IOException {
     for (int i = candidates.size() - 1; neighbors.size() < maxConnections && i >= 0; i--) {
       int cNode = candidates.node[i];
       float cScore = candidates.score[i];
@@ -109,7 +110,7 @@ public class ConcurrentNeighborSet {
   // is the candidate node with the given score closer to the base node than it is to any of the
   // existing neighbors
   private boolean isDiverse(
-      int node, float score, BiFunction<Integer, Integer, Float> scoreBetween) {
+      int node, float score, ThrowingBiFunction<Integer, Integer, Float> scoreBetween) {
     for (Long encoded : neighbors) {
       if (scoreBetween.apply(decodeNodeId(encoded), node) > score) {
         return false;
@@ -123,7 +124,7 @@ public class ConcurrentNeighborSet {
    * look at all nodes e2 that are closer to the base node than e1 is. if any e2 is closer to e1
    * than e1 is to the base node, remove e1.
    */
-  private void removeLeastDiverse(BiFunction<Integer, Integer, Float> scoreBetween) {
+  private void removeLeastDiverse(ThrowingBiFunction<Integer, Integer, Float> scoreBetween) {
     for (Long e1 : neighbors.descendingSet()) {
       int e1Id = decodeNodeId(e1);
       float baseScore = decodeScore(e1);
@@ -190,5 +191,15 @@ public class ConcurrentNeighborSet {
 
   static int decodeNodeId(long heapValue) {
     return (int) ~(heapValue);
+  }
+
+  @FunctionalInterface
+  public interface ThrowingBiFunction<T, U, R> {
+    R apply(T t, U u) throws IOException;
+  }
+
+  @FunctionalInterface
+  public interface ThrowingBiConsumer<T, U> {
+    void accept(T t, U u) throws IOException;
   }
 }
