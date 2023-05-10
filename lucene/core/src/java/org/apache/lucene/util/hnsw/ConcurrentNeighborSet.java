@@ -24,8 +24,6 @@ import java.util.NavigableSet;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.lucene.util.NumericUtils;
-import org.apache.lucene.util.hnsw.ConcurrentHnswGraphBuilder.ThrowingBiConsumer;
-import org.apache.lucene.util.hnsw.ConcurrentHnswGraphBuilder.ThrowingBiFunction;
 
 /**
  * A concurrent set of neighbors
@@ -198,5 +196,15 @@ public class ConcurrentNeighborSet {
 
   static int decodeNodeId(long heapValue) {
     return (int) ~(heapValue);
+  }
+
+  @FunctionalInterface
+  public interface ThrowingBiFunction<T, U, R> {
+    R apply(T t, U u) throws IOException;
+  }
+
+  @FunctionalInterface
+  public interface ThrowingBiConsumer<T, U> {
+    void accept(T t, U u) throws IOException;
   }
 }
