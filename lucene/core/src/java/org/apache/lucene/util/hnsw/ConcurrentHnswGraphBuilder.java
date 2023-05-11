@@ -56,6 +56,7 @@ import org.apache.lucene.util.hnsw.ConcurrentOnHeapHnswGraph.NodeAtLevel;
  * @param <T> the type of vector
  */
 public class ConcurrentHnswGraphBuilder<T> {
+  protected static final Log LOG = new Log();
 
   /** Default number of maximum connections per node */
   public static final int DEFAULT_MAX_CONN = 16;
@@ -128,7 +129,7 @@ public class ConcurrentHnswGraphBuilder<T> {
     }
     this.beamWidth = beamWidth;
     // normalization factor for level generation; currently not configurable
-    this.ml = 0.25;
+    this.ml = M == 1 ? 1 : 1 / Math.log(1.0 * M);
     this.hnsw = new ConcurrentOnHeapHnswGraph(M);
     this.graphSearcher =
         ExplicitThreadLocal.withInitial(
@@ -301,7 +302,7 @@ public class ConcurrentHnswGraphBuilder<T> {
     // do this before adding to in-progress, so a concurrent writer checking
     // the in-progress set doesn't have to worry about uninitialized neighbor sets
     final int nodeLevel = getRandomGraphLevel(ml);
-    System.out.format("%s adding node %s at level %s%n", Thread.currentThread().getId(), node, nodeLevel);
+    LOG.info(String.format("%s adding node %s at level %s", Thread.currentThread().getId(), node, nodeLevel));
     for (int level = nodeLevel; level >= 0; level--) {
       hnsw.addNode(level, node);
     }
@@ -316,7 +317,8 @@ public class ConcurrentHnswGraphBuilder<T> {
       int[] eps = ep >= 0 ? new int[] {ep} : new int[0];
       NeighborQueue candidates;
 
-      // if we're being added in a new level above the entry point, add any concurrent insertions as neighbors
+      // if we're being added in a new level above the entry point, add any concurrent insertions
+      // as neighbors at that level
       for (int level = nodeLevel; level > entry.level; level--) {
         candidates = new NeighborQueue(inProgressBefore.size(), false);
         for (NodeAtLevel n : inProgressBefore) {
@@ -339,7 +341,7 @@ public class ConcurrentHnswGraphBuilder<T> {
         // find best candidates at this level with a beam search
         candidates =
             graphSearcher.get().searchLevel(value, beamWidth, level, eps, vectors, hnsw.getView());
-        System.out.format("%s initial candidates %s%n", Thread.currentThread().getId(), Arrays.toString(candidates.nodes()));
+        LOG.info(String.format("%s L%s initial candidates %s", Thread.currentThread().getId(), level, Arrays.toString(candidates.nodes())));
         // any nodes that are being added concurrently at this level are also candidates
         int thisLevel = level;
         Set<Integer> concurrentCandidates = inProgressBefore
@@ -347,7 +349,7 @@ public class ConcurrentHnswGraphBuilder<T> {
             .filter(n -> n.level >= thisLevel && n != progressMarker)
             .map(n -> n.node)
             .collect(Collectors.toSet());
-        System.out.format("%s concurrent additions are %s%n", Thread.currentThread().getId(), concurrentCandidates);
+        LOG.info(String.format("%s    concurrent additions are %s", Thread.currentThread().getId(), concurrentCandidates));
         Set<Integer> discardedConcurrent = new HashSet<>();
         for (var concurrentId : concurrentCandidates) {
           float score = scoreBetween(value, vectorsCopy.vectorValue(concurrentId));
@@ -367,7 +369,7 @@ public class ConcurrentHnswGraphBuilder<T> {
       // update entry node last, once everything is wired together
       hnsw.maybeUpdateEntryNode(nodeLevel, node);
     } finally {
-      System.out.format("%s finished adding node %s%n", Thread.currentThread().getId(), node);
+      LOG.info(String.format("%s finished adding node %s", Thread.currentThread().getId(), node));
       insertionsInProgress.remove(progressMarker);
     }
   }
@@ -377,11 +379,15 @@ public class ConcurrentHnswGraphBuilder<T> {
     // Add links from new node -> candidates.
     // See ConcurrentNeighborSet for an explanation of "diverse."
     ConcurrentNeighborSet neighbors = hnsw.getNeighbors(level, newNode);
-    System.out.format("%s neighbors are %s%n", Thread.currentThread().getId(), Arrays.toString(candidates.nodes()));
     NeighborArray scratch = popToScratch(candidates); // invert order so best are at front
+    LOG.info(String.format("%s    pre-diverse neighbors are %s",
+        Thread.currentThread().getId(), Arrays.toString(Arrays.copyOf(scratch.node(), scratch.size()))));
     neighbors.insertDiverse(scratch, this::scoreBetween);
+    LOG.info(String.format("%s    final neighbors are %s",
+        Thread.currentThread().getId(), neighbors.neighborsAsList()));
 
     // Add backlinks from candidates -> new node (again applying diversity heuristic)
+    // TODO neighbors could be modified by another thread, do we care?
     neighbors.forEach(
         (nbr, nbrScore) -> {
           ConcurrentNeighborSet nbrNbr = hnsw.getNeighbors(level, nbr);

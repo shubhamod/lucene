@@ -74,6 +74,7 @@ import org.apache.lucene.util.hnsw.HnswGraph.NodesIterator;
 
 /** Tests HNSW KNN graphs */
 abstract class ConcurrentHnswGraphTestCase<T> extends LuceneTestCase {
+  protected static final Log LOG = ConcurrentHnswGraphBuilder.LOG;
 
   VectorSimilarityFunction similarityFunction;
 

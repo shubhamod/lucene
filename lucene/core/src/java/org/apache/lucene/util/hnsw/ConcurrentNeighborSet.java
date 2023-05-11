@@ -18,8 +18,10 @@
 package org.apache.lucene.util.hnsw;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Iterator;
+import java.util.List;
 import java.util.NavigableSet;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -62,6 +64,15 @@ public class ConcurrentNeighborSet {
         return decodeNodeId(it.next());
       }
     };
+  }
+
+  // for debugging
+  List<Integer> neighborsAsList() {
+    ArrayList<Integer> res = new ArrayList<>();
+    for (Long encoded : neighbors) {
+      res.add(decodeNodeId(encoded));
+    }
+    return res;
   }
 
   public int size() {
