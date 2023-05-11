@@ -163,6 +163,7 @@ public class TestConcurrentHnswFloatVectorGraph extends ConcurrentHnswGraphTestC
 
   public void testRepeatedly() throws IOException {
     while (true) {
+      System.out.println("------------- new run ---------------");
       testConnections();
     }
   }
