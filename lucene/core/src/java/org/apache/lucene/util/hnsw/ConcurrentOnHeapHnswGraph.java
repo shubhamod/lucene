@@ -232,7 +232,9 @@ public final class ConcurrentOnHeapHnswGraph extends HnswGraph implements Accoun
       return;
     }
     var en = entryPoint.get();
-    assert en.level >= 0 && en.node >= 0 && graphLevels.get(en.level).containsKey(en.node);
+    if (!(en.level >= 0 && en.node >= 0 && graphLevels.get(en.level).containsKey(en.node))) {
+      throw new IllegalStateException("Entry node was incompletely added! " + en);
+    }
   }
 
   private class ConcurrentHnswGraphView extends HnswGraph {
