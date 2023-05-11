@@ -448,7 +448,7 @@ abstract class ConcurrentHnswGraphTestCase<T> extends LuceneTestCase {
 
   @SuppressWarnings("unchecked")
   public void testSearchWithSelectiveAcceptOrds() throws IOException {
-    int nDoc = 30;
+    int nDoc = 100;
     RandomAccessVectorValues<T> vectors = circularVectorValues(nDoc);
     similarityFunction = VectorSimilarityFunction.DOT_PRODUCT;
     VectorEncoding vectorEncoding = getVectorEncoding();
@@ -458,7 +458,7 @@ abstract class ConcurrentHnswGraphTestCase<T> extends LuceneTestCase {
     // Only mark a few vectors as accepted
     BitSet acceptOrds = new FixedBitSet(nDoc);
     List<Integer> acceptedList = new ArrayList<>();
-    for (int i = 0; i < nDoc; i += random().nextInt(3, 7)) {
+    for (int i = 0; i < nDoc; i += random().nextInt(15, 20)) {
       acceptOrds.set(i);
       acceptedList.add(i);
     }
