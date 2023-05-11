@@ -140,6 +140,10 @@ public final class ConcurrentOnHeapHnswGraph extends HnswGraph implements Accoun
     return entryPoint.get().node;
   }
 
+  NodeAtLevel entry() {
+    return entryPoint.get();
+  }
+
   @Override
   public NodesIterator getNodesOnLevel(int level) {
     if (level == 0) {

@@ -307,19 +307,19 @@ public class ConcurrentHnswGraphBuilder<T> {
     insertionsInProgress.add(progressMarker);
     ConcurrentSkipListSet<NodeAtLevel> inProgressBefore = insertionsInProgress.clone();
     try {
-      NeighborQueue candidates;
-      int curMaxLevel = hnsw.numLevels() - 1;
-
       // find ANN of the new node by searching the graph
-      int ep = hnsw.entryNode();
+      NodeAtLevel entry = hnsw.entry();
+      int ep = entry.node;
       int[] eps = ep >= 0 ? new int[] {ep} : new int[0];
+
+      NeighborQueue candidates;
       // for levels > nodeLevel search with topk = 1
-      for (int level = curMaxLevel; level > nodeLevel; level--) {
+      for (int level = entry.level; level > nodeLevel; level--) {
         candidates = graphSearcher.get().searchLevel(value, 1, level, eps, vectors, hnsw.getView());
         eps = new int[] {candidates.pop()};
       }
       // for levels <= nodeLevel search with topk = beamWidth, and add connections
-      for (int level = Math.min(nodeLevel, curMaxLevel); level >= 0; level--) {
+      for (int level = Math.min(nodeLevel, entry.level); level >= 0; level--) {
         // find best candidates at this level with a beam search
         candidates =
             graphSearcher.get().searchLevel(value, beamWidth, level, eps, vectors, hnsw.getView());
