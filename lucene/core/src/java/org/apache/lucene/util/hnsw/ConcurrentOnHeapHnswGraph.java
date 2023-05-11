@@ -290,39 +290,4 @@ public final class ConcurrentOnHeapHnswGraph extends HnswGraph implements Accoun
       return "NodeAtLevel(level=" + level + ", node=" + node + ")";
     }
   }
-
-  void validateReachability() {
-    for (int level = 0; level < numLevels(); level++) {
-      validateReachability(level);
-    }
-  }
-
-  private void validateReachability(int level) {
-    ConcurrentMap<Integer, ConcurrentNeighborSet> levelGraph = graphLevels.get(level);
-
-    for (Integer node : levelGraph.keySet()) {
-      validateNodeCanReachOthers(node, levelGraph);
-    }
-  }
-
-  private void validateNodeCanReachOthers(Integer startNode, ConcurrentMap<Integer, ConcurrentNeighborSet> levelGraph) {
-    Set<Integer> remaining = new HashSet<>(levelGraph.keySet());
-    dfs(startNode, levelGraph, remaining);
-    assert remaining.isEmpty() : "Node " + startNode + " cannot reach " + remaining;
-  }
-
-  // Performs a depth-first search from a starting node
-  private void dfs(Integer node, ConcurrentMap<Integer, ConcurrentNeighborSet> levelGraph, Set<Integer> remaining) {
-    remaining.remove(node);
-    ConcurrentNeighborSet neighbors = levelGraph.get(node);
-    try {
-      neighbors.forEach((neighborId, score_) -> {
-        if (remaining.contains(neighborId)) {
-          dfs(neighborId, levelGraph, remaining);
-        }
-      });
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
-  }
 }
