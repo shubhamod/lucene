@@ -37,6 +37,8 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
+
 import org.apache.lucene.index.VectorEncoding;
 import org.apache.lucene.index.VectorSimilarityFunction;
 import org.apache.lucene.util.AtomicBitSet;
@@ -322,16 +324,26 @@ public class ConcurrentHnswGraphBuilder<T> {
         candidates =
             graphSearcher.get().searchLevel(value, beamWidth, level, eps, vectors, hnsw.getView());
         // any nodes that are being added concurrently at this level are also candidates
-        HashSet<Integer> concurrentAtLevel = new HashSet<>();
-        for (NodeAtLevel concurrentCandidate : inProgressBefore) {
-          if (concurrentCandidate.level < level || concurrentCandidate == progressMarker) {
-            continue;
+        int thisLevel = level;
+        Set<Integer> concurrentCandidates = inProgressBefore
+            .stream()
+            .filter(n -> n.level >= thisLevel && n != progressMarker)
+            .map(n -> n.node)
+            .collect(Collectors.toSet());
+        Set<Integer> discardedConcurrent = new HashSet<>();
+        for (var concurrentId : concurrentCandidates) {
+          float score = scoreBetween(value, vectorsCopy.vectorValue(concurrentId));
+          candidates.add(concurrentId, score);
+          if (candidates.size() > beamWidth) {
+            int discardedId = candidates.pop();
+            if (concurrentCandidates.contains(discardedId)) {
+              discardedConcurrent.add(discardedId);
+            }
           }
-          concurrentAtLevel.add(concurrentCandidate.node);
         }
         // update entry points and neighbors with these candidates
         eps = candidates.nodes();
-        addDiverseNeighbors(level, node, value, candidates, concurrentAtLevel);
+        addDiverseNeighbors(level, node, candidates, discardedConcurrent);
       }
 
       // update entry node last, once everything is wired together
@@ -341,17 +353,8 @@ public class ConcurrentHnswGraphBuilder<T> {
     }
   }
 
-  private void addDiverseNeighbors(int level, int newNode, T newValue, NeighborQueue candidates, Set<Integer> concurrentAtLevel)
+  private void addDiverseNeighbors(int level, int newNode, NeighborQueue candidates, Set<Integer> discardedConcurrent)
       throws IOException {
-    // add concurrent nodes to candidates pool
-    for (int concurrentId : concurrentAtLevel) {
-      float score = scoreBetween(newValue, vectorsCopy.vectorValue(concurrentId));
-      candidates.add(concurrentId, score);
-      if (candidates.size() > beamWidth) {
-        candidates.pop(); // candidates has worst at the front
-      }
-    }
-
     // Add links from new node -> candidates.
     // See ConcurrentNeighborSet for an explanation of "diverse."
     ConcurrentNeighborSet neighbors = hnsw.getNeighbors(level, newNode);
@@ -363,12 +366,10 @@ public class ConcurrentHnswGraphBuilder<T> {
         (nbr, nbrScore) -> {
           ConcurrentNeighborSet nbrNbr = hnsw.getNeighbors(level, nbr);
           nbrNbr.insert(newNode, nbrScore, this::scoreBetween);
-          concurrentAtLevel.remove(nbr);
         });
     // add backlinks from remaining concurrent, to this one;
     // we rely on insert()'s diversity check to prune it if it's not good
-    for (var nbr : concurrentAtLevel) {
-      // TODO avoid computing score again; we already did it at the start of this method
+    for (var nbr : discardedConcurrent) {
       ConcurrentNeighborSet nbrNbr = hnsw.getNeighbors(level, nbr);
       nbrNbr.insert(newNode, scoreBetween(nbr, newNode), this::scoreBetween);
     }
