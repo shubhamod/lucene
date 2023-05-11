@@ -20,6 +20,7 @@ package org.apache.lucene.util.hnsw;
 import static java.lang.Math.log;
 
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -267,6 +268,7 @@ public class ConcurrentHnswGraphBuilder<T> {
           if (asyncException.get() != null) {
             throw new CompletionException(asyncException.get());
           }
+          hnsw.validateEntryNode();
           return hnsw;
         });
   }
@@ -320,19 +322,16 @@ public class ConcurrentHnswGraphBuilder<T> {
         candidates =
             graphSearcher.get().searchLevel(value, beamWidth, level, eps, vectors, hnsw.getView());
         // any nodes that are being added concurrently at this level are also candidates
+        HashSet<Integer> concurrentAtLevel = new HashSet<>();
         for (NodeAtLevel concurrentCandidate : inProgressBefore) {
           if (concurrentCandidate.level < level || concurrentCandidate == progressMarker) {
             continue;
           }
-          float score = scoreBetween(value, vectorsCopy.vectorValue(concurrentCandidate.node));
-          candidates.add(concurrentCandidate.node, score);
-          if (candidates.size() > beamWidth) {
-            candidates.pop();
-          }
+          concurrentAtLevel.add(concurrentCandidate.node);
         }
         // update entry points and neighbors with these candidates
         eps = candidates.nodes();
-        addDiverseNeighbors(level, node, candidates);
+        addDiverseNeighbors(level, node, value, candidates, concurrentAtLevel);
       }
 
       // update entry node last, once everything is wired together
@@ -342,20 +341,37 @@ public class ConcurrentHnswGraphBuilder<T> {
     }
   }
 
-  private void addDiverseNeighbors(int level, int newNode, NeighborQueue candidates)
+  private void addDiverseNeighbors(int level, int newNode, T newValue, NeighborQueue candidates, Set<Integer> concurrentAtLevel)
       throws IOException {
+    // add concurrent nodes to candidates pool
+    for (int concurrentId : concurrentAtLevel) {
+      float score = scoreBetween(newValue, vectorsCopy.vectorValue(concurrentId));
+      candidates.add(concurrentId, score);
+      if (candidates.size() > beamWidth) {
+        candidates.pop(); // candidates has worst at the front
+      }
+    }
+
     // Add links from new node -> candidates.
     // See ConcurrentNeighborSet for an explanation of "diverse."
     ConcurrentNeighborSet neighbors = hnsw.getNeighbors(level, newNode);
-    NeighborArray scratch = popToScratch(candidates);
+    NeighborArray scratch = popToScratch(candidates); // invert order so best are at front
     neighbors.insertDiverse(scratch, this::scoreBetween);
 
-    // Add links from candidates -> new node (again applying diversity heuristic)
+    // Add backlinks from candidates -> new node (again applying diversity heuristic)
     neighbors.forEach(
         (nbr, nbrScore) -> {
           ConcurrentNeighborSet nbrNbr = hnsw.getNeighbors(level, nbr);
           nbrNbr.insert(newNode, nbrScore, this::scoreBetween);
+          concurrentAtLevel.remove(nbr);
         });
+    // add backlinks from remaining concurrent, to this one;
+    // we rely on insert()'s diversity check to prune it if it's not good
+    for (var nbr : concurrentAtLevel) {
+      // TODO avoid computing score again; we already did it at the start of this method
+      ConcurrentNeighborSet nbrNbr = hnsw.getNeighbors(level, nbr);
+      nbrNbr.insert(newNode, scoreBetween(nbr, newNode), this::scoreBetween);
+    }
   }
 
   private float scoreBetween(int i, int j) throws IOException {

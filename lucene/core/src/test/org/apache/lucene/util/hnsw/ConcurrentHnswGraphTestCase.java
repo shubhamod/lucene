@@ -433,25 +433,55 @@ abstract class ConcurrentHnswGraphTestCase<T> extends LuceneTestCase {
     assertTrue("sum(result docs)=" + sum, sum < 75);
   }
 
+  public void testRepeatedly() throws IOException {
+    while (true) {
+      testSearchWithSelectiveAcceptOrds();
+    }
+  }
+
   @SuppressWarnings("unchecked")
   public void testSearchWithSelectiveAcceptOrds() throws IOException {
-    int nDoc = 100;
+    int nDoc = 10;
     RandomAccessVectorValues<T> vectors = circularVectorValues(nDoc);
     similarityFunction = VectorSimilarityFunction.DOT_PRODUCT;
     VectorEncoding vectorEncoding = getVectorEncoding();
-    random().nextInt();
     ConcurrentHnswGraphBuilder<T> builder =
         new ConcurrentHnswGraphBuilder<>(vectors, vectorEncoding, similarityFunction, 16, 100);
     ConcurrentOnHeapHnswGraph hnsw = builder.build(vectors.copy());
     // Only mark a few vectors as accepted
     BitSet acceptOrds = new FixedBitSet(nDoc);
-    for (int i = 0; i < nDoc; i += random().nextInt(15, 20)) {
+    List<Integer> acceptedList = new ArrayList<>();
+    for (int i = 0; i < nDoc; i += random().nextInt(2, 6)) {
       acceptOrds.set(i);
+      acceptedList.add(i);
     }
 
     // Check the search finds all accepted vectors
     int numAccepted = acceptOrds.cardinality();
-    NeighborQueue nn =
+    HnswGraph hnsw1 = hnsw.getView();
+    NeighborQueue nn = switch (getVectorEncoding()) {
+      case FLOAT32 -> HnswGraphSearcher.search(
+          (float[]) getTargetVector(),
+          numAccepted,
+          (RandomAccessVectorValues<float[]>) vectors.copy(),
+          getVectorEncoding(),
+          similarityFunction,
+          hnsw1,
+          acceptOrds,
+          Integer.MAX_VALUE);
+      case BYTE -> HnswGraphSearcher.search(
+          (byte[]) getTargetVector(),
+          numAccepted,
+          (RandomAccessVectorValues<byte[]>) vectors.copy(),
+          getVectorEncoding(),
+          similarityFunction,
+          hnsw1,
+          acceptOrds,
+          Integer.MAX_VALUE);
+    };
+
+    HnswGraph serial = HnswGraphBuilder.create(vectors, vectorEncoding, similarityFunction, 16, 100, random().nextInt()).build(vectors.copy());
+    NeighborQueue nnS =
         switch (getVectorEncoding()) {
           case FLOAT32 -> HnswGraphSearcher.search(
               (float[]) getTargetVector(),
@@ -459,7 +489,7 @@ abstract class ConcurrentHnswGraphTestCase<T> extends LuceneTestCase {
               (RandomAccessVectorValues<float[]>) vectors.copy(),
               getVectorEncoding(),
               similarityFunction,
-              hnsw.getView(),
+              serial,
               acceptOrds,
               Integer.MAX_VALUE);
           case BYTE -> HnswGraphSearcher.search(
@@ -468,12 +498,48 @@ abstract class ConcurrentHnswGraphTestCase<T> extends LuceneTestCase {
               (RandomAccessVectorValues<byte[]>) vectors.copy(),
               getVectorEncoding(),
               similarityFunction,
-              hnsw.getView(),
+              serial,
               acceptOrds,
               Integer.MAX_VALUE);
         };
+    int[] serialNodes = nnS.nodes();
 
     int[] nodes = nn.nodes();
+
+    if (nodes.length != nnS.nodes().length) {
+      System.out.printf("Found results %s instead of %s in\n%sCompare serial with %s results\n%s\n",
+          Arrays.toString(nodes), acceptedList, prettyPrint(hnsw), serialNodes.length, prettyPrint(serial));
+      hnsw.validateReachability();
+      try {
+        Thread.sleep(100);
+      } catch (InterruptedException e) {
+        throw new RuntimeException(e);
+      }
+
+      nn = switch (getVectorEncoding()) {
+        case FLOAT32 -> HnswGraphSearcher.search(
+            (float[]) getTargetVector(),
+            numAccepted,
+            (RandomAccessVectorValues<float[]>) vectors.copy(),
+            getVectorEncoding(),
+            similarityFunction,
+            hnsw.getView(),
+            acceptOrds,
+            Integer.MAX_VALUE);
+        case BYTE -> HnswGraphSearcher.search(
+            (byte[]) getTargetVector(),
+            numAccepted,
+            (RandomAccessVectorValues<byte[]>) vectors.copy(),
+            getVectorEncoding(),
+            similarityFunction,
+            hnsw.getView(),
+            acceptOrds,
+            Integer.MAX_VALUE);
+      };
+      nodes = nn.nodes();
+      assert nodes.length != nnS.nodes().length;
+    }
+
     assertEquals(numAccepted, nodes.length);
     for (int node : nodes) {
       assertTrue("the results include a deleted document: " + node, acceptOrds.get(node));
@@ -784,6 +850,7 @@ abstract class ConcurrentHnswGraphTestCase<T> extends LuceneTestCase {
     ConcurrentHnswGraphBuilder<T> builder =
         new ConcurrentHnswGraphBuilder<>(vectors, vectorEncoding, similarityFunction, M, M * 2);
     ConcurrentOnHeapHnswGraph hnsw = builder.build(vectors.copy());
+    System.out.println("Graph size is " + hnsw.size() + " out of " + size);
     long estimated = RamUsageEstimator.sizeOfObject(hnsw);
     long actual = ramUsed(hnsw);
 
@@ -1257,6 +1324,9 @@ abstract class ConcurrentHnswGraphTestCase<T> extends LuceneTestCase {
   }
 
   static String prettyPrint(HnswGraph hnsw) {
+    if (hnsw instanceof ConcurrentOnHeapHnswGraph) {
+      hnsw = ((ConcurrentOnHeapHnswGraph) hnsw).getView();
+    }
     StringBuilder sb = new StringBuilder();
     sb.append(hnsw);
     sb.append("\n");

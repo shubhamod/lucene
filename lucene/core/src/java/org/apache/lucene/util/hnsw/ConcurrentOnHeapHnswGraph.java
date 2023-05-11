@@ -20,11 +20,15 @@ package org.apache.lucene.util.hnsw;
 import static org.apache.lucene.search.DocIdSetIterator.NO_MORE_DOCS;
 
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReference;
 import org.apache.lucene.util.Accountable;
+import org.apache.lucene.util.BitSet;
+import org.apache.lucene.util.FixedBitSet;
 import org.apache.lucene.util.RamUsageEstimator;
 
 /**
@@ -81,7 +85,7 @@ public final class ConcurrentOnHeapHnswGraph extends HnswGraph implements Accoun
       }
     }
 
-    graphLevels.get(level).put(node, new ConcurrentNeighborSet(connectionsOnLevel(level)));
+    graphLevels.get(level).put(node, new ConcurrentNeighborSet(node, connectionsOnLevel(level)));
   }
 
   /**
@@ -216,6 +220,14 @@ public final class ConcurrentOnHeapHnswGraph extends HnswGraph implements Accoun
     return new ConcurrentHnswGraphView();
   }
 
+  void validateEntryNode() {
+    if (size() == 0) {
+      return;
+    }
+    var en = entryPoint.get();
+    assert en.level >= 0 && en.node >= 0 && graphLevels.get(en.level).containsKey(en.node);
+  }
+
   private class ConcurrentHnswGraphView extends HnswGraph {
     private Iterator<Integer> remainingNeighbors;
 
@@ -248,6 +260,11 @@ public final class ConcurrentOnHeapHnswGraph extends HnswGraph implements Accoun
     public int nextNeighbor() {
       return remainingNeighbors.hasNext() ? remainingNeighbors.next() : NO_MORE_DOCS;
     }
+
+    @Override
+    public String toString() {
+      return "ConcurrentOnHeapHnswGraphView(size=" + size() + ", entryPoint=" + entryPoint.get();
+    }
   }
 
   static final class NodeAtLevel implements Comparable<NodeAtLevel> {
@@ -271,6 +288,41 @@ public final class ConcurrentOnHeapHnswGraph extends HnswGraph implements Accoun
     @Override
     public String toString() {
       return "NodeAtLevel(level=" + level + ", node=" + node + ")";
+    }
+  }
+
+  void validateReachability() {
+    for (int level = 0; level < numLevels(); level++) {
+      validateReachability(level);
+    }
+  }
+
+  private void validateReachability(int level) {
+    ConcurrentMap<Integer, ConcurrentNeighborSet> levelGraph = graphLevels.get(level);
+
+    for (Integer node : levelGraph.keySet()) {
+      validateNodeCanReachOthers(node, levelGraph);
+    }
+  }
+
+  private void validateNodeCanReachOthers(Integer startNode, ConcurrentMap<Integer, ConcurrentNeighborSet> levelGraph) {
+    Set<Integer> remaining = new HashSet<>(levelGraph.keySet());
+    dfs(startNode, levelGraph, remaining);
+    assert remaining.isEmpty() : "Node " + startNode + " cannot reach " + remaining;
+  }
+
+  // Performs a depth-first search from a starting node
+  private void dfs(Integer node, ConcurrentMap<Integer, ConcurrentNeighborSet> levelGraph, Set<Integer> remaining) {
+    remaining.remove(node);
+    ConcurrentNeighborSet neighbors = levelGraph.get(node);
+    try {
+      neighbors.forEach((neighborId, score_) -> {
+        if (remaining.contains(neighborId)) {
+          dfs(neighborId, levelGraph, remaining);
+        }
+      });
+    } catch (IOException e) {
+      throw new RuntimeException(e);
     }
   }
 }

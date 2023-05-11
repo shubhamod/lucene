@@ -174,6 +174,16 @@ public class NeighborQueue {
     this.incomplete = true;
   }
 
+  /** for debugging */
+  int[] decodedNodes() {
+    int size = size();
+    int[] nodes = new int[size];
+    for (int i = 0; i < size; i++) {
+      nodes[i] = decodeNodeId(heap.get(i + 1));
+    }
+    return nodes;
+  }
+
   @Override
   public String toString() {
     return "Neighbors[" + heap.size() + "]";
