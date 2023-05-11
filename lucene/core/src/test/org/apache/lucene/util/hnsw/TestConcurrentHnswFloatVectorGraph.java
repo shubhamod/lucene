@@ -160,4 +160,11 @@ public class TestConcurrentHnswFloatVectorGraph extends ConcurrentHnswGraphTestC
     // are closest to the query vector: sum(500,509) = 5045
     assertTrue("sum(result docs)=" + sum, sum < 5100);
   }
+
+  public void testRepeatedly() throws IOException {
+    while (true) {
+      System.out.println("------------- new run ---------------");
+      testConnections();
+    }
+  }
 }

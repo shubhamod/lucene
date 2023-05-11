@@ -433,10 +433,16 @@ abstract class ConcurrentHnswGraphTestCase<T> extends LuceneTestCase {
     assertTrue("sum(result docs)=" + sum, sum < 75);
   }
 
-  public void testRepeatedly() throws IOException {
-    while (true) {
-      testSearchWithSelectiveAcceptOrds();
-    }
+  @SuppressWarnings("unchecked")
+  public void testConnections() throws IOException {
+    int nDoc = 5;
+    RandomAccessVectorValues<T> vectors = circularVectorValues(nDoc);
+    similarityFunction = VectorSimilarityFunction.DOT_PRODUCT;
+    VectorEncoding vectorEncoding = getVectorEncoding();
+    ConcurrentHnswGraphBuilder<T> builder =
+        new ConcurrentHnswGraphBuilder<>(vectors, vectorEncoding, similarityFunction, 16, 100);
+    ConcurrentOnHeapHnswGraph hnsw = builder.build(vectors.copy());
+    new HnswGraphValidator(hnsw).validateReachability();
   }
 
   @SuppressWarnings("unchecked")
