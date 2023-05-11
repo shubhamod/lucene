@@ -466,16 +466,15 @@ public class ConcurrentHnswGraphBuilder<T> {
   }
 
   private static class InvertedBitSet extends BitSet {
-    SparseFixedBitSet wrapped;
+    private final int setBit;
 
     public InvertedBitSet(int setBit) {
-      wrapped = new SparseFixedBitSet(setBit + 1);
-      wrapped.set(setBit);
+      this.setBit = setBit;
     }
 
     @Override
     public long ramBytesUsed() {
-      return wrapped.ramBytesUsed();
+      return 4;
     }
 
     @Override
@@ -500,12 +499,12 @@ public class ConcurrentHnswGraphBuilder<T> {
 
     @Override
     public int cardinality() {
-      return wrapped.cardinality() - 1;
+      return 1;
     }
 
     @Override
     public int approximateCardinality() {
-      return wrapped.approximateCardinality() - 1;
+      return 1;
     }
 
     @Override
@@ -520,12 +519,12 @@ public class ConcurrentHnswGraphBuilder<T> {
 
     @Override
     public boolean get(int index) {
-      return !wrapped.get(index);
+      return index != setBit;
     }
 
     @Override
     public int length() {
-      return wrapped.length();
+      return 1;
     }
   }
 }
