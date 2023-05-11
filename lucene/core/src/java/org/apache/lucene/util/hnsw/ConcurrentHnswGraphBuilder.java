@@ -21,6 +21,7 @@ import static java.lang.Math.log;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
@@ -313,10 +314,21 @@ public class ConcurrentHnswGraphBuilder<T> {
       NodeAtLevel entry = hnsw.entry();
       int ep = entry.node;
       int[] eps = ep >= 0 ? new int[] {ep} : new int[0];
-
-      // TODO there is a bug if two nodes get concurrently added above currMaxLevel, since we only
-      // check in-progress candidates for currMaxLevel and below
       NeighborQueue candidates;
+
+      // if we're being added in a new level above the entry point, add any concurrent insertions as neighbors
+      for (int level = nodeLevel; level > entry.level; level--) {
+        candidates = new NeighborQueue(inProgressBefore.size(), false);
+        for (NodeAtLevel n : inProgressBefore) {
+          if (n.level >= level && n != progressMarker) {
+            candidates.add(n.node, scoreBetween(n.node, node));
+          }
+        }
+
+        addDiverseNeighbors(level, node, candidates, Collections.emptySet());
+      }
+
+      // check in-progress candidates for currMaxLevel and below
       // for levels > nodeLevel search with topk = 1
       for (int level = entry.level; level > nodeLevel; level--) {
         candidates = graphSearcher.get().searchLevel(value, 1, level, eps, vectors, hnsw.getView());
