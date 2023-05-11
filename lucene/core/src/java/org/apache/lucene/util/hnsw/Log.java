@@ -17,6 +17,7 @@ public class Log {
 
   public void info(String s) {
     try {
+      System.out.println(s);
       out.write(s + "\n");
     } catch (IOException e) {
       e.printStackTrace();

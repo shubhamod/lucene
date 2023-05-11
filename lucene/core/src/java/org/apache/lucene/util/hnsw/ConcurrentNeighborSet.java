@@ -97,20 +97,22 @@ public class ConcurrentNeighborSet {
 
   /**
    * For each candidate (going from best to worst), select it only if it is closer to target than it
-   * is to any of the already-selected neighbors. This is maintained whether those other neighbors
+   * is to any of the already-selected candidates. This is maintained whether those other neighbors
    * were selected by this method, or were added as a "backlink" to a node inserted concurrently
    * that chose this one as a neighbor.
    */
   public void insertDiverse(
       NeighborArray candidates, ThrowingBiFunction<Integer, Integer, Float> scoreBetween)
       throws IOException {
-    for (int i = candidates.size() - 1; neighbors.size() < maxConnections && i >= 0; i--) {
+    NeighborArray selected = new NeighborArray(candidates.size(), true);
+    for (int i = candidates.size() - 1, j = 0; neighbors.size() < maxConnections && i >= 0; i--) {
       int cNode = candidates.node[i];
       float cScore = candidates.score[i];
       // TODO in the paper, the diversity requirement is only enforced when there are more than
       // maxConn
-      if (isDiverse(cNode, cScore, scoreBetween)) {
-        // raw inserts (invoked by other threads inserting neighbors) could happen concurrently,
+      if (isDiverse(cNode, cScore, selected, scoreBetween)) {
+        selected.add(cNode, cScore);
+        // raw inserts (invoked by other threads backlinking to us) could happen concurrently,
         // so don't "cheat" and do a raw put()
         insert(cNode, cScore, scoreBetween);
       }
@@ -126,7 +128,7 @@ public class ConcurrentNeighborSet {
   public void insert(
       int neighborId, float score, ThrowingBiFunction<Integer, Integer, Float> scoreBetween)
       throws IOException {
-    assert neighborId != nodeId;
+    assert neighborId != nodeId : "can't add self as neighbor at node " + nodeId;
     // if two nodes are inserted concurrently, and see each other as neighbors,
     // we will try to add a duplicate entry to the set, so it is not correct to assume
     // that all calls will result in a new entry being added
@@ -141,10 +143,11 @@ public class ConcurrentNeighborSet {
   // is the candidate node with the given score closer to the base node than it is to any of the
   // existing neighbors
   private boolean isDiverse(
-      int node, float score, ThrowingBiFunction<Integer, Integer, Float> scoreBetween)
+      int node, float score, NeighborArray others, ThrowingBiFunction<Integer, Integer, Float> scoreBetween)
       throws IOException {
-    for (Long encoded : neighbors) {
-      if (scoreBetween.apply(decodeNodeId(encoded), node) > score) {
+    for (int i = 0; i < others.size(); i++) {
+      int candidateNode = others.node[i];
+      if (scoreBetween.apply(candidateNode, node) > score) {
         return false;
       }
     }

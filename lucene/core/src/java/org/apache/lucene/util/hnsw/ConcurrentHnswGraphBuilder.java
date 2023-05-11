@@ -20,9 +20,7 @@ package org.apache.lucene.util.hnsw;
 import static java.lang.Math.log;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -39,13 +37,14 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
-import java.util.stream.Stream;
 
 import org.apache.lucene.index.VectorEncoding;
 import org.apache.lucene.index.VectorSimilarityFunction;
 import org.apache.lucene.util.AtomicBitSet;
+import org.apache.lucene.util.BitSet;
 import org.apache.lucene.util.InfoStream;
 import org.apache.lucene.util.NamedThreadFactory;
+import org.apache.lucene.util.SparseFixedBitSet;
 import org.apache.lucene.util.ThreadInterruptedException;
 import org.apache.lucene.util.hnsw.ConcurrentOnHeapHnswGraph.NodeAtLevel;
 
@@ -58,7 +57,9 @@ import org.apache.lucene.util.hnsw.ConcurrentOnHeapHnswGraph.NodeAtLevel;
 public class ConcurrentHnswGraphBuilder<T> {
   protected static final Log LOG = new Log();
 
-  /** Default number of maximum connections per node */
+  /**
+   * Default number of maximum connections per node
+   */
   public static final int DEFAULT_MAX_CONN = 16;
 
   /**
@@ -66,7 +67,9 @@ public class ConcurrentHnswGraphBuilder<T> {
    */
   public static final int DEFAULT_BEAM_WIDTH = 100;
 
-  /** A name for the HNSW component for the info-stream * */
+  /**
+   * A name for the HNSW component for the info-stream *
+   */
   public static final String HNSW_COMPONENT = "HNSW";
 
   private final int beamWidth;
@@ -88,7 +91,9 @@ public class ConcurrentHnswGraphBuilder<T> {
   // colliding
   private final RandomAccessVectorValues<T> vectorsCopy;
 
-  /** This is the "native" factory for ConcurrentHnswGraphBuilder. */
+  /**
+   * This is the "native" factory for ConcurrentHnswGraphBuilder.
+   */
   public static <T> ConcurrentHnswGraphBuilder<T> create(
       RandomAccessVectorValues<T> vectors,
       VectorEncoding vectorEncoding,
@@ -104,10 +109,10 @@ public class ConcurrentHnswGraphBuilder<T> {
    * Reads all the vectors from vector values, builds a graph connecting them by their dense
    * ordinals, using the given hyperparameter settings, and returns the resulting graph.
    *
-   * @param vectors the vectors whose relations are represented by the graph - must provide a
-   *     different view over those vectors than the one used to add via addGraphNode.
-   * @param M – graph fanout parameter used to calculate the maximum number of connections a node
-   *     can have – M on upper layers, and M * 2 on the lowest level.
+   * @param vectors   the vectors whose relations are represented by the graph - must provide a
+   *                  different view over those vectors than the one used to add via addGraphNode.
+   * @param M         – graph fanout parameter used to calculate the maximum number of connections a node
+   *                  can have – M on upper layers, and M * 2 on the lowest level.
    * @param beamWidth the size of the beam search to use when finding nearest neighbors.
    */
   public ConcurrentHnswGraphBuilder(
@@ -170,10 +175,10 @@ public class ConcurrentHnswGraphBuilder<T> {
    * returned values.
    *
    * @param vectorsToAdd the vectors for which to build a nearest neighbors graph. Must be an
-   *     independent accessor for the vectors
+   *                     independent accessor for the vectors
    * @param autoParallel if true, the builder will allocate one thread per core to building the
-   *     graph; if false, it will use a single thread. For more fine-grained control, use the
-   *     ExecutorService (ThreadPoolExecutor) overload.
+   *                     graph; if false, it will use a single thread. For more fine-grained control, use the
+   *                     ExecutorService (ThreadPoolExecutor) overload.
    */
   public ConcurrentOnHeapHnswGraph build(
       RandomAccessVectorValues<T> vectorsToAdd, boolean autoParallel) throws IOException {
@@ -212,8 +217,8 @@ public class ConcurrentHnswGraphBuilder<T> {
    * returned values.
    *
    * @param vectorsToAdd the vectors for which to build a nearest neighbors graph. Must be an
-   *     independent accessor for the vectors
-   * @param pool The ExecutorService to use. Must be an instance of ThreadPoolExecutor.
+   *                     independent accessor for the vectors
+   * @param pool         The ExecutorService to use. Must be an instance of ThreadPoolExecutor.
    */
   public Future<ConcurrentOnHeapHnswGraph> buildAsync(
       RandomAccessVectorValues<T> vectorsToAdd, ExecutorService pool) {
@@ -282,7 +287,9 @@ public class ConcurrentHnswGraphBuilder<T> {
     addGraphNode(node, values.vectorValue(node));
   }
 
-  /** Set info-stream to output debugging information * */
+  /**
+   * Set info-stream to output debugging information *
+   */
   public void setInfoStream(InfoStream infoStream) {
     this.infoStream = infoStream;
   }
@@ -313,59 +320,75 @@ public class ConcurrentHnswGraphBuilder<T> {
       // find ANN of the new node by searching the graph
       NodeAtLevel entry = hnsw.entry();
       int ep = entry.node;
-      int[] eps = ep >= 0 ? new int[] {ep} : new int[0];
-      NeighborQueue candidates;
+      int[] eps = ep >= 0 ? new int[]{ep} : new int[0];
 
-      // if we're being added in a new level above the entry point, add any concurrent insertions
-      // as neighbors at that level
-      for (int level = nodeLevel; level > entry.level; level--) {
-        candidates = new NeighborQueue(inProgressBefore.size(), false);
-        for (NodeAtLevel n : inProgressBefore) {
-          if (n.level >= level && n != progressMarker) {
-            candidates.add(n.node, scoreBetween(n.node, node));
-          }
-        }
-
-        LOG.info(String.format("%s L%s (above entry) adding in-progress candidates %s", Thread.currentThread().getId(), level, candidates));
-        addDiverseNeighbors(level, node, candidates, Stream.empty());
-      }
-
-      // TODO another problem:
-      // Level 1 consists of node 9.
-      // T1: Add 24 at L1.
-      // T1: wires 24 to 9 at L1 and vice versa.  24 now exists in L1 but not L0.
-      // T2: Add 23 at L0
-      // T2: follows index from 9 -> 24
-      // T2: 24 @L0 has no neighbors
-      //     -> 23 gets wired to 24 alone instead of its correct neighbors
-
-      // check in-progress candidates for currMaxLevel and below
-      // for levels > nodeLevel search with topk = 1
+      // follow the index from the top down, but add neighbors from the bottom up;
+      // that way concurrent inserts also going top-down don't see incompletely
+      // added nodes on the way down.
+      InvertedBitSet notMe = new InvertedBitSet(node);
       String entryString = Arrays.toString(eps);
       for (int level = entry.level; level > nodeLevel; level--) {
-        candidates = graphSearcher.get().searchLevel(value, 1, level, eps, vectors, hnsw.getView());
-        eps = new int[] {candidates.pop()};
+        NeighborQueue candidates = new NeighborQueue(1, false);
+        graphSearcher.get().searchLevel(candidates, value, 1, level, eps, vectors, hnsw.getView(), notMe, Integer.MAX_VALUE);
+        eps = new int[]{candidates.pop()};
         entryString += " -> " + Arrays.toString(eps);
       }
       if (nodeLevel != entry.level) {
         LOG.info(String.format("%s entry path is %s", Thread.currentThread().getId(), entryString));
       }
-      // for levels <= nodeLevel search with topk = beamWidth, and add connections
-      for (int level = Math.min(nodeLevel, entry.level); level >= 0; level--) {
+      // for levels <= nodeLevel search with topk = beamWidth
+      NeighborQueue[] candidatesOnLevel = new NeighborQueue[1 + Math.min(nodeLevel, entry.level)];
+      for (int level = candidatesOnLevel.length - 1; level >= 0; level--) {
         // find best candidates at this level with a beam search
-        candidates =
-            graphSearcher.get().searchLevel(value, beamWidth, level, eps, vectors, hnsw.getView());
-        LOG.info(String.format("%s L%s initial candidates from %s are %s", Thread.currentThread().getId(), level, Arrays.toString(eps), Arrays.toString(candidates.nodes())));
-        // any nodes that are being added concurrently at this level are also candidates
-        int thisLevel = level;
-        Stream<Integer> concurrentCandidates = inProgressBefore
-            .stream()
-            .filter(n -> n.level >= thisLevel && n != progressMarker)
-            .map(n -> n.node);
-        LOG.info(String.format("%s    concurrent additions are %s", Thread.currentThread().getId(), inProgressBefore));
-        // update entry points and neighbors with these candidates
-        eps = candidates.nodes();
-        addDiverseNeighbors(level, node, candidates, concurrentCandidates);
+        candidatesOnLevel[level] = new NeighborQueue(beamWidth, false);
+        graphSearcher.get().searchLevel(candidatesOnLevel[level], value, beamWidth, level, eps, vectors, hnsw.getView(), notMe, Integer.MAX_VALUE);
+        eps = candidatesOnLevel[level].nodes();
+      }
+
+      for (int level = 0; level < candidatesOnLevel.length; level++) {
+        addForwardLinks(level, node, candidatesOnLevel[level]);
+        addForwardLinks(level, node, inProgressBefore, progressMarker);
+        addBackLinks(level, node);
+      }
+
+      // if we're being added in a new level above the entry point, add any concurrent insertions
+      // as neighbors at that level
+      for (int level = entry.level + 1; level <= nodeLevel; level++) {
+        // TODO rewrite this
+        // We don't want the existing nodes to over-eagerly prune
+        // the concurrency here is a bit tricky. Because insertDiverse compares the nodes being inserted to all
+        // existing neighbors, so if other nodes insert backlings to us before we call this, we could end up
+        // having potentially all of them pruned.
+        // Solution is to only consider diversity among the set being inserted.
+        // Example at right -- 24 gets inserted, [correctly] considered 0-22 as neighbors, but 23, 25, 26 are
+        // inserted concurrently and none of 0-22 are added.
+
+        // the concurrency here is a bit tricky.  The initial implementation merged concurrent
+        // inserts into the candidate set, but this is incorrect.  Consider the following graph
+        // with the "circular" test vectors:
+        //
+        // 0 -> 1
+        // 1 <- 0
+        // at this point we insert nodes 2 and 3 concurrently:
+        //     insert 2 to L0 [2 is marked "in progress"]
+        //   insert 3 to L1
+        //   insert 3 to L0
+        //   3 considers as neighbors 0, 1, 2; 0 and 1 are not diverse wrt 2
+        // 3 -> 2 is added to graph
+        // [3 is now entry point]
+        //     2 follows 3 to L0, where 3 only has 2 as a neighbor
+        // 2 -> 3 is added to graph
+        // all further nodes will only be added to the 2/3 subgraph; 0/1 are partitioned forever
+        //
+        // I can't think of a reasonable way to make the entry point "transactional" wrt the
+        // neighbor graph, so we have to be a bit more conservative.
+        //
+        // Instead, we first consider candidates that are fully inserted in the graph for the
+        // diversity heuristic, and then we add links to all concurrent insertions to ensure
+        // connectivity.  (CNS.insert will take care of pruning back if we hit our max neighbor
+        // count.)
+        addForwardLinks(level, node, inProgressBefore, progressMarker);
+        addBackLinks(level, node);
       }
 
       // update entry node last, once everything is wired together
@@ -376,61 +399,30 @@ public class ConcurrentHnswGraphBuilder<T> {
     }
   }
 
-  /**
-   * Add links from new node -> candidates.
-   * See ConcurrentNeighborSet for an explanation of "diverse."
-  */
-  private void addDiverseNeighbors(int level, int newNode, NeighborQueue candidates, Stream<Integer> concurrentCandidates)
-      throws IOException {
-    // the concurrency here is a bit tricky.  The initial implementation merged concurrent
-    // inserts into the candidate set, but this is incorrect.  Consider the following graph
-    // with the "circular" test vectors:
-    //
-    // 0 -> 1
-    // 1 <- 0
-    // at this point we insert nodes 2 and 3 concurrently:
-    //     insert 2 to L0 [2 is marked "in progress"]
-    //   insert 3 to L1
-    //   insert 3 to L0
-    //   3 considers as neighbors 0, 1, 2; 0 and 1 are not diverse wrt 2
-    // 3 -> 2 is added to graph
-    // [3 is now entry point]
-    //     2 follows 3 to L0, where 3 only has 2 as a neighbor
-    // 2 -> 3 is added to graph
-    // all further nodes will only be added to the 2/3 subgraph; 0/1 are partitioned forever
-    //
-    // I can't think of a reasonable way to make the entry point "transactional" wrt the
-    // neighbor graph, so we have to be a bit more conservative.
-    //
-    // Instead, we first consider candidates that are fully inserted in the graph for the
-    // diversity heuristic, and then we add links to all concurrent insertions to ensure
-    // connectivity.  (CNS.insert will take care of pruning back if we hit our max neighbor
-    // count.)
+  private void addForwardLinks(int level, int newNode, NeighborQueue candidates) throws IOException {
+    LOG.info(String.format("%s   L%s adding forward links for %s -> %s", Thread.currentThread().getId(), level, newNode, Arrays.toString(candidates.nodes())));
+    NeighborArray scratch = popToScratch(candidates); // worst are first
+    ConcurrentNeighborSet neighbors = hnsw.getNeighbors(level, newNode);
+    neighbors.insertDiverse(scratch, this::scoreBetween);
+  }
+
+  private void addForwardLinks(int level, int newNode, Set<NodeAtLevel> inProgress, NodeAtLevel progressMarker) throws IOException {
+    LOG.info(String.format("%s   L%s adding forward links for %s -> %s", Thread.currentThread().getId(), level, newNode, inProgress));
+
+    NeighborQueue candidates = new NeighborQueue(inProgress.size(), false);
+    for (NodeAtLevel n : inProgress) {
+      if (n.level >= level && n != progressMarker) {
+        candidates.add(n.node, scoreBetween(n.node, newNode));
+      }
+    }
     ConcurrentNeighborSet neighbors = hnsw.getNeighbors(level, newNode);
     NeighborArray scratch = popToScratch(candidates); // worst are first
-    LOG.info(String.format("%s    pre-diverse neighbors are %s",
-        Thread.currentThread().getId(), Arrays.toString(Arrays.copyOf(scratch.node(), scratch.size()))));
-    // TODO we still have a problem here, because insertDiverse compares the nodes being inserted to all
-    // existing neighbors, so if other nodes insert backlings to us before we call this, we could end up
-    // having potentially all of them pruned.
-    // Solution is to only consider diversity among the set being inserted.
-    // Example at right -- 24 gets inserted, [correctly] considered 0-22 as neighbors, but 23, 25, 26 are
-    // inserted concurrently and none of 0-22 are added.
     neighbors.insertDiverse(scratch, this::scoreBetween);
-    LOG.info(String.format("%s    post-diverse neighbors are %s",
-        Thread.currentThread().getId(), neighbors.neighborsAsList()));
+  }
 
-    concurrentCandidates.forEach(nbr -> {
-      try {
-        neighbors.insert(nbr, scoreBetween(nbr, newNode), this::scoreBetween);
-      } catch (IOException e) {
-        throw new UncheckedIOException(e);
-      }
-    });
-    LOG.info(String.format("%s    neighbors after adding concurrent inserts are %s",
-        Thread.currentThread().getId(), neighbors.neighborsAsList()));
-
-    // Add backlinks from neighbors -> new node (again applying diversity heuristic)
+  private void addBackLinks(int level, int newNode) throws IOException {
+    ConcurrentNeighborSet neighbors = hnsw.getNeighbors(level, newNode);
+    LOG.info(String.format("%s   L%s adding backlinks for %s", Thread.currentThread().getId(), level, neighbors.neighborsAsList()));
     neighbors.forEach(
         (nbr, nbrScore) -> {
           ConcurrentNeighborSet nbrNbr = hnsw.getNeighbors(level, nbr);
@@ -471,5 +463,69 @@ public class ConcurrentHnswGraphBuilder<T> {
           ThreadLocalRandom.current().nextDouble(); // avoid 0 value, as log(0) is undefined
     } while (randDouble == 0.0);
     return ((int) (-log(randDouble) * ml));
+  }
+
+  private static class InvertedBitSet extends BitSet {
+    SparseFixedBitSet wrapped;
+
+    public InvertedBitSet(int setBit) {
+      wrapped = new SparseFixedBitSet(setBit + 1);
+      wrapped.set(setBit);
+    }
+
+    @Override
+    public long ramBytesUsed() {
+      return wrapped.ramBytesUsed();
+    }
+
+    @Override
+    public void set(int i) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean getAndSet(int i) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void clear(int i) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void clear(int startIndex, int endIndex) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public int cardinality() {
+      return wrapped.cardinality() - 1;
+    }
+
+    @Override
+    public int approximateCardinality() {
+      return wrapped.approximateCardinality() - 1;
+    }
+
+    @Override
+    public int prevSetBit(int index) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public int nextSetBit(int index) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean get(int index) {
+      return !wrapped.get(index);
+    }
+
+    @Override
+    public int length() {
+      return wrapped.length();
+    }
   }
 }
