@@ -104,7 +104,7 @@ public class ConcurrentNeighborSet {
    * were selected by this method, or were added as a "backlink" to a node inserted concurrently
    * that chose this one as a neighbor.
    */
-  public void insertDiverse(
+  public NeighborArray insertDiverse(
       NeighborArray candidates, ThrowingBiFunction<Integer, Integer, Float> scoreBetween)
       throws IOException {
     // It is not correct to just use our internal neighbor set to compare diversity against;
@@ -123,9 +123,9 @@ public class ConcurrentNeighborSet {
         insert(cNode, cScore, scoreBetween);
       }
     }
-    LOG.info("inserted %s as forward links".formatted(Arrays.toString(Arrays.copyOf(selected.node, selected.size()))));
     // TODO follow the paper's suggestion and fill up the rest of the neighbors with non-diverse
     // candidates?
+    return selected;
   }
 
   /**

@@ -399,19 +399,19 @@ public class ConcurrentHnswGraphBuilder<T> {
         // Considering concurrent inserts separately from "natural" candidates solves this problem;
         // both 1 and 2 will be added as neighbors to 3, avoiding the partition, and 2 will then
         // pick up the connection to 1 that it's supposed to have as well.
-        addForwardLinks(level, node, candidatesOnLevel[level]);
-        addForwardLinks(level, node, inProgressBefore, progressMarker);
+        NeighborArray insertedNatural = addForwardLinks(level, node, candidatesOnLevel[level]);
+        NeighborArray insertedConcurrent = addForwardLinks(level, node, inProgressBefore, progressMarker);
         // backlinking is where we become visible to natural searches that aren't checking
         // in-progress,
         // so this has to be done after everything is is complete on this level
-        addBackLinks(level, node);
+        addBackLinks(level, node, insertedNatural, insertedConcurrent);
       }
 
       // if we're being added in a new level above the entry point, consider concurrent insertions
       // for inclusion as neighbors at that level. There are no natural neighbors yet.
       for (int level = entry.level + 1; level <= nodeLevel; level++) {
-        addForwardLinks(level, node, inProgressBefore, progressMarker);
-        addBackLinks(level, node);
+        NeighborArray insertedConcurrent = addForwardLinks(level, node, inProgressBefore, progressMarker);
+        addBackLinks(level, node, null, insertedConcurrent);
       }
 
       hnsw.markComplete(nodeLevel, node);
@@ -421,15 +421,20 @@ public class ConcurrentHnswGraphBuilder<T> {
     }
   }
 
-  private void addForwardLinks(int level, int newNode, NeighborQueue candidates)
+  private NeighborArray addForwardLinks(int level, int newNode, NeighborQueue candidates)
       throws IOException {
     LOG.info(String.format("   L%s considering forward links for natural nodes %s -> %s", level, newNode, Arrays.toString(candidates.nodes())));
     NeighborArray scratch = popToScratch(candidates); // worst are first
     ConcurrentNeighborSet neighbors = hnsw.getNeighbors(level, newNode);
-    neighbors.insertDiverse(scratch, this::scoreBetween);
+    var inserted = neighbors.insertDiverse(scratch, this::scoreBetween);
+    if (inserted.size() > 0) {
+      LOG.info("L%s inserted %s -> %s as forward natural links".formatted(
+          level, newNode, Arrays.toString(Arrays.copyOf(inserted.node, inserted.size()))));
+    }
+    return inserted;
   }
 
-  private void addForwardLinks(
+  private NeighborArray addForwardLinks(
       int level, int newNode, Set<NodeAtLevel> inProgress, NodeAtLevel progressMarker)
       throws IOException {
     NeighborQueue candidates = new NeighborQueue(inProgress.size(), false);
@@ -442,17 +447,31 @@ public class ConcurrentHnswGraphBuilder<T> {
     NeighborArray scratch = popToScratch(candidates); // worst are first
     LOG.info(String.format("   L%s considering forward links for concurrent nodes %s -> %s",
             level, newNode, Arrays.toString(Arrays.copyOf(scratch.node, scratch.size()))));
-    neighbors.insertDiverse(scratch, this::scoreBetween);
+    var inserted = neighbors.insertDiverse(scratch, this::scoreBetween);
+    if (inserted.size() > 0) {
+      LOG.info("L%s inserted %s -> %s as forward concurrent links".formatted(
+          level, newNode, Arrays.toString(Arrays.copyOf(inserted.node, inserted.size()))));
+    }
+    return inserted;
   }
 
-  private void addBackLinks(int level, int newNode) throws IOException {
-    ConcurrentNeighborSet neighbors = hnsw.getNeighbors(level, newNode);
-    LOG.info(String.format("   L%s adding backlinks for %s -> %s", level, neighbors.neighborsAsList(), newNode));
-    neighbors.forEach(
-        (nbr, nbrScore) -> {
-          ConcurrentNeighborSet nbrNbr = hnsw.getNeighbors(level, nbr);
-          nbrNbr.insert(newNode, nbrScore, this::scoreBetween);
-        });
+  private void addBackLinks(int level, int newNode, NeighborArray insertedNatural, NeighborArray insertedConcurrent) throws IOException {
+    if (insertedNatural != null) {
+      // TODO
+      // LOG.info(String.format("   L%s adding natural backlinks for %s -> %s", level, neighbors.neighborsAsList(), newNode));
+      for (int i = 0; i < insertedNatural.size(); i++) {
+        int nbr = insertedNatural.node[i];
+        ConcurrentNeighborSet nbrNbr = hnsw.getNeighbors(level, nbr);
+        nbrNbr.insert(newNode, insertedNatural.score[i], this::scoreBetween);
+      }
+    }
+
+    assert insertedConcurrent != null;
+    for (int i = 0; i < insertedConcurrent.size(); i++) {
+      int nbr = insertedConcurrent.node[i];
+      ConcurrentNeighborSet nbrNbr = hnsw.getNeighbors(level, nbr);
+      nbrNbr.insert(newNode, insertedConcurrent.score[i], this::scoreBetween);
+    }
   }
 
   private float scoreBetween(int i, int j) throws IOException {
