@@ -17,6 +17,9 @@
 package org.apache.lucene.util;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.apache.lucene.search.DocIdSetIterator;
 
 /**
@@ -525,6 +528,17 @@ public class SparseFixedBitSet extends BitSet {
     } else {
       orDense(it);
     }
+  }
+
+  /** for debugging */
+  List<Integer> setBits() {
+    List<Integer> res = new ArrayList<>();
+    for (int i = 0; i < length; i++) {
+      if (get(i)) {
+        res.add(i);
+      }
+    }
+    return res;
   }
 
   @Override

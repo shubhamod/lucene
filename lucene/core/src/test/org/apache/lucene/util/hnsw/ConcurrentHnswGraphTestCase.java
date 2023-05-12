@@ -75,6 +75,7 @@ import org.apache.lucene.util.hnsw.HnswGraph.NodesIterator;
 
 /** Tests HNSW KNN graphs */
 abstract class ConcurrentHnswGraphTestCase<T> extends LuceneTestCase {
+  protected static final Log LOG = ConcurrentHnswGraphBuilder.LOG;
 
   VectorSimilarityFunction similarityFunction;
 
@@ -495,13 +496,38 @@ abstract class ConcurrentHnswGraphTestCase<T> extends LuceneTestCase {
     ConcurrentOnHeapHnswGraph hnsw = builder.build(vectors.copy());
     // Only mark a few vectors as accepted
     BitSet acceptOrds = new FixedBitSet(nDoc);
+    List<Integer> acceptedList = new ArrayList<>();
     for (int i = 0; i < atLeast(toAccept); i++) {
       acceptOrds.set(random().nextInt(nDoc));
+      acceptedList.add(i);
     }
 
     // Check the search finds all accepted vectors
     int numAccepted = acceptOrds.cardinality();
-    NeighborQueue nn =
+    HnswGraph hnsw1 = hnsw.getView();
+    NeighborQueue nn = switch (getVectorEncoding()) {
+      case FLOAT32 -> HnswGraphSearcher.search(
+          (float[]) getTargetVector(),
+          numAccepted,
+          (RandomAccessVectorValues<float[]>) vectors.copy(),
+          getVectorEncoding(),
+          similarityFunction,
+          hnsw1,
+          acceptOrds,
+          Integer.MAX_VALUE);
+      case BYTE -> HnswGraphSearcher.search(
+          (byte[]) getTargetVector(),
+          numAccepted,
+          (RandomAccessVectorValues<byte[]>) vectors.copy(),
+          getVectorEncoding(),
+          similarityFunction,
+          hnsw1,
+          acceptOrds,
+          Integer.MAX_VALUE);
+    };
+
+    HnswGraph serial = HnswGraphBuilder.create(vectors, vectorEncoding, similarityFunction, 16, 100, random().nextInt()).build(vectors.copy());
+    NeighborQueue nnS =
         switch (getVectorEncoding()) {
           case FLOAT32 -> HnswGraphSearcher.search(
               (float[]) getTargetVector(),
@@ -509,7 +535,7 @@ abstract class ConcurrentHnswGraphTestCase<T> extends LuceneTestCase {
               (RandomAccessVectorValues<float[]>) vectors.copy(),
               getVectorEncoding(),
               similarityFunction,
-              hnsw.getView(),
+              serial,
               acceptOrds,
               Integer.MAX_VALUE);
           case BYTE -> HnswGraphSearcher.search(
@@ -518,12 +544,49 @@ abstract class ConcurrentHnswGraphTestCase<T> extends LuceneTestCase {
               (RandomAccessVectorValues<byte[]>) vectors.copy(),
               getVectorEncoding(),
               similarityFunction,
-              hnsw.getView(),
+              serial,
               acceptOrds,
               Integer.MAX_VALUE);
         };
+    int[] serialNodes = nnS.nodes();
 
     int[] nodes = nn.nodes();
+
+    if (nodes.length != nnS.nodes().length) {
+      System.out.printf("Found results %s instead of %s in\n%sCompare serial with %s results\n%s\n",
+          Arrays.toString(nodes), acceptedList, prettyPrint(hnsw), serialNodes.length, prettyPrint(serial));
+      new HnswGraphValidator(serial).validateReachability();
+      new HnswGraphValidator(hnsw).validateReachability();
+      try {
+        Thread.sleep(100);
+      } catch (InterruptedException e) {
+        throw new RuntimeException(e);
+      }
+
+      nn = switch (getVectorEncoding()) {
+        case FLOAT32 -> HnswGraphSearcher.search(
+            (float[]) getTargetVector(),
+            numAccepted,
+            (RandomAccessVectorValues<float[]>) vectors.copy(),
+            getVectorEncoding(),
+            similarityFunction,
+            hnsw.getView(),
+            acceptOrds,
+            Integer.MAX_VALUE);
+        case BYTE -> HnswGraphSearcher.search(
+            (byte[]) getTargetVector(),
+            numAccepted,
+            (RandomAccessVectorValues<byte[]>) vectors.copy(),
+            getVectorEncoding(),
+            similarityFunction,
+            hnsw.getView(),
+            acceptOrds,
+            Integer.MAX_VALUE);
+      };
+      nodes = nn.nodes();
+      assert nodes.length != nnS.nodes().length;
+    }
+
     assertEquals(numAccepted, nodes.length);
     for (int node : nodes) {
       assertTrue("the results include a deleted document: " + node, acceptOrds.get(node));
