@@ -435,12 +435,28 @@ abstract class ConcurrentHnswGraphTestCase<T> extends LuceneTestCase {
   }
 
   @SuppressWarnings("unchecked")
+  public void testConnections() throws IOException {
+    for (int i = 0; i < 100; i++)
+    {
+      for (int j = 1; j < 100; j *= 10) {
+        int nDoc = atLeast(j);
+        RandomAccessVectorValues<T> vectors = circularVectorValues(nDoc);
+        similarityFunction = VectorSimilarityFunction.DOT_PRODUCT;
+        VectorEncoding vectorEncoding = getVectorEncoding();
+        ConcurrentHnswGraphBuilder<T> builder =
+                new ConcurrentHnswGraphBuilder<>(vectors, vectorEncoding, similarityFunction, 16, 100);
+        ConcurrentOnHeapHnswGraph hnsw = builder.build(vectors.copy());
+        new HnswGraphValidator(hnsw).validateReachability();
+      }
+    }
+  }
+
+  @SuppressWarnings("unchecked")
   public void testSearchWithSelectiveAcceptOrds() throws IOException {
     int nDoc = 100;
     RandomAccessVectorValues<T> vectors = circularVectorValues(nDoc);
     similarityFunction = VectorSimilarityFunction.DOT_PRODUCT;
     VectorEncoding vectorEncoding = getVectorEncoding();
-    random().nextInt();
     ConcurrentHnswGraphBuilder<T> builder =
         new ConcurrentHnswGraphBuilder<>(vectors, vectorEncoding, similarityFunction, 16, 100);
     ConcurrentOnHeapHnswGraph hnsw = builder.build(vectors.copy());
@@ -1320,6 +1336,9 @@ abstract class ConcurrentHnswGraphTestCase<T> extends LuceneTestCase {
   }
 
   static String prettyPrint(HnswGraph hnsw) {
+    if (hnsw instanceof ConcurrentOnHeapHnswGraph) {
+      hnsw = ((ConcurrentOnHeapHnswGraph) hnsw).getView();
+    }
     StringBuilder sb = new StringBuilder();
     sb.append(hnsw);
     sb.append("\n");
