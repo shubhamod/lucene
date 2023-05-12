@@ -35,6 +35,8 @@ import org.apache.lucene.util.RamUsageEstimator;
  * and `nextNeighbor` operations.
  */
 public final class ConcurrentOnHeapHnswGraph extends HnswGraph implements Accountable {
+  protected static final Log LOG = ConcurrentHnswGraphBuilder.LOG;
+
   private final AtomicReference<NodeAtLevel>
       entryPoint; // the current graph entry node on the top level. -1 if not set
 
@@ -97,6 +99,7 @@ public final class ConcurrentOnHeapHnswGraph extends HnswGraph implements Accoun
           if (oldEntry.node >= 0 && oldEntry.level >= level) {
             return oldEntry;
           } else {
+            LOG.info(String.format("%s updated entry to %s", Thread.currentThread().getId(), newEntry));
             return newEntry;
           }
         });

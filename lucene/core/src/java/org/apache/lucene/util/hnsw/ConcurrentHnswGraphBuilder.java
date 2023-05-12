@@ -51,6 +51,7 @@ import org.apache.lucene.util.hnsw.ConcurrentOnHeapHnswGraph.NodeAtLevel;
  * @param <T> the type of vector
  */
 public class ConcurrentHnswGraphBuilder<T> {
+  protected static final Log LOG = new Log();
 
   /** Default number of maximum connections per node */
   public static final int DEFAULT_MAX_CONN = 16;
@@ -295,6 +296,7 @@ public class ConcurrentHnswGraphBuilder<T> {
     // do this before adding to in-progress, so a concurrent writer checking
     // the in-progress set doesn't have to worry about uninitialized neighbor sets
     final int nodeLevel = getRandomGraphLevel(ml);
+    LOG.info(String.format("%s adding node %s at level %s", Thread.currentThread().getId(), node, nodeLevel));
     for (int level = nodeLevel; level >= 0; level--) {
       hnsw.addNode(level, node);
     }
@@ -338,6 +340,7 @@ public class ConcurrentHnswGraphBuilder<T> {
       // update entry node last, once everything is wired together
       hnsw.maybeUpdateEntryNode(nodeLevel, node);
     } finally {
+      LOG.info(String.format("%s finished adding node %s", Thread.currentThread().getId(), node));
       insertionsInProgress.remove(progressMarker);
     }
   }
