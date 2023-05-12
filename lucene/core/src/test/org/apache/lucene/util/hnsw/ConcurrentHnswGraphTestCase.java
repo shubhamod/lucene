@@ -436,24 +436,23 @@ abstract class ConcurrentHnswGraphTestCase<T> extends LuceneTestCase {
 
   @SuppressWarnings("unchecked")
   public void testConnections() throws IOException {
-    for (int i = 0; i < 100; i++)
-    {
+    for (int i = 0; i < 100; i++) {
       for (int j = 1; j < 1000; j *= 10) {
         int nDoc = atLeast(5 * j);
         RandomAccessVectorValues<T> vectors = circularVectorValues(nDoc);
         similarityFunction = VectorSimilarityFunction.DOT_PRODUCT;
         VectorEncoding vectorEncoding = getVectorEncoding();
         ConcurrentHnswGraphBuilder<T> builder =
-                new ConcurrentHnswGraphBuilder<>(vectors, vectorEncoding, similarityFunction, 16, 100) {
-                  @Override
-                  int getRandomGraphLevel(double ml) {
-                    int level = 0;
-                    while (ThreadLocalRandom.current().nextDouble() < 0.5) {
-                      level++;
-                    }
-                    return level;
-                  }
-                };
+            new ConcurrentHnswGraphBuilder<>(vectors, vectorEncoding, similarityFunction, 16, 100) {
+              @Override
+              int getRandomGraphLevel(double ml) {
+                int level = 0;
+                while (ThreadLocalRandom.current().nextDouble() < 0.5) {
+                  level++;
+                }
+                return level;
+              }
+            };
         ConcurrentOnHeapHnswGraph hnsw = builder.build(vectors.copy());
         new HnswGraphValidator(hnsw).validateReachability();
       }
@@ -483,16 +482,16 @@ abstract class ConcurrentHnswGraphTestCase<T> extends LuceneTestCase {
     // builder that more aggressively creates new levels, whicn increases the chances of
     // exposing a concurrency bug
     ConcurrentHnswGraphBuilder<T> builder =
-            new ConcurrentHnswGraphBuilder<>(vectors, vectorEncoding, similarityFunction, 16, 100) {
-              @Override
-              int getRandomGraphLevel(double ml) {
-                int level = 0;
-                while (ThreadLocalRandom.current().nextDouble() < 0.5) {
-                  level++;
-                }
-                return level;
-              }
-            };
+        new ConcurrentHnswGraphBuilder<>(vectors, vectorEncoding, similarityFunction, 16, 100) {
+          @Override
+          int getRandomGraphLevel(double ml) {
+            int level = 0;
+            while (ThreadLocalRandom.current().nextDouble() < 0.5) {
+              level++;
+            }
+            return level;
+          }
+        };
     ConcurrentOnHeapHnswGraph hnsw = builder.build(vectors.copy());
     // Only mark a few vectors as accepted
     BitSet acceptOrds = new FixedBitSet(nDoc);
