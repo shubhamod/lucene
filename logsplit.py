@@ -1,3 +1,5 @@
+import sys
+
 # Define the start and end strings
 start_construction_str = "--- selective ords docs=60 accept=5 ---"
 end_construction_str = "Node 0 cannot reach [48] on level 0 in ConcurrentOnHeapHnswGraphView(size=80, entryPoint=NodeAtLevel(level=5, node=10)"
@@ -10,11 +12,10 @@ in_graph = False
 skip_start_line = True
 
 # Open the input and output files
-with open("/mnt/data/badgraph2-all.log", "r") as log_file, \
-        open("/mnt/data/badgraph-construction.txt", "w") as construction_file, \
-        open("/mnt/data/badgraph.txt", "w") as graph_file:
+with open("badgraph-construction.txt", "w") as construction_file, \
+        open("badgraph.txt", "w") as graph_file:
     # Read the log file line by line
-    for line in log_file:
+    for line in sys.stdin:
         # Check if the line matches the start or end strings
         if line.strip() == start_construction_str:
             in_construction = True
