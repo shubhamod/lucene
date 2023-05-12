@@ -77,7 +77,8 @@ public class ConcurrentHnswGraphBuilder<T> {
   private final ExplicitThreadLocal<HnswGraphSearcher<T>> graphSearcher;
 
   final ConcurrentOnHeapHnswGraph hnsw;
-  private final ConcurrentSkipListSet<NodeAtLevel> insertionsInProgress =
+  // package-private for testing
+  final ConcurrentSkipListSet<NodeAtLevel> insertionsInProgress =
       new ConcurrentSkipListSet<>();
 
   private InfoStream infoStream = InfoStream.getDefault();
