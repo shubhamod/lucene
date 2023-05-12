@@ -20,10 +20,11 @@ package org.apache.lucene.util.hnsw;
 import static org.apache.lucene.search.DocIdSetIterator.NO_MORE_DOCS;
 
 import java.io.IOException;
-import java.util.Collections;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import org.apache.lucene.util.Accountable;
 import org.apache.lucene.util.AtomicBitSet;
@@ -46,12 +47,14 @@ public final class ConcurrentOnHeapHnswGraph extends HnswGraph implements Accoun
   // lists,
   // a ConcurrentHashMap.  While the ArrayList used for L0 in OHHG is faster for single-threaded
   // workloads, it imposes an unacceptable contention burden for concurrent workloads.
-  private final ConcurrentMap<Integer, ConcurrentMap<Integer, ConcurrentNeighborSet>> graphLevels;
-  private final AtomicBitSet completedNodes;
+  private final Map<Integer, Map<Integer, ConcurrentNeighborSet>> graphLevels;
+  private final Map<Integer, Integer> completedTime;
+  private final AtomicInteger logicalClock;
 
   // Neighbours' size on upper levels (nsize) and level 0 (nsize0)
   private final int nsize;
   private final int nsize0;
+
 
   ConcurrentOnHeapHnswGraph(int M) {
     this.entryPoint =
@@ -61,7 +64,8 @@ public final class ConcurrentOnHeapHnswGraph extends HnswGraph implements Accoun
     this.nsize0 = 2 * M;
 
     this.graphLevels = new ConcurrentHashMap<>();
-    this.completedNodes = new AtomicBitSet(nsize0);
+    this.completedTime = new ConcurrentHashMap<>();
+    logicalClock = new AtomicInteger(0);
   }
 
   /**
@@ -104,7 +108,7 @@ public final class ConcurrentOnHeapHnswGraph extends HnswGraph implements Accoun
             return newEntry;
           }
         });
-    completedNodes.set(node);
+    completedTime.put(node, logicalClock.getAndIncrement());
   }
 
   private int connectionsOnLevel(int level) {
@@ -237,8 +241,13 @@ public final class ConcurrentOnHeapHnswGraph extends HnswGraph implements Accoun
   }
 
   private class ConcurrentHnswGraphView extends HnswGraph {
+    private final int timestamp;
     private Iterator<Integer> remainingNeighbors;
     private int currentLevel;
+
+    public ConcurrentHnswGraphView() {
+      this.timestamp = logicalClock.get();
+    }
 
     @Override
     public int size() {
@@ -270,7 +279,7 @@ public final class ConcurrentOnHeapHnswGraph extends HnswGraph implements Accoun
     public int nextNeighbor() {
       while (remainingNeighbors.hasNext()) {
         int next = remainingNeighbors.next();
-        if (completedNodes.get(next)) {
+        if (completedTime.getOrDefault(next, Integer.MAX_VALUE) < timestamp) {
           return next;
         }
       }

@@ -304,6 +304,7 @@ public class ConcurrentHnswGraphBuilder<T> {
       hnsw.addNode(level, node);
     }
 
+    HnswGraph consistentView = hnsw.getView();
     NodeAtLevel progressMarker = new NodeAtLevel(nodeLevel, node);
     insertionsInProgress.add(progressMarker);
     ConcurrentSkipListSet<NodeAtLevel> inProgressBefore = insertionsInProgress.clone();
@@ -345,7 +346,7 @@ public class ConcurrentHnswGraphBuilder<T> {
                 level,
                 eps,
                 vectors,
-                hnsw.getView(),
+                consistentView,
                 null,
                 Integer.MAX_VALUE);
         eps = new int[] {candidates.pop()};
@@ -367,7 +368,7 @@ public class ConcurrentHnswGraphBuilder<T> {
                 level,
                 eps,
                 vectors,
-                hnsw.getView(),
+                consistentView,
                 null,
                 Integer.MAX_VALUE);
         eps = candidatesOnLevel[level].nodes();
