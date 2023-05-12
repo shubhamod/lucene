@@ -464,14 +464,13 @@ abstract class ConcurrentHnswGraphTestCase<T> extends LuceneTestCase {
   public void testSearchWithSelectiveAcceptOrds() throws IOException {
     // searchWithSelectiveAcceptOrds seems particularly good at exposing problems with the graph
     for (int i = 0; i < 10; i++) {
-//      searchWithSelectiveAcceptOrds(50, 5);
-      searchWithSelectiveAcceptOrds(60, 5);
-//      searchWithSelectiveAcceptOrds(100, 15);
-//      searchWithSelectiveAcceptOrds(500, 10);
-//      searchWithSelectiveAcceptOrds(500, 50);
-//      searchWithSelectiveAcceptOrds(1000, 10);
-//      searchWithSelectiveAcceptOrds(1000, 50);
-//      searchWithSelectiveAcceptOrds(1000, 100);
+      searchWithSelectiveAcceptOrds(50, 5);
+      searchWithSelectiveAcceptOrds(100, 15);
+      searchWithSelectiveAcceptOrds(500, 10);
+      searchWithSelectiveAcceptOrds(500, 50);
+      searchWithSelectiveAcceptOrds(1000, 10);
+      searchWithSelectiveAcceptOrds(1000, 50);
+      searchWithSelectiveAcceptOrds(1000, 100);
     }
   }
 
