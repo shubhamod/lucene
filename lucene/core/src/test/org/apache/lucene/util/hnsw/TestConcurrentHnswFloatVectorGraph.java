@@ -162,15 +162,15 @@ public class TestConcurrentHnswFloatVectorGraph extends ConcurrentHnswGraphTestC
   }
 
   public void testRepeatedly() throws IOException {
-//    for (int i = 0; ; i++) {
-//      // System.out.println(i); this synchronizes things enough that it doesn't break (?)
-//      LOG.info(String.format("---------------------- run %s -----------------------", i));
-//      try {
-//        testSearchWithSelectiveAcceptOrds();
-//      }
-//      finally {
-//        LOG.flush();
-//      }
-//    }
+    try {
+      for (int i = 0; ; i++) {
+      // System.out.println(i); this synchronizes things enough that it doesn't break (?)
+        testSearchWithSelectiveAcceptOrds();
+      }
+    }
+    finally {
+      LOG.flush();
+      LOG.writeLastEntryToStdout();
+    }
   }
 }

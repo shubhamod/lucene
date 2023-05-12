@@ -477,7 +477,7 @@ abstract class ConcurrentHnswGraphTestCase<T> extends LuceneTestCase {
 
   @SuppressWarnings("unchecked")
   public void searchWithSelectiveAcceptOrds(int nDoc, int toAccept) throws IOException {
-    LOG.info("--- selective ords docs=%s accept=%s ---".formatted(nDoc, toAccept));
+    LOG.begin("--- selective ords docs=%s accept=%s ---".formatted(nDoc, toAccept));
     nDoc = atLeast(nDoc);
     RandomAccessVectorValues<T> vectors = circularVectorValues(nDoc);
     similarityFunction = VectorSimilarityFunction.DOT_PRODUCT;
