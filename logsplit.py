@@ -3,7 +3,7 @@ import re
 
 # Define the start and end strings
 start_construction_str = r"\d+ adding node \d+"
-end_construction_str = r"Found results"
+end_construction_str = r"ConcurrentOnHeapHnswGraphView"
 start_graph_str = "# Level 0"
 end_graph_str = "java.lang.AssertionError: "
 
@@ -17,11 +17,11 @@ with open("badgraph-construction.txt", "w") as construction_file, \
     # Read the log file line by line
     for line in sys.stdin:
         # Check if the line matches the start or end strings
-        if re.match(start_construction_str, line):
+        if not in_construction and re.match(start_construction_str, line):
             in_construction = True
-            continue
-        elif end_construction_str in line:
+        elif in_construction and end_construction_str in line:
             in_construction = False
+            continue
         elif line.startswith(start_graph_str):
             in_graph = True
             continue
