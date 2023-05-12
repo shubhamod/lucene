@@ -140,4 +140,17 @@ public class TestConcurrentHnswByteVectorGraph extends ConcurrentHnswGraphTestCa
   byte[] getTargetVector() {
     return new byte[] {1, 0};
   }
+
+  public void testRepeatedly() throws IOException {
+    try {
+      for (int i = 0; ; i++) {
+        // System.out.println(i); this synchronizes things enough that it doesn't break (?)
+        testSearchWithSelectiveAcceptOrds();
+      }
+    }
+    finally {
+      LOG.flush();
+      LOG.writeLastEntry();
+    }
+  }
 }

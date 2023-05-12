@@ -1,10 +1,10 @@
 package org.apache.lucene.util.hnsw;
 
-import java.io.BufferedWriter;
+import java.io.BufferedOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
 import java.io.RandomAccessFile;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -43,16 +43,19 @@ public class Log {
     }
   }
 
-  public void writeLastEntryToStdout() {
+  public void writeLastEntry() {
     try {
       flush();
       RandomAccessFile raf = new RandomAccessFile(logFile, "r");
       raf.seek(lastEntryPosition);
       String line;
-      System.out.println("Last entry from " + logFile + ":");
+      var lastFile = logFile + ".last";
+      var lastOut = new FileWriter(lastFile);
+      System.out.println("Last entry from " + logFile + " written to " + lastFile);
       while ((line = raf.readLine()) != null) {
-        System.out.println(line);
+        lastOut.write(line + "\n");
       }
+      lastOut.close();
       raf.close();
     } catch (IOException e) {
       e.printStackTrace();

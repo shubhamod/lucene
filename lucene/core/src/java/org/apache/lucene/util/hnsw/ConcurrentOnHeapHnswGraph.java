@@ -23,11 +23,9 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import org.apache.lucene.util.Accountable;
-import org.apache.lucene.util.AtomicBitSet;
 import org.apache.lucene.util.RamUsageEstimator;
 
 /**
@@ -226,7 +224,7 @@ public final class ConcurrentOnHeapHnswGraph extends HnswGraph implements Accoun
    *
    * <p>Multiple Views may be searched concurrently.
    */
-  public HnswGraph getView() {
+  public ConcurrentHnswGraphView getView() {
     return new ConcurrentHnswGraphView();
   }
 
@@ -240,7 +238,11 @@ public final class ConcurrentOnHeapHnswGraph extends HnswGraph implements Accoun
     }
   }
 
-  private class ConcurrentHnswGraphView extends HnswGraph {
+  public int nodeCompletedAt(int node) {
+    return completedTime.get(node);
+  }
+
+  class ConcurrentHnswGraphView extends HnswGraph {
     private final int timestamp;
     private Iterator<Integer> remainingNeighbors;
     private int currentLevel;
@@ -289,6 +291,10 @@ public final class ConcurrentOnHeapHnswGraph extends HnswGraph implements Accoun
     @Override
     public String toString() {
       return "ConcurrentOnHeapHnswGraphView(size=" + size() + ", entryPoint=" + entryPoint.get();
+    }
+
+    public int getClock() {
+      return timestamp;
     }
   }
 
