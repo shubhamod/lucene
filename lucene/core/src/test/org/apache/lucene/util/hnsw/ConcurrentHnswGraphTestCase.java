@@ -439,6 +439,7 @@ abstract class ConcurrentHnswGraphTestCase<T> extends LuceneTestCase {
   public void testConnections() throws IOException {
     for (int i = 0; i < 100; i++) {
       for (int j = 1; j < 1000; j *= 10) {
+        LOG.info("--- testConnections: i=%s, j=%s ---".formatted(i, j));
         int nDoc = atLeast(5 * j);
         RandomAccessVectorValues<T> vectors = circularVectorValues(nDoc);
         similarityFunction = VectorSimilarityFunction.DOT_PRODUCT;
@@ -476,6 +477,7 @@ abstract class ConcurrentHnswGraphTestCase<T> extends LuceneTestCase {
 
   @SuppressWarnings("unchecked")
   public void searchWithSelectiveAcceptOrds(int nDoc, int toAccept) throws IOException {
+    LOG.info("--- selective ords docs=%s accept=%s ---".formatted(nDoc, toAccept));
     nDoc = atLeast(nDoc);
     RandomAccessVectorValues<T> vectors = circularVectorValues(nDoc);
     similarityFunction = VectorSimilarityFunction.DOT_PRODUCT;

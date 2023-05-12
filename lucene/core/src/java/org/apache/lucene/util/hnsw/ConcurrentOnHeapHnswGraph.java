@@ -100,7 +100,7 @@ public final class ConcurrentOnHeapHnswGraph extends HnswGraph implements Accoun
           if (oldEntry.node >= 0 && oldEntry.level >= level) {
             return oldEntry;
           } else {
-            LOG.info(String.format("%s updated entry to %s", Thread.currentThread().getId(), newEntry));
+            LOG.info(String.format("updated entry to %s", newEntry));
             return newEntry;
           }
         });

@@ -20,6 +20,7 @@ package org.apache.lucene.util.hnsw;
 import static java.lang.Math.log;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -298,7 +299,7 @@ public class ConcurrentHnswGraphBuilder<T> {
     // do this before adding to in-progress, so a concurrent writer checking
     // the in-progress set doesn't have to worry about uninitialized neighbor sets
     final int nodeLevel = getRandomGraphLevel(ml);
-    LOG.info(String.format("%s adding node %s at level %s", Thread.currentThread().getId(), node, nodeLevel));
+    LOG.info(String.format("adding node %s at level %s", node, nodeLevel));
     for (int level = nodeLevel; level >= 0; level--) {
       hnsw.addNode(level, node);
     }
@@ -333,6 +334,7 @@ public class ConcurrentHnswGraphBuilder<T> {
       //
       // Linking bottom-up avoids this problem.
       var gs = graphSearcher.get();
+      String entryString = Arrays.toString(eps);
       for (int level = entry.level; level > nodeLevel; level--) {
         NeighborQueue candidates = new NeighborQueue(1, false);
         gs
@@ -347,6 +349,10 @@ public class ConcurrentHnswGraphBuilder<T> {
                 null,
                 Integer.MAX_VALUE);
         eps = new int[] {candidates.pop()};
+        entryString += " -> " + Arrays.toString(eps);
+      }
+      if (nodeLevel != entry.level) {
+        LOG.info(String.format("entry path is %s", entryString));
       }
       // for levels <= nodeLevel search with topk = beamWidth
       NeighborQueue[] candidatesOnLevel = new NeighborQueue[1 + Math.min(nodeLevel, entry.level)];
@@ -406,13 +412,14 @@ public class ConcurrentHnswGraphBuilder<T> {
 
       hnsw.markComplete(nodeLevel, node);
     } finally {
-      LOG.info(String.format("%s finished adding node %s", Thread.currentThread().getId(), node));
+      LOG.info(String.format("finished adding node %s", node));
       insertionsInProgress.remove(progressMarker);
     }
   }
 
   private void addForwardLinks(int level, int newNode, NeighborQueue candidates)
       throws IOException {
+    LOG.info(String.format("   L%s adding forward links for %s -> %s", level, newNode, Arrays.toString(candidates.nodes())));
     NeighborArray scratch = popToScratch(candidates); // worst are first
     ConcurrentNeighborSet neighbors = hnsw.getNeighbors(level, newNode);
     neighbors.insertDiverse(scratch, this::scoreBetween);
@@ -421,6 +428,7 @@ public class ConcurrentHnswGraphBuilder<T> {
   private void addForwardLinks(
       int level, int newNode, Set<NodeAtLevel> inProgress, NodeAtLevel progressMarker)
       throws IOException {
+    LOG.info(String.format("   L%s adding forward links for %s -> %s", level, newNode, inProgress));
     NeighborQueue candidates = new NeighborQueue(inProgress.size(), false);
     for (NodeAtLevel n : inProgress) {
       if (n.level >= level && n != progressMarker) {
@@ -434,6 +442,7 @@ public class ConcurrentHnswGraphBuilder<T> {
 
   private void addBackLinks(int level, int newNode) throws IOException {
     ConcurrentNeighborSet neighbors = hnsw.getNeighbors(level, newNode);
+    LOG.info(String.format("   L%s adding backlinks for %s", level, neighbors.neighborsAsList()));
     neighbors.forEach(
         (nbr, nbrScore) -> {
           ConcurrentNeighborSet nbrNbr = hnsw.getNeighbors(level, nbr);
