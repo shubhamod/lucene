@@ -500,8 +500,9 @@ abstract class ConcurrentHnswGraphTestCase<T> extends LuceneTestCase {
     BitSet acceptOrds = new FixedBitSet(nDoc);
     List<Integer> acceptedList = new ArrayList<>();
     for (int i = 0; i < atLeast(toAccept); i++) {
-      acceptOrds.set(random().nextInt(nDoc));
-      acceptedList.add(i);
+      var ord = random().nextInt(nDoc);
+      acceptOrds.set(ord);
+      acceptedList.add(ord);
     }
 
     // Check the search finds all accepted vectors
