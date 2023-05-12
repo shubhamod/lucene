@@ -20,11 +20,13 @@ package org.apache.lucene.util.hnsw;
 import static org.apache.lucene.search.DocIdSetIterator.NO_MORE_DOCS;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReference;
 import org.apache.lucene.util.Accountable;
+import org.apache.lucene.util.AtomicBitSet;
 import org.apache.lucene.util.RamUsageEstimator;
 
 /**
@@ -43,6 +45,7 @@ public final class ConcurrentOnHeapHnswGraph extends HnswGraph implements Accoun
   // a ConcurrentHashMap.  While the ArrayList used for L0 in OHHG is faster for single-threaded
   // workloads, it imposes an unacceptable contention burden for concurrent workloads.
   private final ConcurrentMap<Integer, ConcurrentMap<Integer, ConcurrentNeighborSet>> graphLevels;
+  private final AtomicBitSet completedNodes;
 
   // Neighbours' size on upper levels (nsize) and level 0 (nsize0)
   private final int nsize;
@@ -56,6 +59,7 @@ public final class ConcurrentOnHeapHnswGraph extends HnswGraph implements Accoun
     this.nsize0 = 2 * M;
 
     this.graphLevels = new ConcurrentHashMap<>();
+    this.completedNodes = new AtomicBitSet(nsize0);
   }
 
   /**
@@ -85,12 +89,9 @@ public final class ConcurrentOnHeapHnswGraph extends HnswGraph implements Accoun
   }
 
   /**
-   * must be called after addNode to a level > 0
-   *
-   * <p>we don't do this as part of addNode itself, since it may not yet have been added to all the
-   * levels
+   * must be called after addNode once neighbors are linked in all levels.
    */
-  void maybeUpdateEntryNode(int level, int node) {
+  void markComplete(int level, int node) {
     entryPoint.accumulateAndGet(
         new NodeAtLevel(level, node),
         (oldEntry, newEntry) -> {
@@ -100,6 +101,7 @@ public final class ConcurrentOnHeapHnswGraph extends HnswGraph implements Accoun
             return newEntry;
           }
         });
+    completedNodes.set(node);
   }
 
   private int connectionsOnLevel(int level) {
@@ -233,6 +235,7 @@ public final class ConcurrentOnHeapHnswGraph extends HnswGraph implements Accoun
 
   private class ConcurrentHnswGraphView extends HnswGraph {
     private Iterator<Integer> remainingNeighbors;
+    private int currentLevel;
 
     @Override
     public int size() {
@@ -256,12 +259,19 @@ public final class ConcurrentOnHeapHnswGraph extends HnswGraph implements Accoun
 
     @Override
     public void seek(int level, int targetNode) {
+      currentLevel = level;
       remainingNeighbors = getNeighbors(level, targetNode).nodeIterator();
     }
 
     @Override
     public int nextNeighbor() {
-      return remainingNeighbors.hasNext() ? remainingNeighbors.next() : NO_MORE_DOCS;
+      while (remainingNeighbors.hasNext()) {
+        int next = remainingNeighbors.next();
+        if (completedNodes.get(next)) {
+          return next;
+        }
+      }
+      return NO_MORE_DOCS;
     }
 
     @Override
