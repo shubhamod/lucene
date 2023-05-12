@@ -556,8 +556,8 @@ abstract class ConcurrentHnswGraphTestCase<T> extends LuceneTestCase {
     int[] nodes = nn.nodes();
 
     if (nodes.length != nnS.nodes().length) {
-      System.out.printf("Found results %s instead of %s in\n%sCompare serial with %s results\n%s\n",
-          Arrays.toString(nodes), acceptedList, prettyPrint(hnsw), serialNodes.length, prettyPrint(serial));
+      LOG.info(String.format("Found results %s instead of %s in\n%sCompare serial with %s results\n%s",
+              Arrays.toString(nodes), acceptedList, prettyPrint(hnsw), serialNodes.length, prettyPrint(serial)));
       new HnswGraphValidator(serial).validateReachability();
       new HnswGraphValidator(hnsw).validateReachability();
       try {
