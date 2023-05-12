@@ -419,7 +419,7 @@ public class ConcurrentHnswGraphBuilder<T> {
 
   private void addForwardLinks(int level, int newNode, NeighborQueue candidates)
       throws IOException {
-    LOG.info(String.format("   L%s adding forward links for %s -> %s", level, newNode, Arrays.toString(candidates.nodes())));
+    LOG.info(String.format("   L%s considering forward links for natural nodes %s -> %s", level, newNode, Arrays.toString(candidates.nodes())));
     NeighborArray scratch = popToScratch(candidates); // worst are first
     ConcurrentNeighborSet neighbors = hnsw.getNeighbors(level, newNode);
     neighbors.insertDiverse(scratch, this::scoreBetween);
@@ -428,7 +428,6 @@ public class ConcurrentHnswGraphBuilder<T> {
   private void addForwardLinks(
       int level, int newNode, Set<NodeAtLevel> inProgress, NodeAtLevel progressMarker)
       throws IOException {
-    LOG.info(String.format("   L%s adding forward links for %s -> %s", level, newNode, inProgress));
     NeighborQueue candidates = new NeighborQueue(inProgress.size(), false);
     for (NodeAtLevel n : inProgress) {
       if (n.level >= level && n != progressMarker) {
@@ -437,6 +436,8 @@ public class ConcurrentHnswGraphBuilder<T> {
     }
     ConcurrentNeighborSet neighbors = hnsw.getNeighbors(level, newNode);
     NeighborArray scratch = popToScratch(candidates); // worst are first
+    LOG.info(String.format("   L%s considering forward links for concurrent nodes %s -> %s",
+            level, newNode, Arrays.toString(Arrays.copyOf(scratch.node, scratch.size()))));
     neighbors.insertDiverse(scratch, this::scoreBetween);
   }
 
