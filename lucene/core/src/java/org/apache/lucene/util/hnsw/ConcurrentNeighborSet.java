@@ -19,6 +19,7 @@ package org.apache.lucene.util.hnsw;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
@@ -39,6 +40,8 @@ import org.apache.lucene.util.NumericUtils;
  * out a Big Lock to impose a strict cap.
  */
 public class ConcurrentNeighborSet {
+  private static final Log LOG = ConcurrentHnswGraphBuilder.LOG;
+
   private int nodeId;
   private final ConcurrentSkipListSet<Long> neighbors;
   private final int maxConnections;
@@ -120,6 +123,7 @@ public class ConcurrentNeighborSet {
         insert(cNode, cScore, scoreBetween);
       }
     }
+    LOG.info("inserted %s as forward links".formatted(Arrays.toString(Arrays.copyOf(selected.node, selected.size()))));
     // TODO follow the paper's suggestion and fill up the rest of the neighbors with non-diverse
     // candidates?
   }

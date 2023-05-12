@@ -27,6 +27,7 @@ grant {
   permission java.io.FilePermission ".", "read";
 
   // write only to sandbox
+  permission java.io.FilePermission "${user.home}${/}logs${/}-", "read,write";
   permission java.io.FilePermission "${tests.linedocsfile}", "read";
   permission java.io.FilePermission "${java.io.tmpdir}", "read,write";
   permission java.io.FilePermission "${java.io.tmpdir}${/}-", "read,write,delete";

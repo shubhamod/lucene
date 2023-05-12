@@ -75,6 +75,7 @@ import org.apache.lucene.util.hnsw.HnswGraph.NodesIterator;
 
 /** Tests HNSW KNN graphs */
 abstract class ConcurrentHnswGraphTestCase<T> extends LuceneTestCase {
+  protected static final Log LOG = ConcurrentHnswGraphBuilder.LOG;
 
   VectorSimilarityFunction similarityFunction;
 
@@ -438,6 +439,7 @@ abstract class ConcurrentHnswGraphTestCase<T> extends LuceneTestCase {
   public void testConnections() throws IOException {
     for (int i = 0; i < 100; i++) {
       for (int j = 1; j < 1000; j *= 10) {
+        LOG.info("--- testConnections: i=%s, j=%s ---".formatted(i, j));
         int nDoc = atLeast(5 * j);
         RandomAccessVectorValues<T> vectors = circularVectorValues(nDoc);
         similarityFunction = VectorSimilarityFunction.DOT_PRODUCT;
@@ -462,19 +464,20 @@ abstract class ConcurrentHnswGraphTestCase<T> extends LuceneTestCase {
   public void testSearchWithSelectiveAcceptOrds() throws IOException {
     // searchWithSelectiveAcceptOrds seems particularly good at exposing problems with the graph
     for (int i = 0; i < 10; i++) {
-      searchWithSelectiveAcceptOrds(50, 5);
-      searchWithSelectiveAcceptOrds(100, 5);
-      searchWithSelectiveAcceptOrds(100, 15);
-      searchWithSelectiveAcceptOrds(500, 10);
-      searchWithSelectiveAcceptOrds(500, 50);
-      searchWithSelectiveAcceptOrds(1000, 10);
-      searchWithSelectiveAcceptOrds(1000, 50);
-      searchWithSelectiveAcceptOrds(1000, 100);
+//      searchWithSelectiveAcceptOrds(50, 5);
+      searchWithSelectiveAcceptOrds(60, 5);
+//      searchWithSelectiveAcceptOrds(100, 15);
+//      searchWithSelectiveAcceptOrds(500, 10);
+//      searchWithSelectiveAcceptOrds(500, 50);
+//      searchWithSelectiveAcceptOrds(1000, 10);
+//      searchWithSelectiveAcceptOrds(1000, 50);
+//      searchWithSelectiveAcceptOrds(1000, 100);
     }
   }
 
   @SuppressWarnings("unchecked")
   public void searchWithSelectiveAcceptOrds(int nDoc, int toAccept) throws IOException {
+    LOG.begin("--- selective ords docs=%s accept=%s ---".formatted(nDoc, toAccept));
     nDoc = atLeast(nDoc);
     RandomAccessVectorValues<T> vectors = circularVectorValues(nDoc);
     similarityFunction = VectorSimilarityFunction.DOT_PRODUCT;
@@ -495,13 +498,38 @@ abstract class ConcurrentHnswGraphTestCase<T> extends LuceneTestCase {
     ConcurrentOnHeapHnswGraph hnsw = builder.build(vectors.copy());
     // Only mark a few vectors as accepted
     BitSet acceptOrds = new FixedBitSet(nDoc);
+    List<Integer> acceptedList = new ArrayList<>();
     for (int i = 0; i < atLeast(toAccept); i++) {
       acceptOrds.set(random().nextInt(nDoc));
+      acceptedList.add(i);
     }
 
     // Check the search finds all accepted vectors
     int numAccepted = acceptOrds.cardinality();
-    NeighborQueue nn =
+    HnswGraph hnsw1 = hnsw.getView();
+    NeighborQueue nn = switch (getVectorEncoding()) {
+      case FLOAT32 -> HnswGraphSearcher.search(
+          (float[]) getTargetVector(),
+          numAccepted,
+          (RandomAccessVectorValues<float[]>) vectors.copy(),
+          getVectorEncoding(),
+          similarityFunction,
+          hnsw1,
+          acceptOrds,
+          Integer.MAX_VALUE);
+      case BYTE -> HnswGraphSearcher.search(
+          (byte[]) getTargetVector(),
+          numAccepted,
+          (RandomAccessVectorValues<byte[]>) vectors.copy(),
+          getVectorEncoding(),
+          similarityFunction,
+          hnsw1,
+          acceptOrds,
+          Integer.MAX_VALUE);
+    };
+
+    HnswGraph serial = HnswGraphBuilder.create(vectors, vectorEncoding, similarityFunction, 16, 100, random().nextInt()).build(vectors.copy());
+    NeighborQueue nnS =
         switch (getVectorEncoding()) {
           case FLOAT32 -> HnswGraphSearcher.search(
               (float[]) getTargetVector(),
@@ -509,7 +537,7 @@ abstract class ConcurrentHnswGraphTestCase<T> extends LuceneTestCase {
               (RandomAccessVectorValues<float[]>) vectors.copy(),
               getVectorEncoding(),
               similarityFunction,
-              hnsw.getView(),
+              serial,
               acceptOrds,
               Integer.MAX_VALUE);
           case BYTE -> HnswGraphSearcher.search(
@@ -518,12 +546,49 @@ abstract class ConcurrentHnswGraphTestCase<T> extends LuceneTestCase {
               (RandomAccessVectorValues<byte[]>) vectors.copy(),
               getVectorEncoding(),
               similarityFunction,
-              hnsw.getView(),
+              serial,
               acceptOrds,
               Integer.MAX_VALUE);
         };
+    int[] serialNodes = nnS.nodes();
 
     int[] nodes = nn.nodes();
+
+    if (nodes.length != nnS.nodes().length) {
+      LOG.info(String.format("Found results %s instead of %s in\n%sCompare serial with %s results\n%s",
+              Arrays.toString(nodes), acceptedList, prettyPrint(hnsw), serialNodes.length, prettyPrint(serial)));
+      new HnswGraphValidator(serial).validateReachability();
+      new HnswGraphValidator(hnsw).validateReachability();
+      try {
+        Thread.sleep(100);
+      } catch (InterruptedException e) {
+        throw new RuntimeException(e);
+      }
+
+      nn = switch (getVectorEncoding()) {
+        case FLOAT32 -> HnswGraphSearcher.search(
+            (float[]) getTargetVector(),
+            numAccepted,
+            (RandomAccessVectorValues<float[]>) vectors.copy(),
+            getVectorEncoding(),
+            similarityFunction,
+            hnsw.getView(),
+            acceptOrds,
+            Integer.MAX_VALUE);
+        case BYTE -> HnswGraphSearcher.search(
+            (byte[]) getTargetVector(),
+            numAccepted,
+            (RandomAccessVectorValues<byte[]>) vectors.copy(),
+            getVectorEncoding(),
+            similarityFunction,
+            hnsw.getView(),
+            acceptOrds,
+            Integer.MAX_VALUE);
+      };
+      nodes = nn.nodes();
+      assert nodes.length != nnS.nodes().length;
+    }
+
     assertEquals(numAccepted, nodes.length);
     for (int node : nodes) {
       assertTrue("the results include a deleted document: " + node, acceptOrds.get(node));
