@@ -236,6 +236,10 @@ public class ConcurrentNeighborSet {
     return (int) ~(heapValue);
   }
 
+  public int getNodeId() {
+    return nodeId;
+  }
+
   /** A BiFunction that can throw IOException. */
   @FunctionalInterface
   public interface ThrowingBiFunction<T, U, R> {

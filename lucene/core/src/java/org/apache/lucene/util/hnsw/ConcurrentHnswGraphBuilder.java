@@ -294,12 +294,7 @@ public class ConcurrentHnswGraphBuilder<T> {
    * other in-progress updates as neighbor candidates (subject to normal level constraints).
    */
   public void addGraphNode(int node, T value) throws IOException {
-    // do this before adding to in-progress, so a concurrent writer checking
-    // the in-progress set doesn't have to worry about uninitialized neighbor sets
     final int nodeLevel = getRandomGraphLevel(ml);
-    for (int level = nodeLevel; level >= 0; level--) {
-      hnsw.addNode(level, node);
-    }
 
     NodeAtLevel progressMarker = new NodeAtLevel(nodeLevel, node);
     insertionsInProgress.add(progressMarker);
@@ -389,12 +384,13 @@ public class ConcurrentHnswGraphBuilder<T> {
         // Considering concurrent inserts separately from "natural" candidates solves this problem;
         // both 1 and 2 will be added as neighbors to 3, avoiding the partition, and 2 will then
         // pick up the connection to 1 that it's supposed to have as well.
-        addForwardLinks(level, node, candidatesOnLevel[level]);
-        addForwardLinks(level, node, inProgressBefore, progressMarker);
+        ConcurrentNeighborSet neighbors = new ConcurrentNeighborSet(node, this.hnsw.connectionsOnLevel(level));
+        addForwardLinks(neighbors, candidatesOnLevel[level]);
+        addForwardLinks(neighbors, level, inProgressBefore, progressMarker);
         // backlinking is where we become visible to natural searches that aren't checking
         // in-progress,
         // so this has to be done after everything is is complete on this level
-        addBackLinks(level, node);
+        addBackLinks(neighbors, level);
       }
 
       // if we're being added in a new level above the entry point, consider concurrent insertions
@@ -411,33 +407,31 @@ public class ConcurrentHnswGraphBuilder<T> {
     }
   }
 
-  private void addForwardLinks(int level, int newNode, NeighborQueue candidates)
+  private void addForwardLinks(ConcurrentNeighborSet neighbors, NeighborQueue candidates)
       throws IOException {
     NeighborArray scratch = popToScratch(candidates); // worst are first
-    ConcurrentNeighborSet neighbors = hnsw.getNeighbors(level, newNode);
+    // add "get or create" method?
     neighbors.insertDiverse(scratch, this::scoreBetween);
   }
 
   private void addForwardLinks(
-      int level, int newNode, Set<NodeAtLevel> inProgress, NodeAtLevel progressMarker)
+          ConcurrentNeighborSet neighbors, int level, Set<NodeAtLevel> inProgress, NodeAtLevel progressMarker)
       throws IOException {
     NeighborQueue candidates = new NeighborQueue(inProgress.size(), false);
     for (NodeAtLevel n : inProgress) {
       if (n.level >= level && n != progressMarker) {
-        candidates.add(n.node, scoreBetween(n.node, newNode));
+        candidates.add(n.node, scoreBetween(n.node, neighbors.getNodeId()));
       }
     }
-    ConcurrentNeighborSet neighbors = hnsw.getNeighbors(level, newNode);
     NeighborArray scratch = popToScratch(candidates); // worst are first
     neighbors.insertDiverse(scratch, this::scoreBetween);
   }
 
-  private void addBackLinks(int level, int newNode) throws IOException {
-    ConcurrentNeighborSet neighbors = hnsw.getNeighbors(level, newNode);
+  private void addBackLinks(ConcurrentNeighborSet neighbors, int level) throws IOException {
     neighbors.forEach(
         (nbr, nbrScore) -> {
           ConcurrentNeighborSet nbrNbr = hnsw.getNeighbors(level, nbr);
-          nbrNbr.insert(newNode, nbrScore, this::scoreBetween);
+          nbrNbr.insert(level, nbrScore, this::scoreBetween);
         });
   }
 
