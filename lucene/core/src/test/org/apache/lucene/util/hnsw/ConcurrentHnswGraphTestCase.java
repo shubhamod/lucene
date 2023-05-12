@@ -1110,7 +1110,6 @@ abstract class ConcurrentHnswGraphTestCase<T> extends LuceneTestCase {
       totalMatches += computeOverlap(actual.nodes(), expected.nodes());
     }
     double overlap = totalMatches / (double) (100 * topK);
-    System.out.println("overlap=" + overlap + " totalMatches=" + totalMatches);
     assertTrue("overlap=" + overlap, overlap > 0.9);
   }
 
