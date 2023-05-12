@@ -5,7 +5,7 @@ import re
 start_construction_str = r"\d+ adding node \d+"
 end_construction_str = r"ConcurrentOnHeapHnswGraphView"
 start_graph_str = "# Level 0"
-end_graph_str = "java.lang.AssertionError: "
+end_graph_str = "Compare serial"
 
 # Initialize the flags
 in_construction = False

@@ -9,7 +9,8 @@ def parse_line(line: str) -> Dict[str, Any]:
         'begin': r"adding node (\d+) at level (\d+) with clock (\d+)",
         'info': r"entry path is (\S+)|L(\d+) considering forward links for (natural|concurrent) nodes (\S+) -> (\S+)",
         'finish': r"finished adding node (\d+) at clock (\d+)",
-        'link': r"L(\d+) adding backlinks for \[(.*?)\] -> (\d+)|inserted \[(.*?)\] as forward links",
+        'link_back': r"L(\d+) adding backlinks for \[(.*?)\] -> (\d+)",
+        'link_forwards': r"L(\d+) inserted (\d+) -> \[(.*?)\] as forward \w+ links",
         'update_entry': r"updated entry to NodeAtLevel\(level=(\d+), node=(\d+)\)",
     }
     
@@ -44,28 +45,28 @@ def parse_line(line: str) -> Dict[str, Any]:
                     'finished_at': int(data[1]),
                     'node_id': int(data[0]),
                 }
-            elif op == 'link':
-                if data[0] is not None:
-                    # Case: "L%s adding backlinks for %s -> %s"
-                    level = int(data[0])
-                    from_nodes = list(map(int, data[1].split(', '))) if data[1] else []
-                    to_node = int(data[2])
-                    return {
-                            'op': op,
-                            'thread_id': thread_id,
-                            'level': level,
-                            'from_nodes': from_nodes if from_nodes else [],
-                            'to_node': to_node,
-                        }
-                    
-                else:
-                    # Case: "inserted %s as forward links"
-                    to_nodes = list(map(int, data[3].split(', '))) if data[3] else []
-                    return {
-                            'op': op,
-                            'thread_id': thread_id,
-                            'to_nodes': to_nodes if to_nodes else [],
-                        }
+            elif op == 'link_back':
+                level = int(data[0])
+                from_nodes = list(map(int, data[1].split(', '))) if data[1] else []
+                to_node = int(data[2])
+                return {
+                        'op': op,
+                        'thread_id': thread_id,
+                        'level': level,
+                        'from_nodes': from_nodes if from_nodes else [],
+                        'to_node': to_node,
+                    }
+            elif op == 'link_forwards':
+                level = int(data[0])
+                from_node = int(data[1])
+                to_nodes = list(map(int, data[2].split(', '))) if data[2] else []
+                return {
+                        'op': op,
+                        'thread_id': thread_id,
+                        'level': level,
+                        'from_node': from_node,
+                        'to_nodes': to_nodes if to_nodes else [],
+                    }
             elif op == 'update_entry':
                 return {
                     'op': op,
