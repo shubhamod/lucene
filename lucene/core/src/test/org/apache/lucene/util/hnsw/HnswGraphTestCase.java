@@ -33,6 +33,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 import org.apache.lucene.codecs.KnnVectorsFormat;
 import org.apache.lucene.codecs.lucene95.Lucene95Codec;
@@ -428,6 +429,22 @@ abstract class HnswGraphTestCase<T> extends LuceneTestCase {
     // We expect to get approximately 100% recall;
     // the lowest docIds are closest to zero; sum(0,9) = 45
     assertTrue("sum(result docs)=" + sum, sum < 75);
+  }
+
+  @SuppressWarnings("unchecked")
+  public void testConnections() throws IOException {
+    for (int i = 0; i < 100; i++) {
+      for (int j = 1; j < 1000; j *= 10) {
+        int nDoc = atLeast(5 * j);
+        RandomAccessVectorValues<T> vectors = circularVectorValues(nDoc);
+        similarityFunction = VectorSimilarityFunction.DOT_PRODUCT;
+        VectorEncoding vectorEncoding = getVectorEncoding();
+        HnswGraphBuilder<T> builder =
+            HnswGraphBuilder.create(vectors, vectorEncoding, similarityFunction, 16, 100, random().nextInt());
+        HnswGraph hnsw = builder.build(vectors.copy());
+        new HnswGraphValidator(hnsw).validateConnected();
+      }
+    }
   }
 
   @SuppressWarnings("unchecked")
