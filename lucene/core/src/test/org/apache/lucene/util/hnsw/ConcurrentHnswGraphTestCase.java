@@ -437,7 +437,7 @@ abstract class ConcurrentHnswGraphTestCase<T> extends LuceneTestCase {
 
   @SuppressWarnings("unchecked")
   public void testConnections() throws IOException {
-    for (int i = 0; i < 100; i++) {
+    for (int i = 0; i < 1000; i++) {
       for (int j = 1; j < 1000; j *= 10) {
         LOG.info("--- testConnections: i=%s, j=%s ---".formatted(i, j));
         int nDoc = atLeast(5 * j);

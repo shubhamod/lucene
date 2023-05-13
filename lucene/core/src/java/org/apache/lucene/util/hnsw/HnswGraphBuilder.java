@@ -327,6 +327,7 @@ public final class HnswGraphBuilder<T> {
   private void selectAndLinkDiverse(
       NeighborArray neighbors, NeighborArray candidates, int maxConnOnLevel) throws IOException {
     // Select the best maxConnOnLevel neighbors of the new node, applying the diversity heuristic
+    NeighborArray pruned = new NeighborArray(candidates.size() - 1, true); // at least one will be diverse
     for (int i = candidates.size() - 1; neighbors.size() < maxConnOnLevel && i >= 0; i--) {
       // compare each neighbor (in distance order) against the closer neighbors selected so far,
       // only adding it if it is closer to the target than to any of the other selected neighbors
@@ -335,7 +336,16 @@ public final class HnswGraphBuilder<T> {
       assert cNode < hnsw.size();
       if (diversityCheck(cNode, cScore, neighbors)) {
         neighbors.add(cNode, cScore);
+      } else {
+        pruned.add(cNode, cScore);
       }
+    }
+    // if we didn't find enough diverse neighbors, fill the rest of the slots with the
+    // best options that we pruned
+    for (int i = 0; i < pruned.size() && neighbors.size() < maxConnOnLevel; i++) {
+      int cNode = pruned.node[i];
+      float cScore = pruned.score[i];
+      neighbors.insertSorted(cNode, cScore);
     }
   }
 
