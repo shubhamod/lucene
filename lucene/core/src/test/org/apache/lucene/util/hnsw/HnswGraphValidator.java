@@ -36,16 +36,16 @@ public class HnswGraphValidator {
             : hnsw;
   }
 
-  public void validateReachability() throws IOException {
+  public void validateConnected() throws IOException {
     for (int level = 0; level < hnsw.numLevels(); level++) {
-      validateReachability(level);
+      validateConnected(level);
     }
   }
 
-  private void validateReachability(int level) throws IOException {
+  private void validateConnected(int level) throws IOException {
     Set<Integer> nodes = getAllNodes(level);
     for (Integer node : nodes) {
-      validateNodeCanReachOthers(node, level, new HashSet<>(nodes));
+      validateConnected(node, level, new HashSet<>(nodes));
     }
   }
 
@@ -58,7 +58,7 @@ public class HnswGraphValidator {
     return nodes;
   }
 
-  private void validateNodeCanReachOthers(Integer startNode, int level, Set<Integer> remaining)
+  private void validateConnected(Integer startNode, int level, Set<Integer> remaining)
       throws IOException {
     dfs(startNode, level, remaining);
     assert remaining.isEmpty()
