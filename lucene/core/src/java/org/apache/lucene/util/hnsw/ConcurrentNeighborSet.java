@@ -18,8 +18,10 @@
 package org.apache.lucene.util.hnsw;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Iterator;
+import java.util.List;
 import java.util.NavigableSet;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -37,11 +39,13 @@ import org.apache.lucene.util.NumericUtils;
  * out a Big Lock to impose a strict cap.
  */
 public class ConcurrentNeighborSet {
+  private int nodeId;
   private final ConcurrentSkipListSet<Long> neighbors;
   private final int maxConnections;
   private final AtomicInteger size;
 
-  public ConcurrentNeighborSet(int maxConnections) {
+  public ConcurrentNeighborSet(int nodeId, int maxConnections) {
+    this.nodeId = nodeId;
     this.maxConnections = maxConnections;
     neighbors = new ConcurrentSkipListSet<>(Comparator.<Long>naturalOrder().reversed());
     size = new AtomicInteger();
@@ -62,8 +66,21 @@ public class ConcurrentNeighborSet {
     };
   }
 
+  // for debugging
+  List<Integer> neighborsAsList() {
+    ArrayList<Integer> res = new ArrayList<>();
+    for (Long encoded : neighbors) {
+      res.add(decodeNodeId(encoded));
+    }
+    return res;
+  }
+
   public int size() {
     return size.get();
+  }
+
+  public int rawSize() {
+    return neighbors.size();
   }
 
   public void forEach(ThrowingBiConsumer<Integer, Float> consumer) throws IOException {
@@ -80,20 +97,25 @@ public class ConcurrentNeighborSet {
 
   /**
    * For each candidate (going from best to worst), select it only if it is closer to target than it
-   * is to any of the already-selected neighbors. This is maintained whether those other neighbors
+   * is to any of the already-selected candidates. This is maintained whether those other neighbors
    * were selected by this method, or were added as a "backlink" to a node inserted concurrently
    * that chose this one as a neighbor.
    */
   public void insertDiverse(
       NeighborArray candidates, ThrowingBiFunction<Integer, Integer, Float> scoreBetween)
       throws IOException {
+    // It is not correct to just use our internal neighbor set to compare diversity against;
+    // this may include backlinks that other nodes added to us concurrently.  Track in a
+    // separate NeighborArray instead.
+    NeighborArray selected = new NeighborArray(candidates.size(), true);
     for (int i = candidates.size() - 1; neighbors.size() < maxConnections && i >= 0; i--) {
       int cNode = candidates.node[i];
       float cScore = candidates.score[i];
       // TODO in the paper, the diversity requirement is only enforced when there are more than
       // maxConn
-      if (isDiverse(cNode, cScore, scoreBetween)) {
-        // raw inserts (invoked by other threads inserting neighbors) could happen concurrently,
+      if (isDiverse(cNode, cScore, selected, scoreBetween)) {
+        selected.add(cNode, cScore);
+        // raw inserts (invoked by other threads backlinking to us) could happen concurrently,
         // so don't "cheat" and do a raw put()
         insert(cNode, cScore, scoreBetween);
       }
@@ -107,22 +129,31 @@ public class ConcurrentNeighborSet {
    * necessary.
    */
   public void insert(
-      int node, float score, ThrowingBiFunction<Integer, Integer, Float> scoreBetween)
+      int neighborId, float score, ThrowingBiFunction<Integer, Integer, Float> scoreBetween)
       throws IOException {
-    neighbors.add(encode(node, score));
-    if (size.incrementAndGet() > maxConnections) {
-      removeLeastDiverse(scoreBetween);
-      size.decrementAndGet();
+    assert neighborId != nodeId : "can't add self as neighbor at node " + nodeId;
+    // if two nodes are inserted concurrently, and see each other as neighbors,
+    // we will try to add a duplicate entry to the set, so it is not correct to assume
+    // that all calls will result in a new entry being added
+    if (neighbors.add(encode(neighborId, score))) {
+      if (size.incrementAndGet() > maxConnections) {
+        removeLeastDiverse(scoreBetween);
+        size.decrementAndGet();
+      }
     }
   }
 
   // is the candidate node with the given score closer to the base node than it is to any of the
   // existing neighbors
   private boolean isDiverse(
-      int node, float score, ThrowingBiFunction<Integer, Integer, Float> scoreBetween)
+      int node,
+      float score,
+      NeighborArray others,
+      ThrowingBiFunction<Integer, Integer, Float> scoreBetween)
       throws IOException {
-    for (Long encoded : neighbors) {
-      if (scoreBetween.apply(decodeNodeId(encoded), node) > score) {
+    for (int i = 0; i < others.size(); i++) {
+      int candidateNode = others.node[i];
+      if (scoreBetween.apply(candidateNode, node) > score) {
         return false;
       }
     }
@@ -182,7 +213,8 @@ public class ConcurrentNeighborSet {
     };
   }
 
-  public boolean contains(int i) {
+  /** This is O(n) because we have to decode node ids! Only for testing. */
+  boolean contains(int i) {
     for (Long e : neighbors) {
       if (decodeNodeId(e) == i) {
         return true;

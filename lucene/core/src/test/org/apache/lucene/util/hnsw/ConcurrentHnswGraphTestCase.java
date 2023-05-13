@@ -68,6 +68,7 @@ import org.apache.lucene.util.BitSet;
 import org.apache.lucene.util.Bits;
 import org.apache.lucene.util.FixedBitSet;
 import org.apache.lucene.util.RamUsageEstimator;
+import org.apache.lucene.util.ThreadInterruptedException;
 import org.apache.lucene.util.VectorUtil;
 import org.apache.lucene.util.hnsw.HnswGraph.NodesIterator;
 
@@ -1023,7 +1024,6 @@ abstract class ConcurrentHnswGraphTestCase<T> extends LuceneTestCase {
       totalMatches += computeOverlap(actual.nodes(), expected.nodes());
     }
     double overlap = totalMatches / (double) (100 * topK);
-    System.out.println("overlap=" + overlap + " totalMatches=" + totalMatches);
     assertTrue("overlap=" + overlap, overlap > 0.9);
   }
 
@@ -1043,6 +1043,27 @@ abstract class ConcurrentHnswGraphTestCase<T> extends LuceneTestCase {
       }
     }
     return overlap;
+  }
+
+  public void testConcurrentNeighbors() throws IOException {
+    RandomAccessVectorValues<T> vectors = circularVectorValues(3);
+    ConcurrentHnswGraphBuilder<T> builder =
+        new ConcurrentHnswGraphBuilder<>(vectors, getVectorEncoding(), similarityFunction, 1, 30) {
+          @Override
+          protected float scoreBetween(T v1, T v2) {
+            try {
+              Thread.sleep(10);
+            } catch (InterruptedException e) {
+              throw new ThreadInterruptedException(e);
+            }
+            return super.scoreBetween(v1, v2);
+          }
+        };
+    ConcurrentOnHeapHnswGraph hnsw = builder.build(vectors.copy());
+    for (int i = 0; i < vectors.size(); i++) {
+      assertTrue(hnsw.getNeighbors(0, i).size() <= 2); // Level 0 gets 2x neighbors
+      assertEquals(hnsw.getNeighbors(0, i).rawSize(), hnsw.getNeighbors(0, i).size());
+    }
   }
 
   /** Returns vectors evenly distributed around the upper unit semicircle. */
@@ -1270,6 +1291,9 @@ abstract class ConcurrentHnswGraphTestCase<T> extends LuceneTestCase {
   }
 
   static String prettyPrint(HnswGraph hnsw) {
+    if (hnsw instanceof ConcurrentOnHeapHnswGraph) {
+      hnsw = ((ConcurrentOnHeapHnswGraph) hnsw).getView();
+    }
     StringBuilder sb = new StringBuilder();
     sb.append(hnsw);
     sb.append("\n");
