@@ -666,13 +666,10 @@ abstract class HnswGraphTestCase<T> extends LuceneTestCase {
 
     // assert the nodes from the previous graph are successfully to levels > 0 in the new graph
     for (int level = 1; level < g.numLevels(); level++) {
-      NodesIterator nodesOnLevel = g.getNodesOnLevel(level);
-      NodesIterator nodesOnLevel2 = h.getNodesOnLevel(level);
-      while (nodesOnLevel.hasNext() && nodesOnLevel2.hasNext()) {
-        int node = nodesOnLevel.nextInt();
-        int node2 = oldToNewOrdMap.get(nodesOnLevel2.nextInt());
-        assertEquals("nodes in the graphs are different", node, node2);
-      }
+      List<Integer> nodesOnLevel = sortedNodesOnLevel(g, level);
+      List<Integer> nodesOnLevel2 =
+          sortedNodesOnLevel(h, level).stream().map(oldToNewOrdMap::get).collect(Collectors.toList());
+      assertEquals(nodesOnLevel, nodesOnLevel2);
     }
 
     // assert that the neighbors from the old graph are successfully transferred to the new graph
