@@ -433,17 +433,15 @@ abstract class HnswGraphTestCase<T> extends LuceneTestCase {
 
   @SuppressWarnings("unchecked")
   public void testConnections() throws IOException {
-    for (int i = 0; i < 100; i++) {
-      for (int j = 1; j < 1000; j *= 10) {
-        int nDoc = atLeast(5 * j);
-        RandomAccessVectorValues<T> vectors = circularVectorValues(nDoc);
-        similarityFunction = VectorSimilarityFunction.DOT_PRODUCT;
-        VectorEncoding vectorEncoding = getVectorEncoding();
-        HnswGraphBuilder<T> builder =
-            HnswGraphBuilder.create(vectors, vectorEncoding, similarityFunction, 16, 100, random().nextInt());
-        HnswGraph hnsw = builder.build(vectors.copy());
-        new HnswGraphValidator(hnsw).validateConnected();
-      }
+    for (int i = 1; i < 1000; i++) {
+      int nDoc = atLeast(500);
+      RandomAccessVectorValues<T> vectors = circularVectorValues(nDoc);
+      similarityFunction = VectorSimilarityFunction.DOT_PRODUCT;
+      VectorEncoding vectorEncoding = getVectorEncoding();
+      HnswGraphBuilder<T> builder =
+          HnswGraphBuilder.create(vectors, vectorEncoding, similarityFunction, 16, 100, random().nextInt());
+      HnswGraph hnsw = builder.build(vectors.copy());
+      new HnswGraphValidator(hnsw).validateConnected();
     }
   }
 
