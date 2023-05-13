@@ -608,7 +608,7 @@ abstract class ConcurrentHnswGraphTestCase<T> extends LuceneTestCase {
 
   public void testHnswGraphBuilderInitializationFromGraph_withNonZeroOffset() throws IOException {
     int totalSize = atLeast(100);
-    int initializerSize = 5 + random().nextInt(totalSize);
+    int initializerSize = 5 + random().nextInt(totalSize / 2);
     int docIdOffset = 1 + random().nextInt(totalSize - initializerSize + 1);
     int dim = atLeast(10);
     long seed = random().nextLong();
