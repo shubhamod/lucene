@@ -182,6 +182,7 @@ public class ConcurrentNeighborSet {
         Float e1e2Score = scoreBetween.apply(e1Id, e2Id);
         if (e1e2Score >= baseScore) {
           if (neighbors.remove(e1)) {
+            LOG.info("removed least diverse neighbor %s from %s".formatted(e1Id, nodeId));
             return;
           }
           // else another thread already removed it, keep looking

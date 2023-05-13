@@ -456,7 +456,7 @@ abstract class ConcurrentHnswGraphTestCase<T> extends LuceneTestCase {
               }
             };
         ConcurrentOnHeapHnswGraph hnsw = builder.build(vectors.copy());
-        new HnswGraphValidator(hnsw).validateReachability();
+        new HnswGraphValidator(hnsw).validateConnected();
       }
     }
   }
@@ -552,14 +552,17 @@ abstract class ConcurrentHnswGraphTestCase<T> extends LuceneTestCase {
               Integer.MAX_VALUE);
         };
     int[] serialNodes = nnS.nodes();
+    Arrays.sort(serialNodes);
 
     int[] nodes = nn.nodes();
+    Arrays.sort(nodes);
+    Collections.sort(acceptedList);
 
-    if (nodes.length != nnS.nodes().length) {
-      LOG.info(String.format("Found results %s instead of %s in\n%sCompare serial with %s results\n%s",
-              Arrays.toString(nodes), acceptedList, prettyPrint(hnsw), serialNodes.length, prettyPrint(serial)));
-      new HnswGraphValidator(serial).validateReachability();
-      new HnswGraphValidator(hnsw).validateReachability();
+    if (!Arrays.equals(nodes, serialNodes)) {
+      LOG.info(String.format("Found results %s instead of %s; correct is %s in\n%sCompare serial with %s results\n%s",
+              Arrays.toString(nodes), Arrays.toString(serialNodes), acceptedList, prettyPrint(hnsw), serialNodes.length, prettyPrint(serial)));
+      new HnswGraphValidator(hnsw).validateConnected();
+      new HnswGraphValidator(serial).validateConnected();
       try {
         Thread.sleep(100);
       } catch (InterruptedException e) {

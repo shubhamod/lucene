@@ -12,6 +12,7 @@ def parse_line(line: str) -> Dict[str, Any]:
         'link_back': r"L(\d+) adding backlinks for \[(.*?)\] -> (\d+)",
         'link_forwards': r"L(\d+) inserted (\d+) -> \[(.*?)\] as forward \w+ links",
         'update_entry': r"updated entry to NodeAtLevel\(level=(\d+), node=(\d+)\)",
+        'unlink': r"removed least diverse neighbor (\d+) from (\d+)",
     }
     
     # Extract the thread id from the start of the line
@@ -73,6 +74,13 @@ def parse_line(line: str) -> Dict[str, Any]:
                     'thread_id': thread_id,
                     'level': int(data[0]),
                     'node_id': int(data[1]),
+                }
+            elif op == 'unlink':
+                return {
+                    'op': op,
+                    'thread_id': thread_id,
+                    'removed_node': int(data[0]),
+                    'from_node': int(data[1]),
                 }
 
     # If no pattern matches, return a dictionary with the raw line and thread_id
