@@ -311,7 +311,7 @@ public class HnswGraphSearcher<T> {
       if (visited instanceof FixedBitSet) {
         visited = FixedBitSet.ensureCapacity((FixedBitSet) visited, capacity);
       }
-      // else AtomicBitSet knows how to grow itself safely
+      // else GrowableBitSet knows how to grow itself safely
     }
     visited.clear();
   }
