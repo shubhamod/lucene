@@ -100,6 +100,14 @@ public class AtomicBitSet extends BitSet {
   }
 
   @Override
+  public void clear() {
+    // we don't have direct access to the backing long[] in AtomicLongArray, so suck it up
+    // and do it the slow way.
+    // (Allocating a new AtomicLongArray was tested to be about 50% slower than this.)
+    super.clear();
+  }
+
+  @Override
   public void clear(int i) {
     if (i >= length()) {
       return;
