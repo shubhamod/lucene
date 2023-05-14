@@ -23,6 +23,7 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NavigableSet;
+import java.util.PrimitiveIterator;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.lucene.util.NumericUtils;
@@ -39,7 +40,7 @@ import org.apache.lucene.util.NumericUtils;
  * out a Big Lock to impose a strict cap.
  */
 public class ConcurrentNeighborSet {
-  private int nodeId;
+  private final int nodeId;
   private final ConcurrentSkipListSet<Long> neighbors;
   private final int maxConnections;
   private final AtomicInteger size;
@@ -51,16 +52,18 @@ public class ConcurrentNeighborSet {
     size = new AtomicInteger();
   }
 
-  public Iterator<Integer> nodeIterator() {
+  public PrimitiveIterator.OfInt nodeIterator() {
     // don't use a stream here. stream's implementation of iterator buffers
     // very aggressively, which is a big waste for a lot of searches
     Iterator<Long> it = neighbors.iterator();
-    return new Iterator<>() {
+    return new PrimitiveIterator.OfInt() {
+      @Override
       public boolean hasNext() {
         return it.hasNext();
       }
 
-      public Integer next() {
+      @Override
+      public int nextInt() {
         return decodeNodeId(it.next());
       }
     };

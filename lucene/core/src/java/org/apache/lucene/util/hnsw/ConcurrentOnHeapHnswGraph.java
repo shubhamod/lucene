@@ -20,8 +20,8 @@ package org.apache.lucene.util.hnsw;
 import static org.apache.lucene.search.DocIdSetIterator.NO_MORE_DOCS;
 
 import java.io.IOException;
-import java.util.Iterator;
 import java.util.Map;
+import java.util.PrimitiveIterator;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -266,7 +266,7 @@ public final class ConcurrentOnHeapHnswGraph extends HnswGraph implements Accoun
     // The only really foolproof solution is to implement snapshot isolation as
     // we have done here.
     private final int timestamp;
-    private Iterator<Integer> remainingNeighbors;
+    private PrimitiveIterator.OfInt remainingNeighbors;
 
     public ConcurrentHnswGraphView() {
       this.timestamp = logicalClock.get();
@@ -300,7 +300,7 @@ public final class ConcurrentOnHeapHnswGraph extends HnswGraph implements Accoun
     @Override
     public int nextNeighbor() {
       while (remainingNeighbors.hasNext()) {
-        int next = remainingNeighbors.next();
+        int next = remainingNeighbors.nextInt();
         if (completedTime.getOrDefault(next, Integer.MAX_VALUE) < timestamp) {
           return next;
         }
