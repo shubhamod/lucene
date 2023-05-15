@@ -29,8 +29,8 @@ import org.apache.lucene.util.ArrayUtil;
  * @lucene.internal
  */
 public class NeighborArray {
-  private final boolean scoresDescOrder;
-  private int size;
+  protected final boolean scoresDescOrder;
+  protected int size;
 
   float[] score;
   int[] node;
@@ -47,8 +47,7 @@ public class NeighborArray {
    */
   public void add(int newNode, float newScore) {
     if (size == node.length) {
-      node = ArrayUtil.grow(node);
-      score = ArrayUtil.growExact(score, node.length);
+      growArrays();
     }
     if (size > 0) {
       float previousScore = score[size - 1];
@@ -64,8 +63,7 @@ public class NeighborArray {
   /** Add a new node to the NeighborArray into a correct sort position according to its score. */
   public void insertSorted(int newNode, float newScore) {
     if (size == node.length) {
-      node = ArrayUtil.grow(node);
-      score = ArrayUtil.growExact(score, node.length);
+      growArrays();
     }
     int insertionPoint =
         scoresDescOrder
@@ -76,6 +74,11 @@ public class NeighborArray {
     node[insertionPoint] = newNode;
     score[insertionPoint] = newScore;
     ++size;
+  }
+
+  protected void growArrays() {
+    node = ArrayUtil.grow(node);
+    score = ArrayUtil.growExact(score, node.length);
   }
 
   public int size() {
@@ -114,7 +117,7 @@ public class NeighborArray {
     return "NeighborArray[" + size + "]";
   }
 
-  private int ascSortFindRightMostInsertionPoint(float newScore) {
+  protected int ascSortFindRightMostInsertionPoint(float newScore) {
     int insertionPoint = Arrays.binarySearch(score, 0, size, newScore);
     if (insertionPoint >= 0) {
       // find the right most position with the same score
@@ -128,7 +131,7 @@ public class NeighborArray {
     return insertionPoint;
   }
 
-  private int descSortFindRightMostInsertionPoint(float newScore) {
+  protected int descSortFindRightMostInsertionPoint(float newScore) {
     int start = 0;
     int end = size - 1;
     while (start <= end) {
