@@ -17,8 +17,6 @@
 
 package org.apache.lucene.util.hnsw;
 
-import static org.apache.lucene.util.hnsw.ConcurrentNeighborSet.*;
-
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -75,23 +73,16 @@ public class TestConcurrentNeighborSet extends LuceneTestCase {
         (a, b) -> {
           return similarityFunction.compare(vectors.vectorValue(a), vectors.vectorValue(b));
         };
-    var L =
-        IntStream.range(0, 10)
+    IntStream.range(0, 10)
             .filter(i -> i != 7)
-            .mapToLong(
-                i -> {
-                  try {
-                    return encode(i, scoreBetween.apply(7, i));
-                  } catch (IOException e) {
-                    throw new RuntimeException(e);
-                  }
-                })
-            .sorted()
-            .toArray();
-    for (int i = 0; i < L.length; i++) {
-      var encoded = L[i];
-      candidates.add(decodeNodeId(encoded), decodeScore(encoded));
-    }
+            .forEach(
+                    i -> {
+                      try {
+                        candidates.add(i, scoreBetween.apply(7, i));
+                      } catch (IOException e) {
+                        throw new RuntimeException(e);
+                      }
+                    });
     assert candidates.size() == 9;
 
     var neighbors = new ConcurrentNeighborSet(0, 3);
