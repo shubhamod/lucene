@@ -22,6 +22,7 @@ import java.io.UncheckedIOException;
 import java.util.Arrays;
 import java.util.PrimitiveIterator;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
 /**
@@ -52,7 +53,7 @@ public class ConcurrentNeighborSet {
    return new NeighborIterator(neighborsRef.get());
   }
 
-  public void backlink(Function<Integer, ConcurrentNeighborSet> neighborhoodOf, ThrowingBiFunction<Integer, Integer, Float> scoreBetween) throws IOException {
+  public void backlink(Function<Integer, ConcurrentNeighborSet> neighborhoodOf, BiFunction<Integer, Integer, Float> scoreBetween) throws IOException {
     NeighborArray neighbors = neighborsRef.get();
     for (int i = 0; i < neighbors.size(); i++) {
        int nbr = neighbors.node[i];
@@ -92,7 +93,7 @@ public class ConcurrentNeighborSet {
    * were selected by this method, or were added as a "backlink" to a node inserted concurrently
    * that chose this one as a neighbor.
    */
-  public void insertDiverse(NeighborArray candidates, ThrowingBiFunction<Integer, Integer, Float> scoreBetween) throws IOException {
+  public void insertDiverse(NeighborArray candidates, BiFunction<Integer, Integer, Float> scoreBetween) throws IOException {
     NeighborArray selected = new NeighborArray(candidates.size(), true);
     for (int i = candidates.size() - 1; i >= 0; i--) {
       int cNode = candidates.node[i];
@@ -106,7 +107,7 @@ public class ConcurrentNeighborSet {
     // as an option in the future.
   }
 
-  private void insertMultiple(NeighborArray selected, ThrowingBiFunction<Integer, Integer, Float> scoreBetween) {
+  private void insertMultiple(NeighborArray selected, BiFunction<Integer, Integer, Float> scoreBetween) {
     neighborsRef.getAndUpdate(current -> {
       ConcurrentNeighborArray next = current.copy();
         for (int i = 0; i < selected.size(); i++) {
@@ -123,7 +124,7 @@ public class ConcurrentNeighborSet {
    * Insert a new neighbor, maintaining our size cap by removing the least diverse neighbor if
    * necessary.
    */
-  public void insert(int neighborId, float score, ThrowingBiFunction<Integer, Integer, Float> scoreBetween)
+  public void insert(int neighborId, float score, BiFunction<Integer, Integer, Float> scoreBetween)
       throws IOException {
     assert neighborId != nodeId : "can't add self as neighbor at node " + nodeId;
     neighborsRef.getAndUpdate(current -> {
@@ -140,7 +141,7 @@ public class ConcurrentNeighborSet {
       int node,
       float score,
       NeighborArray others,
-      ThrowingBiFunction<Integer, Integer, Float> scoreBetween)
+      BiFunction<Integer, Integer, Float> scoreBetween)
       throws IOException {
     for (int i = 0; i < others.size(); i++) {
       int candidateNode = others.node[i];
@@ -151,7 +152,7 @@ public class ConcurrentNeighborSet {
     return true;
   }
 
-  private void enforceMaxConnLimit(NeighborArray neighbors, ThrowingBiFunction<Integer, Integer, Float> scoreBetween) {
+  private void enforceMaxConnLimit(NeighborArray neighbors, BiFunction<Integer, Integer, Float> scoreBetween) {
     while (neighbors.size() > maxConnections) {
       try {
         removeLeastDiverse(neighbors, scoreBetween);
@@ -166,7 +167,7 @@ public class ConcurrentNeighborSet {
    * look at all nodes e2 that are closer to the base node than e1 is. If any e2 is closer to e1
    * than e1 is to the base node, remove e1.
    */
-  private void removeLeastDiverse(NeighborArray neighbors, ThrowingBiFunction<Integer, Integer, Float> scoreBetween)
+  private void removeLeastDiverse(NeighborArray neighbors, BiFunction<Integer, Integer, Float> scoreBetween)
       throws IOException {
     for (int i = neighbors.size() - 1; i >= 1; i--) {
       int e1Id = neighbors.node[i];
@@ -242,17 +243,5 @@ public class ConcurrentNeighborSet {
       System.arraycopy(score, 0, copy.score, 0, size);
       return copy;
     }
-  }
-
-  /** A BiFunction that can throw IOException. */
-  @FunctionalInterface
-  public interface ThrowingBiFunction<T, U, R> {
-    R apply(T t, U u) throws IOException;
-  }
-
-  /** A BiConsumer that can throw IOException. */
-  @FunctionalInterface
-  public interface ThrowingBiConsumer<T, U> {
-    void accept(T t, U u) throws IOException;
   }
 }
