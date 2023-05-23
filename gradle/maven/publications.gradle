@@ -59,8 +59,11 @@ apply from: buildscript.sourceFile.toPath().resolveSibling("publications-maven.g
 // Configure on-demand maven publishing into ~/.m2 for developers' convenience.
 apply from: buildscript.sourceFile.toPath().resolveSibling("maven-to-local-m2.gradle")
 
+// Configure on-demand maven publishing into ~/.m2 for developers' convenience.
+apply from: buildscript.sourceFile.toPath().resolveSibling("maven-to-datastax-releases.gradle")
+
 // Configure artifact push to apache nexus (snapshots repository, CI job).
-apply from: buildscript.sourceFile.toPath().resolveSibling("maven-to-nexus-snapshots.gradle")
+// apply from: buildscript.sourceFile.toPath().resolveSibling("maven-to-nexus-snapshots.gradle")
 
 // Configure artifact push to apache nexus (releases repository).
-apply from: buildscript.sourceFile.toPath().resolveSibling("maven-to-nexus-releases.gradle")
+// apply from: buildscript.sourceFile.toPath().resolveSibling("maven-to-nexus-releases.gradle")
