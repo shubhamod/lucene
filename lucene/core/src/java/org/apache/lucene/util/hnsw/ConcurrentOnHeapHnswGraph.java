@@ -175,16 +175,13 @@ public final class ConcurrentOnHeapHnswGraph extends HnswGraph implements Accoun
       }
 
       // size of nodes CHM
-      int numNodesOnLevel = graphLevels.get(l).size();
-      long chmSize = concurrentHashMapRamUsed(numNodesOnLevel);
-
+      long neighborSize = concurrentHashMapRamUsed(level.size());
       // size of the CNS of each node
-      long neighborSize = 0;
-      for (ConcurrentNeighborSet cns : graphLevels.get(l).values()) {
+      for (ConcurrentNeighborSet cns : level.values()) {
         neighborSize += neighborSetBytes + (long) cns.arrayLength() * (Integer.BYTES + Float.BYTES);
       }
 
-      total += chmSize + neighborSize;
+      total += neighborSize;
     }
 
     // logical clocks
