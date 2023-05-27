@@ -152,36 +152,19 @@ public final class ConcurrentOnHeapHnswGraph extends HnswGraph implements Accoun
 
   @Override
   public long ramBytesUsed() {
-    // local vars here just to make it easier to keep lines short enough to read
-    long REF_BYTES = RamUsageEstimator.NUM_BYTES_OBJECT_REF;
-    long AH_BYTES = RamUsageEstimator.NUM_BYTES_ARRAY_HEADER;
-
-    long neighborSetBytes =
-        +REF_BYTES // atomicreference
-            + Integer.BYTES
-            + Integer.BYTES
-            + REF_BYTES // NeighborArray
-            + AH_BYTES * 2
-            + REF_BYTES * 2
-            + Integer.BYTES
-            + 1; // NeighborArray internals
-    long total = 0;
-
     // the main graph structure
+    long total = concurrentHashMapRamUsed(graphLevels.size());
     for (int l = 0; l <= entryPoint.get().level; l++) {
       Map<Integer, ConcurrentNeighborSet> level = graphLevels.get(l);
       if (level == null) {
         continue;
       }
 
-      // size of nodes CHM
-      long neighborSize = concurrentHashMapRamUsed(level.size());
-      // size of the CNS of each node
-      for (ConcurrentNeighborSet cns : level.values()) {
-        neighborSize += neighborSetBytes + (long) cns.arrayLength() * (Integer.BYTES + Float.BYTES);
-      }
+      int numNodesOnLevel = graphLevels.get(l).size();
+      long chmSize = concurrentHashMapRamUsed(numNodesOnLevel);
+      long neighborSize = neighborsRamUsed(connectionsOnLevel(l)) * numNodesOnLevel;
 
-      total += neighborSize;
+      total += chmSize + neighborSize;
     }
 
     // logical clocks
@@ -190,23 +173,58 @@ public final class ConcurrentOnHeapHnswGraph extends HnswGraph implements Accoun
     return total;
   }
 
-  private static long concurrentHashMapRamUsed(int externalNodeCount) {
+  public long ramBytesUsedOneNode(int nodeLevel) {
+    int entryCount = (int) (nodeLevel / CHM_LOAD_FACTOR);
+    var graphBytesUsed =
+        chmEntriesRamUsed(entryCount)
+            + neighborsRamUsed(connectionsOnLevel(0))
+            + nodeLevel * neighborsRamUsed(connectionsOnLevel(1));
+    var clockBytesUsed = Integer.BYTES;
+    return graphBytesUsed + clockBytesUsed;
+  }
+
+  private static long neighborsRamUsed(int count) {
     long REF_BYTES = RamUsageEstimator.NUM_BYTES_OBJECT_REF;
     long AH_BYTES = RamUsageEstimator.NUM_BYTES_ARRAY_HEADER;
-    long CORES = Runtime.getRuntime().availableProcessors();
+    long neighborSetBytes =
+        REF_BYTES // atomicreference
+            + Integer.BYTES
+            + Integer.BYTES
+            + REF_BYTES // NeighborArray
+            + AH_BYTES * 2
+            + REF_BYTES * 2
+            + Integer.BYTES
+            + 1; // NeighborArray internals
+    return neighborSetBytes + (long) count * (Integer.BYTES + Float.BYTES);
+  }
 
+  private static final float CHM_LOAD_FACTOR = 0.75f; // this is hardcoded inside ConcurrentHashMap
+
+  /**
+   * caller's responsibility to divide number of entries by load factor to get internal node count
+   */
+  private static long chmEntriesRamUsed(int internalEntryCount) {
+    long REF_BYTES = RamUsageEstimator.NUM_BYTES_OBJECT_REF;
     long chmNodeBytes =
         REF_BYTES // node itself in Node[]
             + 3L * REF_BYTES
             + Integer.BYTES; // node internals
-    float chmLoadFactor = 0.75f; // this is hardcoded inside ConcurrentHashMap
+
+    return internalEntryCount * chmNodeBytes;
+  }
+
+  private static long concurrentHashMapRamUsed(int externalSize) {
+    long REF_BYTES = RamUsageEstimator.NUM_BYTES_OBJECT_REF;
+    long AH_BYTES = RamUsageEstimator.NUM_BYTES_ARRAY_HEADER;
+    long CORES = Runtime.getRuntime().availableProcessors();
+
     // CHM has a striped counter Cell implementation, we expect at most one per core
     long chmCounters = AH_BYTES + CORES * (REF_BYTES + Long.BYTES);
 
-    long nodeCount = (long) (externalNodeCount / chmLoadFactor);
+    int nodeCount = (int) (externalSize / CHM_LOAD_FACTOR);
 
     long chmSize =
-        nodeCount * chmNodeBytes // nodes
+        chmEntriesRamUsed(nodeCount) // nodes
             + nodeCount * REF_BYTES
             + AH_BYTES // nodes array
             + Long.BYTES
@@ -377,7 +395,11 @@ public final class ConcurrentOnHeapHnswGraph extends HnswGraph implements Accoun
     @Override
     public long ramBytesUsed() {
       var REF_BYTES = RamUsageEstimator.NUM_BYTES_OBJECT_REF;
-      return REF_BYTES + Integer.BYTES + REF_BYTES + REF_BYTES + completionTimesRef.get().length();
+      return REF_BYTES
+          + Integer.BYTES // logicalClock
+          + REF_BYTES
+          + REF_BYTES
+          + (long) Integer.BYTES * completionTimesRef.get().length();
     }
 
     private void ensureCapacity(int node) {
