@@ -108,7 +108,7 @@ public class ConcurrentNeighborSet {
       int cNode = candidates.node[i];
       float cScore = candidates.score[i];
       if (isDiverse(cNode, cScore, selected, scoreBetween)) {
-        selected.add(cNode, cScore);
+        selected.insertSorted(cNode, cScore);
       }
     }
     insertMultiple(selected, scoreBetween);
@@ -207,6 +207,8 @@ public class ConcurrentNeighborSet {
     return false;
   }
 
+  // NeighborArray that fills unused entries with -1 so they are distinguishable from node 0
+  // even if size is modified concurrently
   private static class ConcurrentNeighborArray extends NeighborArray {
     public ConcurrentNeighborArray(int maxSize, boolean descOrder) {
       this(maxSize, descOrder, true);
@@ -233,8 +235,8 @@ public class ConcurrentNeighborSet {
       }
       int insertionPoint =
           scoresDescOrder
-              ? descSortFindRightMostInsertionPoint(newScore)
-              : ascSortFindRightMostInsertionPoint(newScore);
+              ? descSortFindRightMostInsertionPoint(newScore, sortedNodeSize)
+              : ascSortFindRightMostInsertionPoint(newScore, sortedNodeSize);
       // two nodes may attempt to add each other in the Concurrent classes,
       // so we need to check if the node is already present
       if (node[insertionPoint] != newNode) {
