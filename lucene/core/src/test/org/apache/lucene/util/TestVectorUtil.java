@@ -20,6 +20,8 @@ import java.util.Random;
 import org.apache.lucene.tests.util.LuceneTestCase;
 import org.apache.lucene.tests.util.TestUtil;
 
+import static org.apache.lucene.util.TestVectorConstants.largeVector;
+
 public class TestVectorUtil extends LuceneTestCase {
 
   public static final double DELTA = 1e-4;
@@ -113,6 +115,10 @@ public class TestVectorUtil extends LuceneTestCase {
   public void testNormalizeZeroThrows() {
     float[] v = {0, 0, 0};
     expectThrows(IllegalArgumentException.class, () -> VectorUtil.l2normalize(v));
+  }
+
+  public void testCosineLargeVector() {
+    VectorUtil.cosine(largeVector, largeVector);
   }
 
   private static float l2(float[] v) {
