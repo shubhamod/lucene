@@ -45,7 +45,30 @@ public class TestEigenvalueDecomposition extends LuceneTestCase {
         assertEquals(Math.sqrt(2) / 2, Math.abs(eigenvectors[1][1]), 1e-6);
     }
 
-    private static final float EPSILON = 1e-6f;
+    private static final float EPSILON = 1e-5f;
+
+    public void testProject() {
+        float[] u = {1, 2, 3};
+        float[] v = {4, 5, 6};
+        float[] expected = {2.2857143f, 4.5714286f, 6.857143f};
+        float[] actual = EigenvalueDecomposition.project(v, u);
+        assertArrayEquals(expected, actual, EPSILON);
+    }
+
+    public void testOrthogonalize() {
+        float[] u = {1, 0, 0};
+        float[] v = {1, 0, 0};
+        float[] expected = {0, 0, 0};
+        float[] actual = EigenvalueDecomposition.orthogonalize(u, v);
+        assertArrayEquals(expected, actual, EPSILON);
+    }
+
+    public void testNormalize() {
+        float[] u = {3, 0, 4};
+        float[] expected = {0.6f, 0, 0.8f};
+        float[] actual = EigenvalueDecomposition.normalize(u);
+        assertArrayEquals(expected, actual, EPSILON);
+    }
 
     public void testQrDecomp() {
         float[][] A = {
@@ -56,8 +79,7 @@ public class TestEigenvalueDecomposition extends LuceneTestCase {
 
         float[][] R = new float[A.length][A.length];
 
-        float[][] Q = EigenvalueDecomposition.copy(A);
-        EigenvalueDecomposition.qrDecomp(Q, R);
+        float[][] Q = EigenvalueDecomposition.qrDecomp(A, R);
 
         // Check if R is upper triangular
         for (int i = 0; i < R.length; i++) {

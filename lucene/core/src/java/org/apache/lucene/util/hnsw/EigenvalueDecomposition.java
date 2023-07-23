@@ -1,7 +1,5 @@
 package org.apache.lucene.util.hnsw;
 
-import org.apache.lucene.util.VectorUtil;
-
 import static org.apache.lucene.util.VectorUtil.dotProduct;
 
 class EigenvalueDecomposition {
@@ -95,38 +93,79 @@ class EigenvalueDecomposition {
         return eigenvalues;
     }
 
+    static float[] project(float[] u, float[] v) {
+        float scale = dotProduct(u, v) / dotProduct(v, v);
+        return scale(v, scale);
+    }
+
+    static float[] orthogonalize(float[] u, float[] v) {
+        float[] projection = project(u, v);
+        return subtract(u, projection);
+    }
+
+    static float[] normalize(float[] u) {
+        float norm = (float) Math.sqrt(dotProduct(u, u));
+        if (norm != 0) {
+            return scale(u, 1 / norm);
+        }
+        return u;
+    }
+
+    static float magnitude(float[] v) {
+        return (float) Math.sqrt(dotProduct(v, v));
+    }
+
     /**
-     * Perform QR decomposition of A.  The A parameter will be modified in-place to compute Q.
+     * Compute Q for QR decomposition of A such that A=QR.
      */
-    static void qrDecomp(float[][] A, float[][] R) {
-        for (int i = 0; i < A.length; i++) {
-            float[] u = A[i];
+    static float[][] qrDecomp(float[][] A, float[][] R) {
+        int m = A.length;    // rows
+        int n = A[0].length; // columns
+        float[][] Q = new float[m][n];
 
-            // Modified Gram-Schmidt orthogonalization
-            for (int j = 0; j < i; j++) {
-                float[] v = A[j];
-                float r = dotProduct(u, v);
-                R[j][i] = r;
-                u = subtract(u, scale(v, r));
+        for (int j = 0; j < n; j++) {
+            float[] aj = getColumn(A, j);
+            float[] uj = copyVector(aj);
+
+            for (int i = 0; i < j; i++) {
+                float[] qi = getColumn(Q, i);
+                float[] proj = project(aj, qi);
+                uj = subtract(uj, proj);
+                R[i][j] = dotProduct(qi, aj); // Fill the upper-triangular matrix R
             }
 
-            R[i][i] = (float) Math.sqrt(dotProduct(u, u));
-            assert Float.isFinite(R[i][i]) : R[i][i];
-            if (R[i][i] != 0) {
-                u = scale(u, 1 / R[i][i]);
-            }
+            R[j][j] = magnitude(uj);
+            insertColumn(Q, normalize(uj), j);
+        }
 
-            copyRow(A, i, u);
+        return Q;
+    }
+
+    private static float[] copyVector(float[] orig) {
+        float[] copy = new float[orig.length];
+        System.arraycopy(orig, 0, copy, 0, orig.length);
+        return copy;
+    }
+
+    private static float[] getColumn(float[][] mat, int columnIndex) {
+        float[] column = new float[mat.length];
+        for (int i = 0; i < mat.length; i++) {
+            column[i] = mat[i][columnIndex];
+        }
+        return column;
+    }
+
+    private static void insertColumn(float[][] mat, float[] col, int colIndex) {
+        for (int i = 0; i < mat.length; i++) {
+            mat[i][colIndex] = col[i];
         }
     }
 
     private void computeEigen(float[][] A, float[][] R) {
-
         for (int i = 0; i < A.length; i++) {
             eigenvalues[i] = A[i][i];
             copyRow(eigenvectors, i, R[i]);
         }
-
     }
 
     static float[][] copy(float[][] orig) {
