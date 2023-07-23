@@ -1,224 +1,145 @@
 package org.apache.lucene.util.hnsw;
 
 import org.apache.lucene.index.VectorEncoding;
+import org.apache.lucene.util.hnsw.math.linear.ArrayRealVector;
+import org.apache.lucene.util.hnsw.math.linear.EigenDecomposition;
+import org.apache.lucene.util.hnsw.math.linear.RealMatrix;
+import org.apache.lucene.util.hnsw.math.linear.RealVector;
+import org.apache.lucene.util.hnsw.math.stat.correlation.PearsonsCorrelation;
+import org.apache.lucene.util.hnsw.math.stat.descriptive.moment.VectorialMean;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-
-import static org.apache.lucene.search.DocIdSetIterator.NO_MORE_DOCS;
+import java.util.function.Function;
 
 public class FingerSearcher<T> {
-
+    private final RandomAccessVectorValues<T> values;
     private final VectorEncoding vectorEncoding;
+    private final HnswGraph hnswGraph;
+    private final RealMatrix lshBasis;
+    private final int r;
 
-    private final float[][] lshBases;
-
-    public FingerSearcher(HnswGraph graph, RandomAccessVectorValues<T> vectors, VectorEncoding encoding) throws IOException {
-
+    public FingerSearcher(HnswGraph hnswGraph, RandomAccessVectorValues<T> values, VectorEncoding encoding) {
+        this.hnswGraph = hnswGraph;
+        this.values = values;
         this.vectorEncoding = encoding;
+        this.r = values.dimension() < 768 ? 64 : 128;
 
-        float[][] residualVectors = computeResidualVectors(graph, vectors);
-
-        lshBases = learnLSHBases(residualVectors);
+        // Compute the training data and the LSH basis.
+        double[][] trainingData = new double[0][];
+        try {
+            trainingData = computeTrainingData();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        this.lshBasis = computeLshBasis(trainingData);
     }
 
-    private float[][] computeResidualVectors(HnswGraph graph, RandomAccessVectorValues<T> vectors) throws IOException {
+    private double[][] computeTrainingData() throws IOException {
+        int numVectors = values.size();
+        int dimension = values.dimension();
+        double[][] trainingData = new double[numVectors][];
 
-        List<int[]> edges = getAllEdges(graph);
+        for (int i = 0; i < numVectors; i++) {
+            T vector = values.vectorValue(i);
+            double[] doubleVector;
 
-        float[][] residuals = new float[edges.size()][];
-        for(int i = 0; i < edges.size(); i++) {
-            int[] edge = edges.get(i);
-            residuals[i] = getResidual(edge[0], edge[1], vectors);
+            if (vectorEncoding == VectorEncoding.BYTE) {
+                byte[] byteArray = (byte[]) vector;
+                doubleVector = new double[byteArray.length];
+                for (int j = 0; j < byteArray.length; j++) {
+                    doubleVector[j] = byteArray[j];
+                }
+            } else if (vectorEncoding == VectorEncoding.FLOAT32) {
+                float[] floatArray = (float[]) vector;
+                doubleVector = new double[floatArray.length];
+                for (int j = 0; j < floatArray.length; j++) {
+                    doubleVector[j] = floatArray[j];
+                }
+            } else {
+                throw new IllegalArgumentException("Unsupported vector encoding: " + vectorEncoding);
+            }
+
+            trainingData[i] = doubleVector;
         }
 
-        return residuals;
-
+        return trainingData;
     }
 
-    private float[] getResidual(int node1, int node2, RandomAccessVectorValues<T> vectors) throws IOException {
-        float[] vec1, vec2, proj, residual;
+    private RealMatrix computeLshBasis(double[][] trainingData) {
+        // Compute the mean of the training data.
+        VectorialMean mean = new VectorialMean(trainingData[0].length);
+        for (double[] data : trainingData) {
+            mean.increment(data);
+        }
+        double[] meanVector = mean.getResult();
 
-        if(vectorEncoding == VectorEncoding.FLOAT32) {
-            float[] node1Vec = (float[]) vectors.vectorValue(node1);
-            float[] node2Vec = (float[]) vectors.vectorValue(node2);
-            vec1 = node1Vec;
-            vec2 = node2Vec;
+        // Subtract the mean from the training data.
+        for (double[] data : trainingData) {
+            for (int i = 0; i < data.length; i++) {
+                data[i] -= meanVector[i];
+            }
+        }
 
+        // Compute the covariance matrix of the training data.
+        PearsonsCorrelation pc = new PearsonsCorrelation(trainingData);
+        RealMatrix covarianceMatrix = pc.getCorrelationMatrix();
+
+        // Compute the eigen decomposition of the covariance matrix.
+        EigenDecomposition eig = new EigenDecomposition(covarianceMatrix);
+
+        // The LSH basis is given by the eigenvectors corresponding to the r largest eigenvalues.
+        return eig.getV().getSubMatrix(0, r-1, 0, values.dimension()-1).transpose();
+    }
+
+    private float normSq(RealVector v) {
+        return (float) v.dotProduct(v);
+    }
+
+    public Function<T, Float> distanceFunction(T query) {
+        // Project the query vector into the LSH space
+        RealVector queryVector;
+        if (vectorEncoding == VectorEncoding.BYTE) {
+            byte[] byteArray = (byte[]) query;
+            queryVector = new ArrayRealVector(byteArray.length);
+            for (int j = 0; j < byteArray.length; j++) {
+                queryVector.setEntry(j, byteArray[j]);
+            }
+        } else if (vectorEncoding == VectorEncoding.FLOAT32) {
+            float[] floatArray = (float[]) query;
+            queryVector = new ArrayRealVector(floatArray.length);
+            for (int j = 0; j < floatArray.length; j++) {
+                queryVector.setEntry(j, floatArray[j]);
+            }
         } else {
-            byte[] node1Vec = (byte[]) vectors.vectorValue(node1);
-            byte[] node2Vec = (byte[]) vectors.vectorValue(node2);
-            vec1 = byteArrayToFloatArray(node1Vec);
-            vec2 = byteArrayToFloatArray(node2Vec);
+            throw new IllegalArgumentException("Unsupported vector encoding: " + vectorEncoding);
         }
 
-        proj = project(vec2, vec1);
-        residual = subtract(vec2, proj);
+        RealVector queryProjection = lshBasis.operate(queryVector);
+        float queryProjectionLengthSquared = normSq(queryProjection);
 
-        return residual;
-
-    }
-
-    private List<int[]> getAllEdges(HnswGraph graph) throws IOException {
-
-        List<int[]> edges = new ArrayList<>();
-
-        for(int level = 0; level < graph.numLevels(); level++) {
-            HnswGraph.NodesIterator nodes = graph.getNodesOnLevel(level);
-            while(nodes.hasNext()) {
-                int node = nodes.next();
-                graph.seek(level, node);
-
-                int neighbor;
-                while((neighbor = graph.nextNeighbor()) != NO_MORE_DOCS) {
-                    edges.add(new int[]{node, neighbor});
+        // Function that computes the distance between the query vector and other vectors in the LHS space
+        return otherVector -> {
+            RealVector otherVectorInLSHSpace;
+            if (vectorEncoding == VectorEncoding.BYTE) {
+                byte[] byteArray = (byte[]) otherVector;
+                otherVectorInLSHSpace = new ArrayRealVector(byteArray.length);
+                for (int j = 0; j < byteArray.length; j++) {
+                    otherVectorInLSHSpace.setEntry(j, byteArray[j]);
+                }
+            } else {
+                assert vectorEncoding == VectorEncoding.FLOAT32;
+                float[] floatArray = (float[]) otherVector;
+                otherVectorInLSHSpace = new ArrayRealVector(floatArray.length);
+                for (int j = 0; j < floatArray.length; j++) {
+                    otherVectorInLSHSpace.setEntry(j, floatArray[j]);
                 }
             }
-        }
 
-        return edges;
+            RealVector otherProjection = lshBasis.operate(otherVectorInLSHSpace);
+            float opSquared = normSq(otherProjection);
 
-    }
-
-    private float[] project(float[] vec, float[] onto) {
-
-        // Compute projection of vec onto onto
-        float[] proj = new float[vec.length];
-
-        double ontoNorm = Math.sqrt(dotProduct(onto, onto));
-        for(int i = 0; i < vec.length; i++) {
-            proj[i] = (float) ((dotProduct(vec, onto) / ontoNorm) * onto[i]);
-        }
-
-        return proj;
-
-    }
-
-    private float dotProduct(float[] vec1, float[] vec2) {
-        float product = 0;
-        for(int i = 0; i < vec1.length; i++) {
-            product += vec1[i] * vec2[i];
-        }
-        return product;
-    }
-
-    private float[] subtract(float[] vec1, float[] vec2) {
-
-        // Compute vec1 - vec2
-        float[] result = new float[vec1.length];
-        for(int i = 0; i < vec1.length; i++) {
-            result[i] = vec1[i] - vec2[i];
-        }
-
-        return result;
-
-    }
-
-    private float[] byteArrayToFloatArray(byte[] input) {
-
-        float[] output = new float[input.length];
-
-        for(int i = 0; i < input.length; i++) {
-            output[i] = input[i]; // Bytes to floats
-        }
-
-        return output;
-
-    }
-
-    private float[][] learnLSHBases(float[][] residualVectors) {
-
-        return pca(residualVectors, 64);
-    }
-
-    private float[][] pca(float[][] data, int numBases) {
-        // Subtract mean
-        float[] mean = computeMean(data);
-        float[][] centered = centerData(data, mean);
-
-        // Compute covariance matrix
-        float[][] covariance = computeCovariance(centered);
-
-        // Compute eigenvectors of covariance matrix
-        EigenvalueDecomposition evd = new EigenvalueDecomposition(covariance);
-        float[][] eigenvectors = evd.getEigenvectors();
-
-        // Take top k eigenvectors as bases
-        float[][] bases = new float[numBases][];
-        System.arraycopy(eigenvectors, 0, bases, 0, numBases);
-
-        return bases;
-    }
-
-    private float[] computeMean(float[][] data) {
-        float[] mean = new float[data[0].length];
-        for(float[] row : data) {
-            for(int j = 0; j < mean.length; j++) {
-                mean[j] += row[j];
-            }
-        }
-        for(int i = 0; i < mean.length; i++) {
-            mean[i] /= data.length;
-        }
-        return mean;
-    }
-
-    private float[][] centerData(float[][] data, float[] mean) {
-        float[][] centered = new float[data.length][];
-        for(int i = 0; i < data.length; i++) {
-            centered[i] = subtract(data[i], mean);
-        }
-        return centered;
-    }
-
-    private float[][] computeCovariance(float[][] centered) {
-        float[][] covariance = new float[centered[0].length][centered[0].length];
-        for(float[] row : centered) {
-            float[] xt = transpose(row);
-            covariance = sum(covariance, multiply(row, xt));
-        }
-        covariance = scale(covariance, 1.0f/centered.length);
-        return covariance;
-    }
-
-    private float[] transpose(float[] vec) {
-        float[] result = new float[vec.length];
-        System.arraycopy(vec, 0, result, 0, vec.length);
-        return result;
-    }
-
-    private float[][] sum(float[][] mat1, float[][] mat2) {
-        float[][] result = new float[mat1.length][mat1[0].length];
-        for(int i = 0; i < result.length; i++) {
-            for(int j = 0; j < result[0].length; j++) {
-                result[i][j] = mat1[i][j] + mat2[i][j];
-            }
-        }
-        return result;
-    }
-
-    private float[][] multiply(float[] vec, float[] vecT) {
-        float[][] result = new float[vec.length][vecT.length];
-        for(int i = 0; i < vec.length; i++) {
-            for(int j = 0; j < vecT.length; j++) {
-                result[i][j] = vec[i] * vecT[j];
-            }
-        }
-        return result;
-    }
-
-    private float[][] scale(float[][] mat, float scale) {
-        float[][] result = new float[mat.length][mat[0].length];
-        for(int i = 0; i < mat.length; i++) {
-            for(int j = 0; j < mat[0].length; j++) {
-                result[i][j] = mat[i][j] * scale;
-            }
-        }
-        return result;
-    }
-
-    public float[][] getLSHBases() {
-        return lshBases;
+            // Compute the cosine similarity in the LSH space
+            return queryProjectionLengthSquared + opSquared - 2 * (float) queryProjection.dotProduct(otherProjection);
+        };
     }
 }

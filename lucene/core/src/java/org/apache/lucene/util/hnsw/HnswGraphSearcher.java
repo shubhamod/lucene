@@ -103,6 +103,30 @@ public class HnswGraphSearcher<T> {
     return search(query, topK, vectors, graph, graphSearcher, acceptOrds, visitedLimit);
   }
 
+  public interface DistanceFunction {
+    public float compare(int ordinal) throws IOException;
+  }
+
+  void searchLevel(
+          NeighborQueue results,
+          T query,
+          int topK,
+          int level,
+          final int[] eps,
+          RandomAccessVectorValues<T> vectors,
+          HnswGraph graph,
+          Bits acceptOrds,
+          int visitedLimit)
+          throws IOException {
+    DistanceFunction<T> df = new DistanceFunction<>() {
+      @Override
+      public float compare(T query, int ordinal) throws IOException {
+        return HnswGraphSearcher.this.compare(query, vectors, ordinal);
+      }
+    };
+    searchLevel(results, query, topK, level, eps, df, graph, acceptOrds, visitedLimit);
+  }
+
   /**
    * Search {@link OnHeapHnswGraph}, this method is thread safe, for parameters please refer to
    * {@link #search(float[], int, RandomAccessVectorValues, VectorEncoding,
