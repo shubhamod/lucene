@@ -3,60 +3,22 @@ package org.apache.lucene.util.hnsw;
 import static org.apache.lucene.util.VectorUtil.dotProduct;
 
 class EigenvalueDecomposition {
-
-    private final float[][] eigenvectors;
-    private final float[] eigenvalues;
+    private float[][] eigenvectors;
+    private float[] eigenvalues;
 
     public EigenvalueDecomposition(float[][] matrix) {
-        int n = matrix.length;
+        final int MAX_ITERATIONS = 100;
+        eigenvectors = identity(matrix.length);
+        eigenvalues = new float[matrix.length];
 
-        eigenvalues = new float[n];
-        eigenvectors = new float[n][n];
-
-        float[][] A = copy(matrix);
-        float[][] Q = new float[n][n];
-        float[][] R = new float[n][n];
-
-        for (int i = 0; i < n; i++) {
-            for (int j = 0; j < n; j++) {
-                if (i < j) {
-                    R[i][j] = A[i][j];
-                } else {
-                    R[i][j] = 0;
-                }
-            }
-        }
-
-        int iterations = 100;  // Maximum number of iterations.
-        for (int k = 0; k < iterations; k++) {
-            float shift = A[n - 1][n - 1];  // Rayleigh quotient shift.
-            assert Float.isFinite(shift) : shift;
-
-            for (int i = 0; i < n; i++) {
-                A[i][i] -= shift;
-            }
+        float[][] A = matrix;
+        float[][] Q = null;
+        for (int i = 0; i < MAX_ITERATIONS; i++) {
+            Q = identity(A.length);
+            float[][] R = new float[A.length][A.length];
             qrDecomp(A, Q, R);
-            for (int i = 0; i < n; i++) {
-                A[i][i] += shift;
-            }
-
-            for (int i = 0; i < n; i++) {
-                assert Float.isFinite(A[i][i]) : "Diagonal element in A is NaN after shift at iteration " + k;
-            }
-
             A = multiply(R, Q);
-            Q = multiply(Q, R);
-
-            for (int i = 0; i < n; i++) {
-                assert Float.isFinite(A[i][i]) : "Diagonal element in A is NaN after shift at iteration " + k;
-            }
-
-            // Check for convergence (in practice, you'd use a more robust check)
-            float a = Math.abs(A[n - 1][n - 2]);
-            assert Float.isFinite(a) : a;
-            if (a < 1e-10) {
-                break;
-            }
+            eigenvectors = multiply(eigenvectors, Q);
         }
 
         computeEigen(A, Q);
