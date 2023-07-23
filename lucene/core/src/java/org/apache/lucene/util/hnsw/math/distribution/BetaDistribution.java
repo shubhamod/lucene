@@ -154,7 +154,7 @@ public class BetaDistribution extends AbstractRealDistribution {
         return logDensity == Double.NEGATIVE_INFINITY ? 0 : FastMath.exp(logDensity);
     }
 
-    /** {@inheritDoc} **/
+    
     @Override
     public double logDensity(double x) {
         recomputeZ();

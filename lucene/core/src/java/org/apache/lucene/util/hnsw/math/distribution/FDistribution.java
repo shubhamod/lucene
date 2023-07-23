@@ -158,7 +158,7 @@ public class FDistribution extends AbstractRealDistribution {
         return FastMath.exp(logDensity(x));
     }
 
-    /** {@inheritDoc} **/
+    
     @Override
     public double logDensity(double x) {
         final double nhalf = numeratorDegreesOfFreedom / 2;

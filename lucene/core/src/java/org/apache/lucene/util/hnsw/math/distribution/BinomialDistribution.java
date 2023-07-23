@@ -109,7 +109,7 @@ public class BinomialDistribution extends AbstractIntegerDistribution {
         return logProbability == Double.NEGATIVE_INFINITY ? 0 : FastMath.exp(logProbability);
     }
 
-    /** {@inheritDoc} **/
+    
     @Override
     public double logProbability(int x) {
         if (numberOfTrials == 0) {

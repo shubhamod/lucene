@@ -125,17 +125,7 @@ public class LevenbergMarquardtOptimizer implements LeastSquaresOptimizer {
     /** Threshold for QR ranking. */
     private final double qrRankingThreshold;
 
-    /** Default constructor.
-     * <p>
-     * The default values for the algorithm settings are:
-     * <ul>
-     *  <li>Initial step bound factor: 100</li>
-     *  <li>Cost relative tolerance: 1e-10</li>
-     *  <li>Parameters relative tolerance: 1e-10</li>
-     *  <li>Orthogonality tolerance: 1e-10</li>
-     *  <li>QR ranking threshold: {@link Precision#SAFE_MIN}</li>
-     * </ul>
-     **/
+    
     public LevenbergMarquardtOptimizer() {
         this(100, 1e-10, 1e-10, 1e-10, Precision.SAFE_MIN);
     }

@@ -50,10 +50,10 @@ public class BigReal implements FieldElement<BigReal>, Comparable<BigReal>, Seri
     /** Underlying BigDecimal. */
     private final BigDecimal d;
 
-    /** Rounding mode for divisions. **/
+    
     private RoundingMode roundingMode = RoundingMode.HALF_UP;
 
-    /*** BigDecimal scale ***/
+    
     private int scale = 64;
 
     /** Build an instance from a BigDecimal.

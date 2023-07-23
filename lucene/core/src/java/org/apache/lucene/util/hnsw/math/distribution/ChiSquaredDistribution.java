@@ -114,7 +114,7 @@ public class ChiSquaredDistribution extends AbstractRealDistribution {
         return gamma.density(x);
     }
 
-    /** {@inheritDoc} **/
+    
     @Override
     public double logDensity(double x) {
         return gamma.logDensity(x);

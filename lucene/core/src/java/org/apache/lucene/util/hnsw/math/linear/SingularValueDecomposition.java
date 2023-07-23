@@ -73,10 +73,7 @@ public class SingularValueDecomposition {
     private final RealMatrix cachedV;
     /** Cached value of transposed V matrix. */
     private RealMatrix cachedVt;
-    /**
-     * Tolerance value for small singular values, calculated once we have
-     * populated "singularValues".
-     **/
+    
     private final double tol;
 
     /**

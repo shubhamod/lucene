@@ -306,7 +306,7 @@ public class GammaDistribution extends AbstractRealDistribution {
         return densityPrefactor1 * FastMath.exp(-y) * FastMath.pow(y, shape - 1);
     }
 
-    /** {@inheritDoc} **/
+    
     @Override
     public double logDensity(double x) {
         /*

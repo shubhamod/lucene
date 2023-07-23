@@ -91,15 +91,11 @@ public class NonMonotonicSequenceException extends MathIllegalNumberException {
         this.previous = previous;
     }
 
-    /**
-     * @return the order direction.
-     **/
+    
     public MathArrays.OrderDirection getDirection() {
         return direction;
     }
-    /**
-     * @return {@code true} is the sequence should be strictly monotonic.
-     **/
+    
     public boolean getStrict() {
         return strict;
     }
