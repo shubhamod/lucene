@@ -45,7 +45,7 @@ public class TestEigenvalueDecomposition extends LuceneTestCase {
         assertEquals(Math.sqrt(2) / 2, Math.abs(eigenvectors[1][1]), 1e-6);
     }
 
-    private static final float EPSILON = 1e-5f;
+    private static final float EPSILON = 1e-6f;
 
     public void testProject() {
         float[] u = {1, 2, 3};
@@ -78,13 +78,13 @@ public class TestEigenvalueDecomposition extends LuceneTestCase {
         };
 
         float[][] R = new float[A.length][A.length];
-
-        float[][] Q = EigenvalueDecomposition.qrDecomp(A, R);
+        float[][] Q = new float[A.length][A.length];
+        EigenvalueDecomposition.qrDecomp(A, Q, R);
 
         // Check if R is upper triangular
         for (int i = 0; i < R.length; i++) {
             for (int j = 0; j < i; j++) {
-                assertEquals(0, R[i][j], 1e-6);
+                assertEquals(0, R[i][j], EPSILON);
             }
         }
 
@@ -94,7 +94,7 @@ public class TestEigenvalueDecomposition extends LuceneTestCase {
                 float[] column1 = getColumn(Q, i);
                 float[] column2 = getColumn(Q, j);
                 float dotProduct = dotProduct(column1, column2);
-                assertEquals(0, dotProduct, 1e-6);
+                assertEquals(0, dotProduct, EPSILON);
             }
         }
 

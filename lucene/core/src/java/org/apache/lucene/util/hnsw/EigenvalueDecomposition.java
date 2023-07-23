@@ -14,7 +14,7 @@ class EigenvalueDecomposition {
         eigenvectors = new float[n][n];
 
         float[][] A = copy(matrix);
-        float[][] Q = identity(n);
+        float[][] Q = new float[n][n];
         float[][] R = new float[n][n];
 
         for (int i = 0; i < n; i++) {
@@ -35,7 +35,7 @@ class EigenvalueDecomposition {
             for (int i = 0; i < n; i++) {
                 A[i][i] -= shift;
             }
-            qrDecomp(A, R);
+            qrDecomp(A, Q, R);
             for (int i = 0; i < n; i++) {
                 A[i][i] += shift;
             }
@@ -116,29 +116,28 @@ class EigenvalueDecomposition {
     }
 
     /**
-     * Compute Q for QR decomposition of A such that A=QR.
+     * Compute Q and R for QR decomposition of A such that A=QR.
+     * Q and R should be matrices of the same size as A; their contents will be overwritten by the computation.
      */
-    static float[][] qrDecomp(float[][] A, float[][] R) {
+    static void qrDecomp(float[][] A, float[][] Q, float[][] R) {
         int m = A.length;    // rows
         int n = A[0].length; // columns
-        float[][] Q = new float[m][n];
 
-        for (int j = 0; j < n; j++) {
-            float[] aj = getColumn(A, j);
-            float[] uj = copyVector(aj);
+        // Modified Gram-Schmidt
+        for (int i = 0; i < n; i++) {
+            float[] ai = getColumn(A, i);
+            float[] ui = copyVector(ai);
 
-            for (int i = 0; i < j; i++) {
-                float[] qi = getColumn(Q, i);
-                float[] proj = project(aj, qi);
-                uj = subtract(uj, proj);
-                R[i][j] = dotProduct(qi, aj); // Fill the upper-triangular matrix R
+            for (int j = 0; j < i; j++) {
+                float[] qj = getColumn(Q, j);
+                float proj = dotProduct(ai, qj); // Project on already-orthogonalized vectors
+                R[j][i] = proj; // Fill the upper-triangular matrix R
+                ui = subtract(ui, scale(qj, proj)); // Orthogonalize with respect to already-orthogonalized vectors
             }
 
-            R[j][j] = magnitude(uj);
-            insertColumn(Q, normalize(uj), j);
+            R[i][i] = magnitude(ui);
+            insertColumn(Q, normalize(ui), i);
         }
-
-        return Q;
     }
 
     private static float[] copyVector(float[] orig) {
