@@ -1,65 +1,16 @@
 package org.apache.lucene.util.hnsw;
 
+import java.util.Arrays;
+
 import static org.apache.lucene.util.VectorUtil.dotProduct;
 
 class EigenvalueDecomposition {
 
-    private final float[][] eigenvectors;
-    private final float[] eigenvalues;
+    private final float[][] eigenvectors = null;
+    private final float[] eigenvalues = null;
 
     public EigenvalueDecomposition(float[][] matrix) {
-        int n = matrix.length;
-
-        eigenvalues = new float[n];
-        eigenvectors = new float[n][n];
-
-        float[][] A = copy(matrix);
-        float[][] Q = new float[n][n];
-        float[][] R = new float[n][n];
-
-        for (int i = 0; i < n; i++) {
-            for (int j = 0; j < n; j++) {
-                if (i < j) {
-                    R[i][j] = A[i][j];
-                } else {
-                    R[i][j] = 0;
-                }
-            }
-        }
-
-        int iterations = 100;  // Maximum number of iterations.
-        for (int k = 0; k < iterations; k++) {
-            float shift = A[n - 1][n - 1];  // Rayleigh quotient shift.
-            assert Float.isFinite(shift) : shift;
-
-            for (int i = 0; i < n; i++) {
-                A[i][i] -= shift;
-            }
-            qrDecomp(A, Q, R);
-            for (int i = 0; i < n; i++) {
-                A[i][i] += shift;
-            }
-
-            for (int i = 0; i < n; i++) {
-                assert Float.isFinite(A[i][i]) : "Diagonal element in A is NaN after shift at iteration " + k;
-            }
-
-            A = multiply(R, Q);
-            Q = multiply(Q, R);
-
-            for (int i = 0; i < n; i++) {
-                assert Float.isFinite(A[i][i]) : "Diagonal element in A is NaN after shift at iteration " + k;
-            }
-
-            // Check for convergence (in practice, you'd use a more robust check)
-            float a = Math.abs(A[n - 1][n - 2]);
-            assert Float.isFinite(a) : a;
-            if (a < 1e-10) {
-                break;
-            }
-        }
-
-        computeEigen(A, Q);
+        // TODO
     }
 
     static float[][] multiply(float[][] a, float[][] b) {
@@ -117,36 +68,86 @@ class EigenvalueDecomposition {
 
     /**
      * Compute Q and R for QR decomposition of A such that A=QR.
-     * Q and R should be matrices of the same size as A; their contents will be overwritten by the computation.
+     * R must be an empty (all zeros) matrix of the same size as A; its contents will be overwritten by the computation.
+     * Q will be returned by the method.
+     * A must be a square matrix.
      */
-    static void qrDecomp(float[][] A, float[][] Q, float[][] R) {
+    static float[][] qrDecomp(float[][] A, float[][] R) {
         int m = A.length;    // rows
         int n = A[0].length; // columns
+        if (m != n) {
+            throw new IllegalArgumentException("A matrix must be square, found " + m + "x" + n);
+        }
 
-        // Modified Gram-Schmidt
+        float[][] P;
+
+        // Initialize Q as an identity matrix
+        float[][] Q = identity(m);
+
+        // Householder transformation
         for (int i = 0; i < n; i++) {
             float[] ai = getColumn(A, i);
-            float[] ui = copyVector(ai);
-
-            for (int j = 0; j < i; j++) {
-                float[] qj = getColumn(Q, j);
-                float proj = dotProduct(ai, qj); // Project on already-orthogonalized vectors
-                R[j][i] = proj; // Fill the upper-triangular matrix R
-                ui = subtract(ui, scale(qj, proj)); // Orthogonalize with respect to already-orthogonalized vectors
-            }
-
-            R[i][i] = magnitude(ui);
-            insertColumn(Q, normalize(ui), i);
+            float alpha = computeAlpha(ai, i);
+            float[] v = createV(ai, alpha, m, i);
+            P = createP(m, v);
+            A = multiply(P, A);
+            Q = multiply(Q, P);
         }
+
+        // Copy upper triangle of [the ending, modified] A to R
+        for (int i = 0; i < n; i++) {
+            System.arraycopy(A[i], i, R[i], i, n - i);
+        }
+
+        return Q;
     }
 
-    private static float[] copyVector(float[] orig) {
-        float[] copy = new float[orig.length];
-        System.arraycopy(orig, 0, copy, 0, orig.length);
-        return copy;
+    static float computeAlpha(float[] ai, int i) {
+        // Create a subvector from the i-th position to the end
+        float[] subAi = Arrays.copyOfRange(ai, i, ai.length);
+
+        // Compute the norm of the subvector
+        float norm = magnitude(subAi);
+
+        // Multiply the norm by the signum of the first component of the subvector
+        return -Math.signum(subAi[0]) * norm;
     }
 
-    private static float[] getColumn(float[][] mat, int columnIndex) {
+    static float[] createV(float[] ai, float alpha, int m, int i) {
+        float[] ei = identityColumn(m, i);
+        float[] u = subtract(ai, scale(ei, alpha));
+        return scale(u, 1 / magnitude(u));
+    }
+
+    static float[][] createP(int m, float[] v) {
+        float[][] P = identity(m);
+        for (int j = 0; j < m; j++) {
+            for (int k = 0; k < m; k++) {
+                P[j][k] -= 2 * v[j] * v[k];
+            }
+        }
+        return P;
+    }
+
+    private static float[][] transpose(float[][] mat) {
+        int rows = mat.length;
+        int cols = mat[0].length;
+        float[][] transposed = new float[cols][rows];
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < cols; j++) {
+                transposed[j][i] = mat[i][j];
+            }
+        }
+        return transposed;
+    }
+
+    private static float[] identityColumn(int size, int pos) {
+        float[] column = new float[size];
+        column[pos] = 1;
+        return column;
+    }
+
+    static float[] getColumn(float[][] mat, int columnIndex) {
         float[] column = new float[mat.length];
         for (int i = 0; i < mat.length; i++) {
             column[i] = mat[i][columnIndex];
@@ -154,31 +155,11 @@ class EigenvalueDecomposition {
         return column;
     }
 
-    private static void insertColumn(float[][] mat, float[] col, int colIndex) {
-        for (int i = 0; i < mat.length; i++) {
-            mat[i][colIndex] = col[i];
-        }
-    }
-
     private void computeEigen(float[][] A, float[][] R) {
         for (int i = 0; i < A.length; i++) {
             eigenvalues[i] = A[i][i];
             copyRow(eigenvectors, i, R[i]);
         }
-    }
-
-    static float[][] copy(float[][] orig) {
-        float[][] copy = new float[orig.length][orig[0].length];
-        for (int i = 0; i < orig.length; i++) {
-            copy[i] = copyRow(orig, i);
-        }
-        return copy;
-    }
-
-    private static float[] copyRow(float[][] mat, int rowIndex) {
-        float[] row = new float[mat[0].length];
-        System.arraycopy(mat[rowIndex], 0, row, 0, row.length);
-        return row;
     }
 
     private static void copyRow(float[][] dest, int rowIndex, float[] srcRow) {

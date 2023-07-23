@@ -20,6 +20,7 @@ package org.apache.lucene.util.hnsw;
 import org.apache.lucene.tests.util.LuceneTestCase;
 
 import static org.apache.lucene.util.VectorUtil.dotProduct;
+import static org.apache.lucene.util.hnsw.EigenvalueDecomposition.getColumn;
 
 public class TestEigenvalueDecomposition extends LuceneTestCase {
     private static final float EPSILON = 1e-4f;
@@ -87,8 +88,7 @@ public class TestEigenvalueDecomposition extends LuceneTestCase {
 
     private void testOneQr(float[][] A) {
         float[][] R = new float[A.length][A.length];
-        float[][] Q = new float[A.length][A.length];
-        EigenvalueDecomposition.qrDecomp(A, Q, R);
+        float[][] Q = EigenvalueDecomposition.qrDecomp(A, R);
 
         // Check if R is upper triangular
         for (int i = 0; i < R.length; i++) {
@@ -116,12 +116,30 @@ public class TestEigenvalueDecomposition extends LuceneTestCase {
         }
     }
 
-    private float[] getColumn(float[][] matrix, int column) {
-        float[] result = new float[matrix.length];
-        for (int i = 0; i < matrix.length; i++) {
-            result[i] = matrix[i][column];
+    public void testComputeAlpha() {
+        float[] ai = {1, 2, 3, 4, 5};
+        int i = 2;
+        // Compute the norm of the subvector of `ai` starting from `i` and adjust the expectation
+        float norm = (float) Math.sqrt(3*3 + 4*4 + 5*5);  // sqrt(50)
+        float expected = -norm;  // since ai[i] is positive
+        float result = EigenvalueDecomposition.computeAlpha(ai, i);
+        assertEquals(expected, result, EPSILON);
+    }
+
+    public void testCreateP() {
+        int m = 3;
+        float[] v = {1, 0, 0};
+        float[][] expected = {
+                {-1, 0, 0},
+                {0, 1, 0},
+                {0, 0, 1}
+        };
+        float[][] result = EigenvalueDecomposition.createP(m, v);
+        for (int i = 0; i < expected.length; i++) {
+            for (int j = 0; j < expected[i].length; j++) {
+                assertEquals(expected[i][j], result[i][j], EPSILON);
+            }
         }
-        return result;
     }
 
     public void testScale() {
