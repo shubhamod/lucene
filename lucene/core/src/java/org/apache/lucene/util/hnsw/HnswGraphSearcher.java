@@ -20,6 +20,8 @@ package org.apache.lucene.util.hnsw;
 import static org.apache.lucene.search.DocIdSetIterator.NO_MORE_DOCS;
 
 import java.io.IOException;
+import java.util.function.Function;
+
 import org.apache.lucene.index.VectorEncoding;
 import org.apache.lucene.index.VectorSimilarityFunction;
 import org.apache.lucene.util.BitSet;
@@ -101,30 +103,6 @@ public class HnswGraphSearcher<T> {
             new NeighborQueue(topK, true),
             new SparseFixedBitSet(vectors.size()));
     return search(query, topK, vectors, graph, graphSearcher, acceptOrds, visitedLimit);
-  }
-
-  public interface DistanceFunction {
-    public float compare(int ordinal) throws IOException;
-  }
-
-  void searchLevel(
-          NeighborQueue results,
-          T query,
-          int topK,
-          int level,
-          final int[] eps,
-          RandomAccessVectorValues<T> vectors,
-          HnswGraph graph,
-          Bits acceptOrds,
-          int visitedLimit)
-          throws IOException {
-    DistanceFunction<T> df = new DistanceFunction<>() {
-      @Override
-      public float compare(T query, int ordinal) throws IOException {
-        return HnswGraphSearcher.this.compare(query, vectors, ordinal);
-      }
-    };
-    searchLevel(results, query, topK, level, eps, df, graph, acceptOrds, visitedLimit);
   }
 
   /**
@@ -330,6 +308,30 @@ public class HnswGraphSearcher<T> {
     return new int[] {currentEp, visitedCount};
   }
 
+  void searchLevel(
+          NeighborQueue results,
+          T query,
+          int topK,
+          int level,
+          final int[] eps,
+          RandomAccessVectorValues<T> vectors,
+          HnswGraph graph,
+          Bits acceptOrds,
+          int visitedLimit)
+          throws IOException {
+    Function<Integer, Float> df = new Function<>() {
+      @Override
+      public Float apply(Integer ordinal) {
+        try {
+          return HnswGraphSearcher.this.compare(query, vectors, ordinal);
+        } catch (IOException e) {
+          throw new RuntimeException(e);
+        }
+      }
+    };
+    searchLevel(results, topK, level, eps, df, graph, acceptOrds, visitedLimit);
+  }
+
   /**
    * Add the closest neighbors found to a priority queue (heap). These are returned in REVERSE
    * proximity order -- the most distant neighbor of the topK found, i.e. the one with the lowest
@@ -338,11 +340,10 @@ public class HnswGraphSearcher<T> {
    */
   void searchLevel(
       NeighborQueue results,
-      T query,
       int topK,
       int level,
       final int[] eps,
-      RandomAccessVectorValues<T> vectors,
+      Function<Integer, Float> distanceFunction,
       HnswGraph graph,
       Bits acceptOrds,
       int visitedLimit)
@@ -350,7 +351,7 @@ public class HnswGraphSearcher<T> {
     assert results.isMinHeap();
 
     int size = graph.size();
-    prepareScratchState(vectors.size());
+    prepareScratchState(size);
 
     int numVisited = 0;
     for (int ep : eps) {
@@ -359,7 +360,7 @@ public class HnswGraphSearcher<T> {
           results.markIncomplete();
           break;
         }
-        float score = compare(query, vectors, ep);
+        float score = distanceFunction.apply(ep);
         numVisited++;
         candidates.add(ep, score);
         if (acceptOrds == null || acceptOrds.get(ep)) {
@@ -394,7 +395,7 @@ public class HnswGraphSearcher<T> {
           results.markIncomplete();
           break;
         }
-        float friendSimilarity = compare(query, vectors, friendOrd);
+        float friendSimilarity = distanceFunction.apply(friendOrd);
         numVisited++;
         if (friendSimilarity >= minAcceptedSimilarity) {
           candidates.add(friendOrd, friendSimilarity);

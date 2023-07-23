@@ -1,15 +1,15 @@
 package org.apache.lucene.util.hnsw;
 
 import org.apache.lucene.index.VectorEncoding;
-import org.apache.lucene.util.hnsw.math.linear.ArrayRealVector;
-import org.apache.lucene.util.hnsw.math.linear.EigenDecomposition;
-import org.apache.lucene.util.hnsw.math.linear.RealMatrix;
-import org.apache.lucene.util.hnsw.math.linear.RealVector;
+import org.apache.lucene.util.hnsw.math.linear.*;
 import org.apache.lucene.util.hnsw.math.stat.correlation.PearsonsCorrelation;
-import org.apache.lucene.util.hnsw.math.stat.descriptive.moment.VectorialMean;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Function;
+
+import static org.apache.lucene.search.DocIdSetIterator.NO_MORE_DOCS;
 
 public class FingerSearcher<T> {
     private final RandomAccessVectorValues<T> values;
@@ -25,7 +25,7 @@ public class FingerSearcher<T> {
         this.r = values.dimension() < 768 ? 64 : 128;
 
         // Compute the training data and the LSH basis.
-        double[][] trainingData = new double[0][];
+        List<RealVector> trainingData = null;
         try {
             trainingData = computeTrainingData();
         } catch (IOException e) {
@@ -34,54 +34,84 @@ public class FingerSearcher<T> {
         this.lshBasis = computeLshBasis(trainingData);
     }
 
-    private double[][] computeTrainingData() throws IOException {
-        int numVectors = values.size();
-        int dimension = values.dimension();
-        double[][] trainingData = new double[numVectors][];
+    private List<RealVector> computeTrainingData() throws IOException {
+        int numNodes = hnswGraph.size();
+        List<RealVector> trainingData = new ArrayList<>(numNodes);
+        RealMatrix valuesMatrix = new Array2DRowRealMatrix(values.size(), values.dimension());
 
-        for (int i = 0; i < numVectors; i++) {
+        for (int i = 0; i < values.size(); i++) {
             T vector = values.vectorValue(i);
-            double[] doubleVector;
 
+            // Convert vector to double array based on vectorEncoding.
+            double[] doubleVector;
             if (vectorEncoding == VectorEncoding.BYTE) {
-                byte[] byteArray = (byte[]) vector;
-                doubleVector = new double[byteArray.length];
-                for (int j = 0; j < byteArray.length; j++) {
-                    doubleVector[j] = byteArray[j];
+                byte[] byteVector = (byte[]) vector;
+                doubleVector = new double[byteVector.length];
+                for (int j = 0; j < byteVector.length; j++) {
+                    doubleVector[j] = byteVector[j];
                 }
             } else if (vectorEncoding == VectorEncoding.FLOAT32) {
-                float[] floatArray = (float[]) vector;
-                doubleVector = new double[floatArray.length];
-                for (int j = 0; j < floatArray.length; j++) {
-                    doubleVector[j] = floatArray[j];
+                float[] floatVector = (float[]) vector;
+                doubleVector = new double[floatVector.length];
+                for (int j = 0; j < floatVector.length; j++) {
+                    doubleVector[j] = floatVector[j];
                 }
             } else {
-                throw new IllegalArgumentException("Unsupported vector encoding: " + vectorEncoding);
+                throw new IllegalStateException("Unsupported vector encoding: " + vectorEncoding);
             }
 
-            trainingData[i] = doubleVector;
+            valuesMatrix.setRowVector(i, new ArrayRealVector(doubleVector));
         }
 
+        for (int node = 0; node < numNodes; node++) {
+            RealVector c = valuesMatrix.getRowVector(node);
+            hnswGraph.seek(0, node);
+            int neighbor;
+            while ((neighbor = hnswGraph.nextNeighbor()) != NO_MORE_DOCS) {
+                RealVector d = valuesMatrix.getRowVector(neighbor);
+
+                // Compute the residual vector.
+                double[] projection = c.toArray();
+                double scale = d.dotProduct(c) / c.dotProduct(c);
+                for (int i = 0; i < projection.length; i++) {
+                    projection[i] *= scale;
+                }
+                RealVector d_proj = new ArrayRealVector(projection);
+                RealVector d_res = d.subtract(d_proj);
+
+                trainingData.add(d_res);
+            }
+        }
         return trainingData;
     }
 
-    private RealMatrix computeLshBasis(double[][] trainingData) {
-        // Compute the mean of the training data.
-        VectorialMean mean = new VectorialMean(trainingData[0].length);
-        for (double[] data : trainingData) {
-            mean.increment(data);
+    private RealMatrix computeLshBasis(List<RealVector> trainingData) {
+        // Compute the mean of the training data
+        double[] meanVector = new double[values.dimension()];
+        for (RealVector data : trainingData) {
+            for (int i = 0; i < data.getDimension(); i++) {
+                meanVector[i] += data.getEntry(i);
+            }
         }
-        double[] meanVector = mean.getResult();
+        for (int i = 0; i < meanVector.length; i++) {
+            meanVector[i] /= trainingData.size();
+        }
 
         // Subtract the mean from the training data.
-        for (double[] data : trainingData) {
-            for (int i = 0; i < data.length; i++) {
-                data[i] -= meanVector[i];
+        for (RealVector data : trainingData) {
+            for (int i = 0; i < data.getDimension(); i++) {
+                data.setEntry(i, data.getEntry(i) - meanVector[i]);
             }
         }
 
+        // Convert the training data back to a 2D array for PearsonsCorrelation.
+        double[][] centeredData = new double[trainingData.size()][];
+        for (int i = 0; i < trainingData.size(); i++) {
+            centeredData[i] = trainingData.get(i).toArray();
+        }
+
         // Compute the covariance matrix of the training data.
-        PearsonsCorrelation pc = new PearsonsCorrelation(trainingData);
+        PearsonsCorrelation pc = new PearsonsCorrelation(centeredData);
         RealMatrix covarianceMatrix = pc.getCorrelationMatrix();
 
         // Compute the eigen decomposition of the covariance matrix.
