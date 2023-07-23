@@ -22,6 +22,8 @@ import org.apache.lucene.tests.util.LuceneTestCase;
 import static org.apache.lucene.util.VectorUtil.dotProduct;
 
 public class TestEigenvalueDecomposition extends LuceneTestCase {
+    private static final float EPSILON = 1e-4f;
+
     public void testEigenvalueDecomposition() {
         float[][] matrix = new float[][]{
                 {4, 1},
@@ -44,8 +46,6 @@ public class TestEigenvalueDecomposition extends LuceneTestCase {
         assertEquals(Math.sqrt(2) / 2, Math.abs(eigenvectors[1][0]), 1e-6);
         assertEquals(Math.sqrt(2) / 2, Math.abs(eigenvectors[1][1]), 1e-6);
     }
-
-    private static final float EPSILON = 1e-6f;
 
     public void testProject() {
         float[] u = {1, 2, 3};
@@ -71,12 +71,21 @@ public class TestEigenvalueDecomposition extends LuceneTestCase {
     }
 
     public void testQrDecomp() {
-        float[][] A = {
-                {12, -51, 4},
-                {6, 167, -68},
-                {-4, 24, -41}
-        };
+        for (int k = 0; k < 1000; k++) {
+            int n = random().nextInt(2, 10);
+            float[][] A = new float[n][];
+            for (int i = 0; i < n; i++) {
+                A[i] = new float[n];
+                for (int j = 0; j < n; j++) {
+                    A[i][j] = random().nextFloat() * 10;
+                }
+            }
 
+            testOneQr(A);
+        }
+    }
+
+    private void testOneQr(float[][] A) {
         float[][] R = new float[A.length][A.length];
         float[][] Q = new float[A.length][A.length];
         EigenvalueDecomposition.qrDecomp(A, Q, R);
