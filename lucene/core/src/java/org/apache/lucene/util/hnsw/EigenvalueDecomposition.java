@@ -118,56 +118,26 @@ class EigenvalueDecomposition {
     /**
      * Compute Q and R for QR decomposition of A such that A=QR.
      * Q and R should be matrices of the same size as A; their contents will be overwritten by the computation.
-     * R's contents are ignored but
      */
     static void qrDecomp(float[][] A, float[][] Q, float[][] R) {
         int m = A.length;    // rows
         int n = A[0].length; // columns
 
-        // Householder decomposition
-        for (int k = 0; k < n; k++) {
-            float[] x = getColumn(A, k);
-            float[] e = new float[x.length];
-            e[0] = 1;
-            float[] v_k = subtract(x, scale(e, x[0] >= 0 ? -magnitude(x) : magnitude(x)));
-            float[][] H_k = subtract(identity(m), scaleOuterProduct(v_k, v_k, 2 / dotProduct(v_k, v_k)));
-            float[][] A_next = multiply(H_k, A);
+        // Modified Gram-Schmidt
+        for (int i = 0; i < n; i++) {
+            float[] ai = getColumn(A, i);
+            float[] ui = copyVector(ai);
 
-            for (int i = 0; i < m; i++) {
-                System.arraycopy(A_next[i], 0, A[i], 0, n);
+            for (int j = 0; j < i; j++) {
+                float[] qj = getColumn(Q, j);
+                float proj = dotProduct(ai, qj); // Project on already-orthogonalized vectors
+                R[j][i] = proj; // Fill the upper-triangular matrix R
+                ui = subtract(ui, scale(qj, proj)); // Orthogonalize with respect to already-orthogonalized vectors
             }
 
-            updateColumn(Q, getColumn(H_k, k), k);
-            updateColumn(R, getColumn(A, k), k);
+            R[i][i] = magnitude(ui);
+            insertColumn(Q, normalize(ui), i);
         }
-    }
-
-    static float[][] subtract(float[][] mat1, float[][] mat2) {
-        int rows = mat1.length;
-        int cols = mat1[0].length;
-        float[][] result = new float[rows][cols];
-
-        for (int i = 0; i < rows; i++) {
-            for (int j = 0; j < cols; j++) {
-                result[i][j] = mat1[i][j] - mat2[i][j];
-            }
-        }
-
-        return result;
-    }
-
-    static float[][] scaleOuterProduct(float[] u, float[] v, float scale) {
-        int rows = u.length;
-        int cols = v.length;
-        float[][] result = new float[rows][cols];
-
-        for (int i = 0; i < rows; i++) {
-            for (int j = 0; j < cols; j++) {
-                result[i][j] = u[i] * v[j] * scale;
-            }
-        }
-
-        return result;
     }
 
     private static float[] copyVector(float[] orig) {
@@ -184,7 +154,7 @@ class EigenvalueDecomposition {
         return column;
     }
 
-    private static void updateColumn(float[][] mat, float[] col, int colIndex) {
+    private static void insertColumn(float[][] mat, float[] col, int colIndex) {
         for (int i = 0; i < mat.length; i++) {
             mat[i][colIndex] = col[i];
         }
