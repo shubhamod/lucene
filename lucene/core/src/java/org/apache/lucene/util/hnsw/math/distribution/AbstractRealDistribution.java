@@ -46,8 +46,8 @@ implements RealDistribution, Serializable {
       * {@link #random} instance variable instead.
       */
     @Deprecated
-    protected org.apache.commons.math3.random.RandomDataImpl randomData =
-        new org.apache.commons.math3.random.RandomDataImpl();
+    protected org.apache.lucene.util.hnsw.math.random.RandomDataImpl randomData =
+        new org.apache.lucene.util.hnsw.math.random.RandomDataImpl();
 
     /**
      * RNG instance used to generate samples from the distribution.

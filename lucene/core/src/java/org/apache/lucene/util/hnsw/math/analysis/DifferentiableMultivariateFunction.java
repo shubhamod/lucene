@@ -21,7 +21,7 @@ package org.apache.lucene.util.hnsw.math.analysis;
  * Extension of {@link MultivariateFunction} representing a differentiable
  * multivariate real function.
  * @since 2.0
- * @deprecated as of 3.1 replaced by {@link org.apache.commons.math3.analysis.differentiation.MultivariateDifferentiableFunction}
+ * @deprecated as of 3.1 replaced by {@link org.apache.lucene.util.hnsw.math.analysis.differentiation.MultivariateDifferentiableFunction}
  */
 @Deprecated
 public interface DifferentiableMultivariateFunction extends MultivariateFunction {

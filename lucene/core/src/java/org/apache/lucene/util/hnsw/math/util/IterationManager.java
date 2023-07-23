@@ -52,10 +52,10 @@ public class IterationManager {
      * @param maxIterations the maximum number of iterations
      * @param callBack the function to be called when the maximum number of
      * iterations has been reached
-     * @throws org.apache.commons.math3.exception.NullArgumentException if {@code callBack} is {@code null}
+     * @throws org.apache.lucene.util.hnsw.math.exception.NullArgumentException if {@code callBack} is {@code null}
      * @since 3.1
      * @deprecated as of 3.6, replaced with {@link #IterationManager(int,
-     * org.apache.commons.math3.util.IntegerSequence.Incrementor.MaxCountExceededCallback)}
+     * org.apache.lucene.util.hnsw.math.util.IntegerSequence.Incrementor.MaxCountExceededCallback)}
      */
     @Deprecated
     public IterationManager(final int maxIterations,
@@ -74,7 +74,7 @@ public class IterationManager {
      * @param maxIterations the maximum number of iterations
      * @param callBack the function to be called when the maximum number of
      * iterations has been reached
-     * @throws org.apache.commons.math3.exception.NullArgumentException if {@code callBack} is {@code null}
+     * @throws org.apache.lucene.util.hnsw.math.exception.NullArgumentException if {@code callBack} is {@code null}
      * @since 3.6
      */
     public IterationManager(final int maxIterations,

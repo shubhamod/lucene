@@ -696,7 +696,7 @@ public class SingularValueDecomposition {
          * </p>
          * @param b Right-hand side of the equation A &times; X = B
          * @return a vector X that minimizes the two norm of A &times; X - B
-         * @throws org.apache.commons.math3.exception.DimensionMismatchException
+         * @throws org.apache.lucene.util.hnsw.math.exception.DimensionMismatchException
          * if the matrices dimensions do not match.
          */
         public RealVector solve(final RealVector b) {
@@ -712,7 +712,7 @@ public class SingularValueDecomposition {
          *
          * @param b Right-hand side of the equation A &times; X = B
          * @return a matrix X that minimizes the two norm of A &times; X - B
-         * @throws org.apache.commons.math3.exception.DimensionMismatchException
+         * @throws org.apache.lucene.util.hnsw.math.exception.DimensionMismatchException
          * if the matrices dimensions do not match.
          */
         public RealMatrix solve(final RealMatrix b) {

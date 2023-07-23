@@ -19,7 +19,7 @@ package org.apache.lucene.util.hnsw.math.analysis;
 /**
  * Extension of {@link UnivariateFunction} representing a differentiable univariate real function.
  *
- * @deprecated as of 3.1 replaced by {@link org.apache.commons.math3.analysis.differentiation.UnivariateDifferentiableFunction}
+ * @deprecated as of 3.1 replaced by {@link org.apache.lucene.util.hnsw.math.analysis.differentiation.UnivariateDifferentiableFunction}
  */
 @Deprecated
 public interface DifferentiableUnivariateFunction

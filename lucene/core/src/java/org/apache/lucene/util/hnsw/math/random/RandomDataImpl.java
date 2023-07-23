@@ -259,7 +259,7 @@ public class RandomDataImpl implements RandomData, Serializable {
     }
 
     /**
-     * Generates a random value from the {@link org.apache.commons.math3.distribution.BetaDistribution Beta Distribution}.
+     * Generates a random value from the {@link org.apache.lucene.util.hnsw.math.distribution.BetaDistribution Beta Distribution}.
      * This implementation uses {@link #nextInversionDeviate(RealDistribution) inversion}
      * to generate random values.
      *
@@ -273,7 +273,7 @@ public class RandomDataImpl implements RandomData, Serializable {
     }
 
     /**
-     * Generates a random value from the {@link org.apache.commons.math3.distribution.BinomialDistribution Binomial Distribution}.
+     * Generates a random value from the {@link org.apache.lucene.util.hnsw.math.distribution.BinomialDistribution Binomial Distribution}.
      * This implementation uses {@link #nextInversionDeviate(RealDistribution) inversion}
      * to generate random values.
      *
@@ -287,7 +287,7 @@ public class RandomDataImpl implements RandomData, Serializable {
     }
 
     /**
-     * Generates a random value from the {@link org.apache.commons.math3.distribution.CauchyDistribution Cauchy Distribution}.
+     * Generates a random value from the {@link org.apache.lucene.util.hnsw.math.distribution.CauchyDistribution Cauchy Distribution}.
      * This implementation uses {@link #nextInversionDeviate(RealDistribution) inversion}
      * to generate random values.
      *
@@ -301,7 +301,7 @@ public class RandomDataImpl implements RandomData, Serializable {
     }
 
     /**
-     * Generates a random value from the {@link org.apache.commons.math3.distribution.ChiSquaredDistribution ChiSquare Distribution}.
+     * Generates a random value from the {@link org.apache.lucene.util.hnsw.math.distribution.ChiSquaredDistribution ChiSquare Distribution}.
      * This implementation uses {@link #nextInversionDeviate(RealDistribution) inversion}
      * to generate random values.
      *
@@ -314,7 +314,7 @@ public class RandomDataImpl implements RandomData, Serializable {
     }
 
     /**
-     * Generates a random value from the {@link org.apache.commons.math3.distribution.FDistribution F Distribution}.
+     * Generates a random value from the {@link org.apache.lucene.util.hnsw.math.distribution.FDistribution F Distribution}.
      * This implementation uses {@link #nextInversionDeviate(RealDistribution) inversion}
      * to generate random values.
      *
@@ -331,7 +331,7 @@ public class RandomDataImpl implements RandomData, Serializable {
 
     /**
      * <p>Generates a random value from the
-     * {@link org.apache.commons.math3.distribution.GammaDistribution Gamma Distribution}.</p>
+     * {@link org.apache.lucene.util.hnsw.math.distribution.GammaDistribution Gamma Distribution}.</p>
      *
      * <p>This implementation uses the following algorithms: </p>
      *
@@ -357,7 +357,7 @@ public class RandomDataImpl implements RandomData, Serializable {
     }
 
     /**
-     * Generates a random value from the {@link org.apache.commons.math3.distribution.HypergeometricDistribution Hypergeometric Distribution}.
+     * Generates a random value from the {@link org.apache.lucene.util.hnsw.math.distribution.HypergeometricDistribution Hypergeometric Distribution}.
      * This implementation uses {@link #nextInversionDeviate(IntegerDistribution) inversion}
      * to generate random values.
      *
@@ -377,7 +377,7 @@ public class RandomDataImpl implements RandomData, Serializable {
     }
 
     /**
-     * Generates a random value from the {@link org.apache.commons.math3.distribution.PascalDistribution Pascal Distribution}.
+     * Generates a random value from the {@link org.apache.lucene.util.hnsw.math.distribution.PascalDistribution Pascal Distribution}.
      * This implementation uses {@link #nextInversionDeviate(IntegerDistribution) inversion}
      * to generate random values.
      *
@@ -395,7 +395,7 @@ public class RandomDataImpl implements RandomData, Serializable {
     }
 
     /**
-     * Generates a random value from the {@link org.apache.commons.math3.distribution.TDistribution T Distribution}.
+     * Generates a random value from the {@link org.apache.lucene.util.hnsw.math.distribution.TDistribution T Distribution}.
      * This implementation uses {@link #nextInversionDeviate(RealDistribution) inversion}
      * to generate random values.
      *
@@ -409,7 +409,7 @@ public class RandomDataImpl implements RandomData, Serializable {
     }
 
     /**
-     * Generates a random value from the {@link org.apache.commons.math3.distribution.WeibullDistribution Weibull Distribution}.
+     * Generates a random value from the {@link org.apache.lucene.util.hnsw.math.distribution.WeibullDistribution Weibull Distribution}.
      * This implementation uses {@link #nextInversionDeviate(RealDistribution) inversion}
      * to generate random values.
      *
@@ -425,7 +425,7 @@ public class RandomDataImpl implements RandomData, Serializable {
     }
 
     /**
-     * Generates a random value from the {@link org.apache.commons.math3.distribution.ZipfDistribution Zipf Distribution}.
+     * Generates a random value from the {@link org.apache.lucene.util.hnsw.math.distribution.ZipfDistribution Zipf Distribution}.
      * This implementation uses {@link #nextInversionDeviate(IntegerDistribution) inversion}
      * to generate random values.
      *

@@ -20,7 +20,7 @@ package org.apache.lucene.util.hnsw.math.analysis;
  * Extension of {@link UnivariateMatrixFunction} representing a differentiable univariate matrix function.
  *
  * @since 2.0
- * @deprecated as of 3.1 replaced by  {@link org.apache.commons.math3.analysis.differentiation.UnivariateDifferentiableMatrixFunction}
+ * @deprecated as of 3.1 replaced by  {@link org.apache.lucene.util.hnsw.math.analysis.differentiation.UnivariateDifferentiableMatrixFunction}
  */
 @Deprecated
 public interface DifferentiableUnivariateMatrixFunction

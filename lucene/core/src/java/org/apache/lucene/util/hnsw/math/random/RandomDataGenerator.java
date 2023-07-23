@@ -379,7 +379,7 @@ public class RandomDataGenerator implements RandomData, Serializable {
 
     /**
      * <p>Generates a random value from the
-     * {@link org.apache.commons.math3.distribution.GammaDistribution Gamma Distribution}.</p>
+     * {@link org.apache.lucene.util.hnsw.math.distribution.GammaDistribution Gamma Distribution}.</p>
      *
      * <p>This implementation uses the following algorithms: </p>
      *

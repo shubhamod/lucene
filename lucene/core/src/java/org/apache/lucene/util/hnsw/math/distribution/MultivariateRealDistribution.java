@@ -69,7 +69,7 @@ public interface MultivariateRealDistribution {
      *
      * @param sampleSize the number of random vectors to generate.
      * @return an array representing the random samples.
-     * @throws org.apache.commons.math3.exception.NotStrictlyPositiveException
+     * @throws org.apache.lucene.util.hnsw.math.exception.NotStrictlyPositiveException
      * if {@code sampleSize} is not positive.
      *
      * @see #sample()

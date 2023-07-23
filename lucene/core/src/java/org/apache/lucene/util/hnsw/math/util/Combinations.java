@@ -69,8 +69,8 @@ public class Combinations implements Iterable<int[]> {
      *
      * @param n Size of the set from which subsets are selected.
      * @param k Size of the subsets to be enumerated.
-     * @throws org.apache.commons.math3.exception.NotPositiveException if {@code n < 0}.
-     * @throws org.apache.commons.math3.exception.NumberIsTooLargeException if {@code k > n}.
+     * @throws org.apache.lucene.util.hnsw.math.exception.NotPositiveException if {@code n < 0}.
+     * @throws org.apache.lucene.util.hnsw.math.exception.NumberIsTooLargeException if {@code k > n}.
      */
     public Combinations(int n,
                         int k) {
@@ -98,8 +98,8 @@ public class Combinations implements Iterable<int[]> {
      * @param n Size of the set from which subsets are selected.
      * @param k Size of the subsets to be enumerated.
      * @param iterationOrder Specifies the {@link #iterator() iteration order}.
-     * @throws org.apache.commons.math3.exception.NotPositiveException if {@code n < 0}.
-     * @throws org.apache.commons.math3.exception.NumberIsTooLargeException if {@code k > n}.
+     * @throws org.apache.lucene.util.hnsw.math.exception.NotPositiveException if {@code n < 0}.
+     * @throws org.apache.lucene.util.hnsw.math.exception.NumberIsTooLargeException if {@code k > n}.
      */
     private Combinations(int n,
                          int k,

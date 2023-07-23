@@ -29,9 +29,9 @@ public interface MultivariateFunction {
      *
      * @param point Point at which the function must be evaluated.
      * @return the function value for the given point.
-     * @throws org.apache.commons.math3.exception.DimensionMismatchException
+     * @throws org.apache.lucene.util.hnsw.math.exception.DimensionMismatchException
      * if the parameter's dimension is wrong for the function being evaluated.
-     * @throws  org.apache.commons.math3.exception.MathIllegalArgumentException
+     * @throws  org.apache.lucene.util.hnsw.math.exception.MathIllegalArgumentException
      * when the activated method itself can ascertain that preconditions,
      * specified in the API expressed at the level of the activated method,
      * have been violated.  In the vast majority of cases where Commons Math

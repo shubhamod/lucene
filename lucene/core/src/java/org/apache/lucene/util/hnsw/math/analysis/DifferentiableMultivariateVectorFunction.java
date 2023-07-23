@@ -21,7 +21,7 @@ package org.apache.lucene.util.hnsw.math.analysis;
  * Extension of {@link MultivariateVectorFunction} representing a differentiable
  * multivariate vectorial function.
  * @since 2.0
- * @deprecated as of 3.1 replaced by {@link org.apache.commons.math3.analysis.differentiation.MultivariateDifferentiableVectorFunction}
+ * @deprecated as of 3.1 replaced by {@link org.apache.lucene.util.hnsw.math.analysis.differentiation.MultivariateDifferentiableVectorFunction}
  */
 @Deprecated
 public interface DifferentiableMultivariateVectorFunction

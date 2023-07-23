@@ -109,7 +109,7 @@ public class Beta {
      * @param a Parameter {@code a}.
      * @param b Parameter {@code b}.
      * @return the regularized beta function I(x, a, b).
-     * @throws org.apache.commons.math3.exception.MaxCountExceededException
+     * @throws org.apache.lucene.util.hnsw.math.exception.MaxCountExceededException
      * if the algorithm fails to converge.
      */
     public static double regularizedBeta(double x, double a, double b) {
@@ -128,7 +128,7 @@ public class Beta {
      * series is less than epsilon the approximation ceases to calculate
      * further elements in the series.
      * @return the regularized beta function I(x, a, b)
-     * @throws org.apache.commons.math3.exception.MaxCountExceededException
+     * @throws org.apache.lucene.util.hnsw.math.exception.MaxCountExceededException
      * if the algorithm fails to converge.
      */
     public static double regularizedBeta(double x,
@@ -145,7 +145,7 @@ public class Beta {
      * @param b Parameter {@code b}.
      * @param maxIterations Maximum number of "iterations" to complete.
      * @return the regularized beta function I(x, a, b)
-     * @throws org.apache.commons.math3.exception.MaxCountExceededException
+     * @throws org.apache.lucene.util.hnsw.math.exception.MaxCountExceededException
      * if the algorithm fails to converge.
      */
     public static double regularizedBeta(double x,
@@ -175,7 +175,7 @@ public class Beta {
      * further elements in the series.
      * @param maxIterations Maximum number of "iterations" to complete.
      * @return the regularized beta function I(x, a, b)
-     * @throws org.apache.commons.math3.exception.MaxCountExceededException
+     * @throws org.apache.lucene.util.hnsw.math.exception.MaxCountExceededException
      * if the algorithm fails to converge.
      */
     public static double regularizedBeta(double x,
