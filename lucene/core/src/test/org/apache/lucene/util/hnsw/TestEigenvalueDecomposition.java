@@ -87,7 +87,7 @@ public class TestEigenvalueDecomposition extends LuceneTestCase {
 
     private void testOneQr(float[][] A) {
         float[][] R = new float[A.length][A.length];
-        float[][] Q = new float[A.length][A.length];
+        float[][] Q = EigenvalueDecomposition.identity(A.length);
         EigenvalueDecomposition.qrDecomp(A, Q, R);
 
         // Check if R is upper triangular
