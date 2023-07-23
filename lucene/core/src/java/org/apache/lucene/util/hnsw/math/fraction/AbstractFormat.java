@@ -17,14 +17,14 @@
 
 package org.apache.lucene.util.hnsw.math.fraction;
 
-import org.apache.lucene.util.hnsw.math.exception.NullArgumentException;
-import org.apache.lucene.util.hnsw.math.exception.util.LocalizedFormats;
-
 import java.io.Serializable;
 import java.text.FieldPosition;
 import java.text.NumberFormat;
 import java.text.ParsePosition;
 import java.util.Locale;
+
+import org.apache.lucene.util.hnsw.math.exception.NullArgumentException;
+import org.apache.lucene.util.hnsw.math.exception.util.LocalizedFormats;
 
 /**
  * Common part shared by both {@link FractionFormat} and {@link BigFractionFormat}.

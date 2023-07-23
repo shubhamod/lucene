@@ -17,14 +17,13 @@
 
 package org.apache.lucene.util.hnsw.math.complex;
 
-import org.apache.lucene.util.hnsw.math.exception.DimensionMismatchException;
-import org.apache.lucene.util.hnsw.math.exception.ZeroException;
-import org.apache.lucene.util.hnsw.math.exception.util.LocalizedFormats;
+import java.io.Serializable;
 import org.apache.lucene.util.hnsw.math.util.FastMath;
 import org.apache.lucene.util.hnsw.math.util.MathUtils;
 import org.apache.lucene.util.hnsw.math.util.Precision;
-
-import java.io.Serializable;
+import org.apache.lucene.util.hnsw.math.exception.DimensionMismatchException;
+import org.apache.lucene.util.hnsw.math.exception.ZeroException;
+import org.apache.lucene.util.hnsw.math.exception.util.LocalizedFormats;
 
 /**
  * This class implements <a href="http://mathworld.wolfram.com/Quaternion.html">

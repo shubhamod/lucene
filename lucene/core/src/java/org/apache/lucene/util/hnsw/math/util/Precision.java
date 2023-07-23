@@ -17,11 +17,11 @@
 
 package org.apache.lucene.util.hnsw.math.util;
 
+import java.math.BigDecimal;
+
 import org.apache.lucene.util.hnsw.math.exception.MathArithmeticException;
 import org.apache.lucene.util.hnsw.math.exception.MathIllegalArgumentException;
 import org.apache.lucene.util.hnsw.math.exception.util.LocalizedFormats;
-
-import java.math.BigDecimal;
 
 /**
  * Utilities for comparing numbers.

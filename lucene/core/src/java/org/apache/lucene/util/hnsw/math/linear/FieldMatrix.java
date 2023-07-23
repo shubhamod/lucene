@@ -20,7 +20,13 @@ package org.apache.lucene.util.hnsw.math.linear;
 
 import org.apache.lucene.util.hnsw.math.Field;
 import org.apache.lucene.util.hnsw.math.FieldElement;
-import org.apache.lucene.util.hnsw.math.exception.*;
+import org.apache.lucene.util.hnsw.math.exception.DimensionMismatchException;
+import org.apache.lucene.util.hnsw.math.exception.NoDataException;
+import org.apache.lucene.util.hnsw.math.exception.NotPositiveException;
+import org.apache.lucene.util.hnsw.math.exception.NotStrictlyPositiveException;
+import org.apache.lucene.util.hnsw.math.exception.NullArgumentException;
+import org.apache.lucene.util.hnsw.math.exception.NumberIsTooSmallException;
+import org.apache.lucene.util.hnsw.math.exception.OutOfRangeException;
 
 /**
  * Interface defining field-valued matrix with basic algebraic operations.

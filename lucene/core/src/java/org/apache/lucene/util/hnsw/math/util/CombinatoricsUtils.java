@@ -16,13 +16,13 @@
  */
 package org.apache.lucene.util.hnsw.math.util;
 
+import java.util.Iterator;
+import java.util.concurrent.atomic.AtomicReference;
+
 import org.apache.lucene.util.hnsw.math.exception.MathArithmeticException;
 import org.apache.lucene.util.hnsw.math.exception.NotPositiveException;
 import org.apache.lucene.util.hnsw.math.exception.NumberIsTooLargeException;
 import org.apache.lucene.util.hnsw.math.exception.util.LocalizedFormats;
-
-import java.util.Iterator;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Combinatorial utilities.

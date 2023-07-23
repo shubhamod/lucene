@@ -17,17 +17,36 @@
 
 package org.apache.lucene.util.hnsw.math.random;
 
-import org.apache.lucene.util.hnsw.math.distribution.*;
-import org.apache.lucene.util.hnsw.math.exception.*;
-import org.apache.lucene.util.hnsw.math.exception.util.LocalizedFormats;
-import org.apache.lucene.util.hnsw.math.util.MathArrays;
-
 import java.io.Serializable;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.SecureRandom;
 import java.util.Collection;
+
+import org.apache.lucene.util.hnsw.math.distribution.BetaDistribution;
+import org.apache.lucene.util.hnsw.math.distribution.BinomialDistribution;
+import org.apache.lucene.util.hnsw.math.distribution.CauchyDistribution;
+import org.apache.lucene.util.hnsw.math.distribution.ChiSquaredDistribution;
+import org.apache.lucene.util.hnsw.math.distribution.ExponentialDistribution;
+import org.apache.lucene.util.hnsw.math.distribution.FDistribution;
+import org.apache.lucene.util.hnsw.math.distribution.GammaDistribution;
+import org.apache.lucene.util.hnsw.math.distribution.HypergeometricDistribution;
+import org.apache.lucene.util.hnsw.math.distribution.PascalDistribution;
+import org.apache.lucene.util.hnsw.math.distribution.PoissonDistribution;
+import org.apache.lucene.util.hnsw.math.distribution.TDistribution;
+import org.apache.lucene.util.hnsw.math.distribution.WeibullDistribution;
+import org.apache.lucene.util.hnsw.math.distribution.ZipfDistribution;
+import org.apache.lucene.util.hnsw.math.distribution.UniformIntegerDistribution;
+import org.apache.lucene.util.hnsw.math.exception.MathInternalError;
+import org.apache.lucene.util.hnsw.math.exception.NotANumberException;
+import org.apache.lucene.util.hnsw.math.exception.NotFiniteNumberException;
+import org.apache.lucene.util.hnsw.math.exception.NotPositiveException;
+import org.apache.lucene.util.hnsw.math.exception.NotStrictlyPositiveException;
+import org.apache.lucene.util.hnsw.math.exception.NumberIsTooLargeException;
+import org.apache.lucene.util.hnsw.math.exception.OutOfRangeException;
+import org.apache.lucene.util.hnsw.math.exception.util.LocalizedFormats;
+import org.apache.lucene.util.hnsw.math.util.MathArrays;
 
 /**
  * Implements the {@link RandomData} interface using a {@link RandomGenerator}
@@ -379,7 +398,7 @@ public class RandomDataGenerator implements RandomData, Serializable {
 
     /**
      * <p>Generates a random value from the
-     * {@link org.apache.lucene.util.hnsw.math.distribution.GammaDistribution Gamma Distribution}.</p>
+     * {@link GammaDistribution Gamma Distribution}.</p>
      *
      * <p>This implementation uses the following algorithms: </p>
      *

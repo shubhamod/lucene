@@ -17,15 +17,31 @@
 
 package org.apache.lucene.util.hnsw.math.util;
 
+import java.lang.reflect.Array;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.List;
+import java.util.TreeSet;
+
 import org.apache.lucene.util.hnsw.math.Field;
-import org.apache.lucene.util.hnsw.math.distribution.UniformIntegerDistribution;
-import org.apache.lucene.util.hnsw.math.exception.*;
-import org.apache.lucene.util.hnsw.math.exception.util.LocalizedFormats;
 import org.apache.lucene.util.hnsw.math.random.RandomGenerator;
 import org.apache.lucene.util.hnsw.math.random.Well19937c;
-
-import java.lang.reflect.Array;
-import java.util.*;
+import org.apache.lucene.util.hnsw.math.distribution.UniformIntegerDistribution;
+import org.apache.lucene.util.hnsw.math.exception.DimensionMismatchException;
+import org.apache.lucene.util.hnsw.math.exception.MathArithmeticException;
+import org.apache.lucene.util.hnsw.math.exception.MathIllegalArgumentException;
+import org.apache.lucene.util.hnsw.math.exception.MathInternalError;
+import org.apache.lucene.util.hnsw.math.exception.NoDataException;
+import org.apache.lucene.util.hnsw.math.exception.NonMonotonicSequenceException;
+import org.apache.lucene.util.hnsw.math.exception.NotPositiveException;
+import org.apache.lucene.util.hnsw.math.exception.NotStrictlyPositiveException;
+import org.apache.lucene.util.hnsw.math.exception.NullArgumentException;
+import org.apache.lucene.util.hnsw.math.exception.NumberIsTooLargeException;
+import org.apache.lucene.util.hnsw.math.exception.NotANumberException;
+import org.apache.lucene.util.hnsw.math.exception.util.LocalizedFormats;
 
 /**
  * Arrays utilities.

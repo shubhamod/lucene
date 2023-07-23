@@ -16,8 +16,8 @@
  */
 package org.apache.lucene.util.hnsw.math.exception.util;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.ArrayList;
 
 /**
  * Utility class for transforming the list of arguments passed to

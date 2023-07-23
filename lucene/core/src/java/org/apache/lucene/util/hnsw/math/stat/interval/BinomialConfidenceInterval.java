@@ -16,10 +16,10 @@
  */
 package org.apache.lucene.util.hnsw.math.stat.interval;
 
-import org.apache.lucene.util.hnsw.math.exception.NotPositiveException;
-import org.apache.lucene.util.hnsw.math.exception.NotStrictlyPositiveException;
 import org.apache.lucene.util.hnsw.math.exception.NumberIsTooLargeException;
 import org.apache.lucene.util.hnsw.math.exception.OutOfRangeException;
+import org.apache.lucene.util.hnsw.math.exception.NotPositiveException;
+import org.apache.lucene.util.hnsw.math.exception.NotStrictlyPositiveException;
 
 /**
  * Interface to generate confidence intervals for a binomial proportion.

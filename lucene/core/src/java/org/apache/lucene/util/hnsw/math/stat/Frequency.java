@@ -16,15 +16,22 @@
  */
 package org.apache.lucene.util.hnsw.math.stat;
 
+import java.io.Serializable;
+import java.text.NumberFormat;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.SortedMap;
+import java.util.TreeMap;
+
 import org.apache.lucene.util.hnsw.math.exception.MathIllegalArgumentException;
 import org.apache.lucene.util.hnsw.math.exception.NullArgumentException;
 import org.apache.lucene.util.hnsw.math.exception.util.LocalizedFormats;
 import org.apache.lucene.util.hnsw.math.util.MathUtils;
-
-import java.io.Serializable;
-import java.text.NumberFormat;
-import java.util.*;
-import java.util.Map.Entry;
 
 /**
  * Maintains a frequency distribution.

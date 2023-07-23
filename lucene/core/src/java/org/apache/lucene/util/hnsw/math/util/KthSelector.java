@@ -16,10 +16,10 @@
  */
 package org.apache.lucene.util.hnsw.math.util;
 
-import org.apache.lucene.util.hnsw.math.exception.NullArgumentException;
-
 import java.io.Serializable;
 import java.util.Arrays;
+
+import org.apache.lucene.util.hnsw.math.exception.NullArgumentException;
 
 
 /**

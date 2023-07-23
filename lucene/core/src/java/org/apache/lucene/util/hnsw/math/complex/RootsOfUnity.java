@@ -16,14 +16,14 @@
  */
 package org.apache.lucene.util.hnsw.math.complex;
 
+import java.io.Serializable;
+
 import org.apache.lucene.util.hnsw.math.exception.MathIllegalArgumentException;
 import org.apache.lucene.util.hnsw.math.exception.MathIllegalStateException;
 import org.apache.lucene.util.hnsw.math.exception.OutOfRangeException;
 import org.apache.lucene.util.hnsw.math.exception.ZeroException;
 import org.apache.lucene.util.hnsw.math.exception.util.LocalizedFormats;
 import org.apache.lucene.util.hnsw.math.util.FastMath;
-
-import java.io.Serializable;
 
 /**
  * A helper class for the computation and caching of the {@code n}-th roots of

@@ -16,6 +16,8 @@
  */
 package org.apache.lucene.util.hnsw.math.analysis.differentiation;
 
+import java.io.Serializable;
+
 import org.apache.lucene.util.hnsw.math.Field;
 import org.apache.lucene.util.hnsw.math.FieldElement;
 import org.apache.lucene.util.hnsw.math.RealFieldElement;
@@ -25,8 +27,6 @@ import org.apache.lucene.util.hnsw.math.exception.NumberIsTooLargeException;
 import org.apache.lucene.util.hnsw.math.util.FastMath;
 import org.apache.lucene.util.hnsw.math.util.MathArrays;
 import org.apache.lucene.util.hnsw.math.util.MathUtils;
-
-import java.io.Serializable;
 
 /** Class representing both the value and the differentials of a function.
  * <p>This class is the workhorse of the differentiation package.</p>

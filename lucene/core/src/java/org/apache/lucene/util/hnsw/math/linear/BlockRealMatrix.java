@@ -17,13 +17,18 @@
 
 package org.apache.lucene.util.hnsw.math.linear;
 
-import org.apache.lucene.util.hnsw.math.exception.*;
+import java.io.Serializable;
+import java.util.Arrays;
+
+import org.apache.lucene.util.hnsw.math.exception.DimensionMismatchException;
+import org.apache.lucene.util.hnsw.math.exception.NoDataException;
+import org.apache.lucene.util.hnsw.math.exception.NotStrictlyPositiveException;
+import org.apache.lucene.util.hnsw.math.exception.NullArgumentException;
+import org.apache.lucene.util.hnsw.math.exception.NumberIsTooSmallException;
+import org.apache.lucene.util.hnsw.math.exception.OutOfRangeException;
 import org.apache.lucene.util.hnsw.math.exception.util.LocalizedFormats;
 import org.apache.lucene.util.hnsw.math.util.FastMath;
 import org.apache.lucene.util.hnsw.math.util.MathUtils;
-
-import java.io.Serializable;
-import java.util.Arrays;
 
 /**
  * Cache-friendly implementation of RealMatrix using a flat arrays to store

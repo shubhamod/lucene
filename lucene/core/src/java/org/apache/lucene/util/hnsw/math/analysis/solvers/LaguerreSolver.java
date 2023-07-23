@@ -19,7 +19,11 @@ package org.apache.lucene.util.hnsw.math.analysis.solvers;
 import org.apache.lucene.util.hnsw.math.analysis.polynomials.PolynomialFunction;
 import org.apache.lucene.util.hnsw.math.complex.Complex;
 import org.apache.lucene.util.hnsw.math.complex.ComplexUtils;
-import org.apache.lucene.util.hnsw.math.exception.*;
+import org.apache.lucene.util.hnsw.math.exception.NoBracketingException;
+import org.apache.lucene.util.hnsw.math.exception.NoDataException;
+import org.apache.lucene.util.hnsw.math.exception.NullArgumentException;
+import org.apache.lucene.util.hnsw.math.exception.NumberIsTooLargeException;
+import org.apache.lucene.util.hnsw.math.exception.TooManyEvaluationsException;
 import org.apache.lucene.util.hnsw.math.exception.util.LocalizedFormats;
 import org.apache.lucene.util.hnsw.math.util.FastMath;
 
@@ -178,7 +182,7 @@ public class LaguerreSolver extends AbstractPolynomialSolver {
      * @param coefficients Polynomial coefficients.
      * @param initial Start value.
      * @return the full set of complex roots of the polynomial
-     * @throws org.apache.lucene.util.hnsw.math.exception.TooManyEvaluationsException
+     * @throws TooManyEvaluationsException
      * if the maximum number of evaluations is exceeded when solving for one of the roots
      * @throws NullArgumentException if the {@code coefficients} is
      * {@code null}.
@@ -203,7 +207,7 @@ public class LaguerreSolver extends AbstractPolynomialSolver {
      * @param initial start value
      * @param maxEval maximum number of evaluations
      * @return the full set of complex roots of the polynomial
-     * @throws org.apache.lucene.util.hnsw.math.exception.TooManyEvaluationsException
+     * @throws TooManyEvaluationsException
      * if the maximum number of evaluations is exceeded when solving for one of the roots
      * @throws NullArgumentException if the {@code coefficients} is
      * {@code null}
@@ -233,7 +237,7 @@ public class LaguerreSolver extends AbstractPolynomialSolver {
      * @param coefficients Polynomial coefficients.
      * @param initial Start value.
      * @return a complex root of the polynomial
-     * @throws org.apache.lucene.util.hnsw.math.exception.TooManyEvaluationsException
+     * @throws TooManyEvaluationsException
      * if the maximum number of evaluations is exceeded.
      * @throws NullArgumentException if the {@code coefficients} is
      * {@code null}.
@@ -258,7 +262,7 @@ public class LaguerreSolver extends AbstractPolynomialSolver {
      * @param initial start value
      * @param maxEval maximum number of evaluations
      * @return a complex root of the polynomial
-     * @throws org.apache.lucene.util.hnsw.math.exception.TooManyEvaluationsException
+     * @throws TooManyEvaluationsException
      * if the maximum number of evaluations is exceeded
      * @throws NullArgumentException if the {@code coefficients} is
      * {@code null}
@@ -308,7 +312,7 @@ public class LaguerreSolver extends AbstractPolynomialSolver {
          * @param coefficients Polynomial coefficients.
          * @param initial Start value.
          * @return the point at which the function value is zero.
-         * @throws org.apache.lucene.util.hnsw.math.exception.TooManyEvaluationsException
+         * @throws TooManyEvaluationsException
          * if the maximum number of evaluations is exceeded.
          * @throws NullArgumentException if the {@code coefficients} is
          * {@code null}.
@@ -357,7 +361,7 @@ public class LaguerreSolver extends AbstractPolynomialSolver {
          * @param coefficients Polynomial coefficients.
          * @param initial Start value.
          * @return the point at which the function value is zero.
-         * @throws org.apache.lucene.util.hnsw.math.exception.TooManyEvaluationsException
+         * @throws TooManyEvaluationsException
          * if the maximum number of evaluations is exceeded.
          * @throws NullArgumentException if the {@code coefficients} is
          * {@code null}.

@@ -17,10 +17,10 @@
 
 package org.apache.lucene.util.hnsw.math.fraction;
 
+import java.io.Serializable;
+
 import org.apache.lucene.util.hnsw.math.Field;
 import org.apache.lucene.util.hnsw.math.FieldElement;
-
-import java.io.Serializable;
 
 /**
  * Representation of the fractional numbers  without any overflow field.

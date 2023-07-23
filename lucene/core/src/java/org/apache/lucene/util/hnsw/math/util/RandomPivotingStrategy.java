@@ -16,10 +16,10 @@
  */
 package org.apache.lucene.util.hnsw.math.util;
 
+import java.io.Serializable;
+
 import org.apache.lucene.util.hnsw.math.exception.MathIllegalArgumentException;
 import org.apache.lucene.util.hnsw.math.random.RandomGenerator;
-
-import java.io.Serializable;
 
 
 /**

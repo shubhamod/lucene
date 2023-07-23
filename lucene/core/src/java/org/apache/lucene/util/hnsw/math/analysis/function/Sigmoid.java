@@ -17,17 +17,17 @@
 
 package org.apache.lucene.util.hnsw.math.analysis.function;
 
-import org.apache.lucene.util.hnsw.math.analysis.DifferentiableUnivariateFunction;
+import java.util.Arrays;
+
 import org.apache.lucene.util.hnsw.math.analysis.FunctionUtils;
-import org.apache.lucene.util.hnsw.math.analysis.ParametricUnivariateFunction;
 import org.apache.lucene.util.hnsw.math.analysis.UnivariateFunction;
+import org.apache.lucene.util.hnsw.math.analysis.DifferentiableUnivariateFunction;
+import org.apache.lucene.util.hnsw.math.analysis.ParametricUnivariateFunction;
 import org.apache.lucene.util.hnsw.math.analysis.differentiation.DerivativeStructure;
 import org.apache.lucene.util.hnsw.math.analysis.differentiation.UnivariateDifferentiableFunction;
-import org.apache.lucene.util.hnsw.math.exception.DimensionMismatchException;
 import org.apache.lucene.util.hnsw.math.exception.NullArgumentException;
+import org.apache.lucene.util.hnsw.math.exception.DimensionMismatchException;
 import org.apache.lucene.util.hnsw.math.util.FastMath;
-
-import java.util.Arrays;
 
 /**
  * <a href="http://en.wikipedia.org/wiki/Sigmoid_function">

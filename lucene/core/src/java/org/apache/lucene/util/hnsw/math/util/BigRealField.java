@@ -17,10 +17,10 @@
 
 package org.apache.lucene.util.hnsw.math.util;
 
+import java.io.Serializable;
+
 import org.apache.lucene.util.hnsw.math.Field;
 import org.apache.lucene.util.hnsw.math.FieldElement;
-
-import java.io.Serializable;
 
 /**
  * Representation of real numbers with arbitrary precision field.

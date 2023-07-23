@@ -16,15 +16,20 @@
  */
 package org.apache.lucene.util.hnsw.math.linear;
 
-import org.apache.lucene.util.hnsw.math.analysis.UnivariateFunction;
-import org.apache.lucene.util.hnsw.math.exception.*;
-import org.apache.lucene.util.hnsw.math.exception.util.LocalizedFormats;
-import org.apache.lucene.util.hnsw.math.util.FastMath;
-import org.apache.lucene.util.hnsw.math.util.MathUtils;
-
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Iterator;
+
+import org.apache.lucene.util.hnsw.math.analysis.UnivariateFunction;
+import org.apache.lucene.util.hnsw.math.exception.NotPositiveException;
+import org.apache.lucene.util.hnsw.math.exception.NullArgumentException;
+import org.apache.lucene.util.hnsw.math.exception.DimensionMismatchException;
+import org.apache.lucene.util.hnsw.math.exception.NumberIsTooLargeException;
+import org.apache.lucene.util.hnsw.math.exception.NumberIsTooSmallException;
+import org.apache.lucene.util.hnsw.math.exception.OutOfRangeException;
+import org.apache.lucene.util.hnsw.math.exception.util.LocalizedFormats;
+import org.apache.lucene.util.hnsw.math.util.MathUtils;
+import org.apache.lucene.util.hnsw.math.util.FastMath;
 
 /**
  * This class implements the {@link RealVector} interface with a double array.

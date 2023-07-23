@@ -16,10 +16,10 @@
  */
 package org.apache.lucene.util.hnsw.math.exception;
 
-import org.apache.lucene.util.hnsw.math.exception.util.ExceptionContext;
-import org.apache.lucene.util.hnsw.math.exception.util.ExceptionContextProvider;
 import org.apache.lucene.util.hnsw.math.exception.util.Localizable;
 import org.apache.lucene.util.hnsw.math.exception.util.LocalizedFormats;
+import org.apache.lucene.util.hnsw.math.exception.util.ExceptionContext;
+import org.apache.lucene.util.hnsw.math.exception.util.ExceptionContextProvider;
 
 /**
  * Base class for arithmetic exceptions.

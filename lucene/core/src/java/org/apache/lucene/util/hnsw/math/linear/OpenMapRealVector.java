@@ -16,6 +16,8 @@
  */
 package org.apache.lucene.util.hnsw.math.linear;
 
+import java.io.Serializable;
+
 import org.apache.lucene.util.hnsw.math.exception.DimensionMismatchException;
 import org.apache.lucene.util.hnsw.math.exception.MathArithmeticException;
 import org.apache.lucene.util.hnsw.math.exception.NotPositiveException;
@@ -24,8 +26,6 @@ import org.apache.lucene.util.hnsw.math.exception.util.LocalizedFormats;
 import org.apache.lucene.util.hnsw.math.util.FastMath;
 import org.apache.lucene.util.hnsw.math.util.OpenIntToDoubleHashMap;
 import org.apache.lucene.util.hnsw.math.util.OpenIntToDoubleHashMap.Iterator;
-
-import java.io.Serializable;
 
 /**
  * This class implements the {@link RealVector} interface with a

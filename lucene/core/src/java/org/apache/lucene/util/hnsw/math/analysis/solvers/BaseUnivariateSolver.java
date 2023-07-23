@@ -133,9 +133,9 @@ public interface BaseUnivariateSolver<FUNC extends UnivariateFunction> {
      * @param startValue Start value to use.
      * @return a value where the function is zero.
      * @param maxEval Maximum number of evaluations.
-     * @throws org.apache.lucene.util.hnsw.math.exception.MathIllegalArgumentException
+     * @throws MathIllegalArgumentException
      * if the arguments do not satisfy the requirements specified by the solver.
-     * @throws org.apache.lucene.util.hnsw.math.exception.TooManyEvaluationsException if
+     * @throws TooManyEvaluationsException if
      * the allowed number of evaluations is exceeded.
      */
     double solve(int maxEval, FUNC f, double startValue);

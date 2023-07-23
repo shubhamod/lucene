@@ -17,11 +17,10 @@
 
 package org.apache.lucene.util.hnsw.math.util;
 
+import java.util.NoSuchElementException;
 import org.apache.lucene.util.hnsw.math.exception.DimensionMismatchException;
 import org.apache.lucene.util.hnsw.math.exception.NotStrictlyPositiveException;
 import org.apache.lucene.util.hnsw.math.exception.OutOfRangeException;
-
-import java.util.NoSuchElementException;
 
 /**
  * Converter between unidimensional storage structure and multidimensional

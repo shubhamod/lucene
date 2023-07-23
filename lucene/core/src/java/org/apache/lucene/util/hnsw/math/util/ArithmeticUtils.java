@@ -16,13 +16,13 @@
  */
 package org.apache.lucene.util.hnsw.math.util;
 
+import java.math.BigInteger;
+
 import org.apache.lucene.util.hnsw.math.exception.MathArithmeticException;
 import org.apache.lucene.util.hnsw.math.exception.NotPositiveException;
 import org.apache.lucene.util.hnsw.math.exception.NumberIsTooLargeException;
 import org.apache.lucene.util.hnsw.math.exception.util.Localizable;
 import org.apache.lucene.util.hnsw.math.exception.util.LocalizedFormats;
-
-import java.math.BigInteger;
 
 /**
  * Some useful, arithmetics related, additions to the built-in functions in

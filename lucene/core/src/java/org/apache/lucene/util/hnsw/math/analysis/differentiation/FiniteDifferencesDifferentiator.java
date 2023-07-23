@@ -16,6 +16,8 @@
  */
 package org.apache.lucene.util.hnsw.math.analysis.differentiation;
 
+import java.io.Serializable;
+
 import org.apache.lucene.util.hnsw.math.analysis.UnivariateFunction;
 import org.apache.lucene.util.hnsw.math.analysis.UnivariateMatrixFunction;
 import org.apache.lucene.util.hnsw.math.analysis.UnivariateVectorFunction;
@@ -24,8 +26,6 @@ import org.apache.lucene.util.hnsw.math.exception.NotPositiveException;
 import org.apache.lucene.util.hnsw.math.exception.NumberIsTooLargeException;
 import org.apache.lucene.util.hnsw.math.exception.NumberIsTooSmallException;
 import org.apache.lucene.util.hnsw.math.util.FastMath;
-
-import java.io.Serializable;
 
 /** Univariate functions differentiator using finite differences.
  * <p>

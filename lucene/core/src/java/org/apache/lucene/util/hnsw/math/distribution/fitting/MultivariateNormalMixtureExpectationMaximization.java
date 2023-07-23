@@ -16,9 +16,17 @@
  */
 package org.apache.lucene.util.hnsw.math.distribution.fitting;
 
-import org.apache.lucene.util.hnsw.math.distribution.MixtureMultivariateNormalDistribution;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 import org.apache.lucene.util.hnsw.math.distribution.MultivariateNormalDistribution;
-import org.apache.lucene.util.hnsw.math.exception.*;
+import org.apache.lucene.util.hnsw.math.distribution.MixtureMultivariateNormalDistribution;
+import org.apache.lucene.util.hnsw.math.exception.ConvergenceException;
+import org.apache.lucene.util.hnsw.math.exception.DimensionMismatchException;
+import org.apache.lucene.util.hnsw.math.exception.NotStrictlyPositiveException;
+import org.apache.lucene.util.hnsw.math.exception.NumberIsTooSmallException;
+import org.apache.lucene.util.hnsw.math.exception.NumberIsTooLargeException;
 import org.apache.lucene.util.hnsw.math.exception.util.LocalizedFormats;
 import org.apache.lucene.util.hnsw.math.linear.Array2DRowRealMatrix;
 import org.apache.lucene.util.hnsw.math.linear.RealMatrix;
@@ -27,10 +35,6 @@ import org.apache.lucene.util.hnsw.math.stat.correlation.Covariance;
 import org.apache.lucene.util.hnsw.math.util.FastMath;
 import org.apache.lucene.util.hnsw.math.util.MathArrays;
 import org.apache.lucene.util.hnsw.math.util.Pair;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
 /**
  * Expectation-Maximization</a> algorithm for fitting the parameters of

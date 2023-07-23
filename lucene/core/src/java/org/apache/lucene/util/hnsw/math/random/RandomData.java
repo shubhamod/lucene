@@ -16,13 +16,12 @@
  */
 
 package org.apache.lucene.util.hnsw.math.random;
+import java.util.Collection;
 
 import org.apache.lucene.util.hnsw.math.exception.NotANumberException;
 import org.apache.lucene.util.hnsw.math.exception.NotFiniteNumberException;
 import org.apache.lucene.util.hnsw.math.exception.NotStrictlyPositiveException;
 import org.apache.lucene.util.hnsw.math.exception.NumberIsTooLargeException;
-
-import java.util.Collection;
 
 /**
  * Random data generation utilities.

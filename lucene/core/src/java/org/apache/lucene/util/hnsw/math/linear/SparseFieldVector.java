@@ -16,15 +16,20 @@
  */
 package org.apache.lucene.util.hnsw.math.linear;
 
+import java.io.Serializable;
+
 import org.apache.lucene.util.hnsw.math.Field;
 import org.apache.lucene.util.hnsw.math.FieldElement;
-import org.apache.lucene.util.hnsw.math.exception.*;
+import org.apache.lucene.util.hnsw.math.exception.DimensionMismatchException;
+import org.apache.lucene.util.hnsw.math.exception.MathArithmeticException;
+import org.apache.lucene.util.hnsw.math.exception.NotPositiveException;
+import org.apache.lucene.util.hnsw.math.exception.NullArgumentException;
+import org.apache.lucene.util.hnsw.math.exception.NumberIsTooSmallException;
+import org.apache.lucene.util.hnsw.math.exception.OutOfRangeException;
 import org.apache.lucene.util.hnsw.math.exception.util.LocalizedFormats;
 import org.apache.lucene.util.hnsw.math.util.MathArrays;
 import org.apache.lucene.util.hnsw.math.util.MathUtils;
 import org.apache.lucene.util.hnsw.math.util.OpenIntToFieldHashMap;
-
-import java.io.Serializable;
 
 /**
  * This class implements the {@link FieldVector} interface with a {@link OpenIntToFieldHashMap} backing store.

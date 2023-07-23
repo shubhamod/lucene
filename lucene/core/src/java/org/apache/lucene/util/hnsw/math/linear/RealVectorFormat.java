@@ -17,15 +17,15 @@
 
 package org.apache.lucene.util.hnsw.math.linear;
 
-import org.apache.lucene.util.hnsw.math.exception.MathParseException;
-import org.apache.lucene.util.hnsw.math.util.CompositeFormat;
-
 import java.text.FieldPosition;
 import java.text.NumberFormat;
 import java.text.ParsePosition;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+
+import org.apache.lucene.util.hnsw.math.exception.MathParseException;
+import org.apache.lucene.util.hnsw.math.util.CompositeFormat;
 
 /**
  * Formats a vector in components list format "{v0; v1; ...; vk-1}".

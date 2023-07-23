@@ -17,14 +17,20 @@
 
 package org.apache.lucene.util.hnsw.math.linear;
 
+import java.io.Serializable;
+
 import org.apache.lucene.util.hnsw.math.Field;
 import org.apache.lucene.util.hnsw.math.FieldElement;
-import org.apache.lucene.util.hnsw.math.exception.*;
+import org.apache.lucene.util.hnsw.math.exception.NoDataException;
+import org.apache.lucene.util.hnsw.math.exception.DimensionMismatchException;
+import org.apache.lucene.util.hnsw.math.exception.MathIllegalStateException;
+import org.apache.lucene.util.hnsw.math.exception.NotStrictlyPositiveException;
+import org.apache.lucene.util.hnsw.math.exception.NullArgumentException;
+import org.apache.lucene.util.hnsw.math.exception.NumberIsTooSmallException;
+import org.apache.lucene.util.hnsw.math.exception.OutOfRangeException;
 import org.apache.lucene.util.hnsw.math.exception.util.LocalizedFormats;
 import org.apache.lucene.util.hnsw.math.util.MathArrays;
 import org.apache.lucene.util.hnsw.math.util.MathUtils;
-
-import java.io.Serializable;
 
 /**
  * Implementation of FieldMatrix<T> using a {@link FieldElement}[][] array to store entries.

@@ -17,16 +17,16 @@
 
 package org.apache.lucene.util.hnsw.math.fraction;
 
-import org.apache.lucene.util.hnsw.math.exception.MathIllegalArgumentException;
-import org.apache.lucene.util.hnsw.math.exception.MathParseException;
-import org.apache.lucene.util.hnsw.math.exception.util.LocalizedFormats;
-
 import java.io.Serializable;
 import java.math.BigInteger;
 import java.text.FieldPosition;
 import java.text.NumberFormat;
 import java.text.ParsePosition;
 import java.util.Locale;
+
+import org.apache.lucene.util.hnsw.math.exception.MathIllegalArgumentException;
+import org.apache.lucene.util.hnsw.math.exception.MathParseException;
+import org.apache.lucene.util.hnsw.math.exception.util.LocalizedFormats;
 
 /**
  * Formats a BigFraction number in proper format or improper format.

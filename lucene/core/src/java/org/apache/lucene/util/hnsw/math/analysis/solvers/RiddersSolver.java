@@ -16,9 +16,9 @@
  */
 package org.apache.lucene.util.hnsw.math.analysis.solvers;
 
+import org.apache.lucene.util.hnsw.math.util.FastMath;
 import org.apache.lucene.util.hnsw.math.exception.NoBracketingException;
 import org.apache.lucene.util.hnsw.math.exception.TooManyEvaluationsException;
-import org.apache.lucene.util.hnsw.math.util.FastMath;
 
 /**
  * Implements the <a href="http://mathworld.wolfram.com/RiddersMethod.html">

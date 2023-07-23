@@ -17,16 +17,16 @@
 
 package org.apache.lucene.util.hnsw.math.stat.ranking;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.List;
+
 import org.apache.lucene.util.hnsw.math.exception.MathInternalError;
 import org.apache.lucene.util.hnsw.math.exception.NotANumberException;
 import org.apache.lucene.util.hnsw.math.random.RandomDataGenerator;
 import org.apache.lucene.util.hnsw.math.random.RandomGenerator;
 import org.apache.lucene.util.hnsw.math.util.FastMath;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
 
 
 /**

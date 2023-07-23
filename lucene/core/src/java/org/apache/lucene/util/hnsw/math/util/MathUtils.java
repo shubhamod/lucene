@@ -17,14 +17,14 @@
 
 package org.apache.lucene.util.hnsw.math.util;
 
+import java.util.Arrays;
+
 import org.apache.lucene.util.hnsw.math.RealFieldElement;
 import org.apache.lucene.util.hnsw.math.exception.MathArithmeticException;
 import org.apache.lucene.util.hnsw.math.exception.NotFiniteNumberException;
 import org.apache.lucene.util.hnsw.math.exception.NullArgumentException;
 import org.apache.lucene.util.hnsw.math.exception.util.Localizable;
 import org.apache.lucene.util.hnsw.math.exception.util.LocalizedFormats;
-
-import java.util.Arrays;
 
 /**
  * Miscellaneous utility functions.

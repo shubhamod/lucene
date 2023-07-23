@@ -17,9 +17,9 @@
 
 package org.apache.lucene.util.hnsw.math.random;
 
-import org.apache.lucene.util.hnsw.math.util.FastMath;
-
 import java.io.Serializable;
+
+import org.apache.lucene.util.hnsw.math.util.FastMath;
 
 /**
  * <a href="http://burtleburtle.net/bob/rand/isaacafa.html">

@@ -17,16 +17,16 @@
 package org.apache.lucene.util.hnsw.math.util;
 
 
-import org.apache.lucene.util.hnsw.math.Field;
-import org.apache.lucene.util.hnsw.math.FieldElement;
-import org.apache.lucene.util.hnsw.math.exception.MathArithmeticException;
-import org.apache.lucene.util.hnsw.math.exception.util.LocalizedFormats;
-
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.MathContext;
 import java.math.RoundingMode;
+
+import org.apache.lucene.util.hnsw.math.Field;
+import org.apache.lucene.util.hnsw.math.FieldElement;
+import org.apache.lucene.util.hnsw.math.exception.MathArithmeticException;
+import org.apache.lucene.util.hnsw.math.exception.util.LocalizedFormats;
 
 /**
  * Arbitrary precision decimal number.

@@ -17,10 +17,10 @@
 
 package org.apache.lucene.util.hnsw.math.analysis.solvers;
 
+import org.apache.lucene.util.hnsw.math.util.FastMath;
 import org.apache.lucene.util.hnsw.math.analysis.UnivariateFunction;
 import org.apache.lucene.util.hnsw.math.exception.ConvergenceException;
 import org.apache.lucene.util.hnsw.math.exception.MathInternalError;
-import org.apache.lucene.util.hnsw.math.util.FastMath;
 
 /**
  * Base class for all bracketing <em>Secant</em>-based methods for root-finding

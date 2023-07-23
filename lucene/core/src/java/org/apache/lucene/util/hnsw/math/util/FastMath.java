@@ -16,10 +16,10 @@
  */
 package org.apache.lucene.util.hnsw.math.util;
 
+import java.io.PrintStream;
+
 import org.apache.lucene.util.hnsw.math.exception.MathArithmeticException;
 import org.apache.lucene.util.hnsw.math.exception.util.LocalizedFormats;
-
-import java.io.PrintStream;
 
 /**
  * Faster, more accurate, portable alternative to {@link Math} and

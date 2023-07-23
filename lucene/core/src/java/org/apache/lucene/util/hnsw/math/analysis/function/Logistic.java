@@ -17,15 +17,15 @@
 
 package org.apache.lucene.util.hnsw.math.analysis.function;
 
-import org.apache.lucene.util.hnsw.math.analysis.DifferentiableUnivariateFunction;
 import org.apache.lucene.util.hnsw.math.analysis.FunctionUtils;
-import org.apache.lucene.util.hnsw.math.analysis.ParametricUnivariateFunction;
 import org.apache.lucene.util.hnsw.math.analysis.UnivariateFunction;
+import org.apache.lucene.util.hnsw.math.analysis.DifferentiableUnivariateFunction;
+import org.apache.lucene.util.hnsw.math.analysis.ParametricUnivariateFunction;
 import org.apache.lucene.util.hnsw.math.analysis.differentiation.DerivativeStructure;
 import org.apache.lucene.util.hnsw.math.analysis.differentiation.UnivariateDifferentiableFunction;
-import org.apache.lucene.util.hnsw.math.exception.DimensionMismatchException;
 import org.apache.lucene.util.hnsw.math.exception.NotStrictlyPositiveException;
 import org.apache.lucene.util.hnsw.math.exception.NullArgumentException;
+import org.apache.lucene.util.hnsw.math.exception.DimensionMismatchException;
 import org.apache.lucene.util.hnsw.math.util.FastMath;
 
 /**

@@ -17,17 +17,22 @@
 
 package org.apache.lucene.util.hnsw.math.linear;
 
-import org.apache.lucene.util.hnsw.math.analysis.FunctionUtils;
-import org.apache.lucene.util.hnsw.math.analysis.UnivariateFunction;
-import org.apache.lucene.util.hnsw.math.analysis.function.Add;
-import org.apache.lucene.util.hnsw.math.analysis.function.Divide;
-import org.apache.lucene.util.hnsw.math.analysis.function.Multiply;
-import org.apache.lucene.util.hnsw.math.exception.*;
-import org.apache.lucene.util.hnsw.math.exception.util.LocalizedFormats;
-import org.apache.lucene.util.hnsw.math.util.FastMath;
-
 import java.util.Iterator;
 import java.util.NoSuchElementException;
+
+import org.apache.lucene.util.hnsw.math.exception.MathUnsupportedOperationException;
+import org.apache.lucene.util.hnsw.math.exception.DimensionMismatchException;
+import org.apache.lucene.util.hnsw.math.exception.NotPositiveException;
+import org.apache.lucene.util.hnsw.math.exception.NumberIsTooSmallException;
+import org.apache.lucene.util.hnsw.math.exception.OutOfRangeException;
+import org.apache.lucene.util.hnsw.math.exception.MathArithmeticException;
+import org.apache.lucene.util.hnsw.math.analysis.FunctionUtils;
+import org.apache.lucene.util.hnsw.math.analysis.function.Add;
+import org.apache.lucene.util.hnsw.math.analysis.function.Multiply;
+import org.apache.lucene.util.hnsw.math.analysis.function.Divide;
+import org.apache.lucene.util.hnsw.math.analysis.UnivariateFunction;
+import org.apache.lucene.util.hnsw.math.exception.util.LocalizedFormats;
+import org.apache.lucene.util.hnsw.math.util.FastMath;
 
 /**
  * Class defining a real-valued vector with basic algebraic operations.

@@ -16,15 +16,19 @@
  */
 package org.apache.lucene.util.hnsw.math.analysis.differentiation;
 
-import org.apache.lucene.util.hnsw.math.exception.*;
-import org.apache.lucene.util.hnsw.math.util.CombinatoricsUtils;
-import org.apache.lucene.util.hnsw.math.util.FastMath;
-import org.apache.lucene.util.hnsw.math.util.MathArrays;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
+
+import org.apache.lucene.util.hnsw.math.exception.DimensionMismatchException;
+import org.apache.lucene.util.hnsw.math.exception.MathArithmeticException;
+import org.apache.lucene.util.hnsw.math.exception.MathInternalError;
+import org.apache.lucene.util.hnsw.math.exception.NotPositiveException;
+import org.apache.lucene.util.hnsw.math.exception.NumberIsTooLargeException;
+import org.apache.lucene.util.hnsw.math.util.CombinatoricsUtils;
+import org.apache.lucene.util.hnsw.math.util.FastMath;
+import org.apache.lucene.util.hnsw.math.util.MathArrays;
 
 /** Class holding "compiled" computation rules for derivative structures.
  * <p>This class implements the computation rules described in Dan Kalman's paper <a

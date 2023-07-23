@@ -16,12 +16,16 @@
  */
 package org.apache.lucene.util.hnsw.math.linear;
 
-import org.apache.lucene.util.hnsw.math.exception.*;
+import java.io.Serializable;
+
+import org.apache.lucene.util.hnsw.math.exception.DimensionMismatchException;
+import org.apache.lucene.util.hnsw.math.exception.NotStrictlyPositiveException;
+import org.apache.lucene.util.hnsw.math.exception.NullArgumentException;
+import org.apache.lucene.util.hnsw.math.exception.NumberIsTooLargeException;
+import org.apache.lucene.util.hnsw.math.exception.OutOfRangeException;
 import org.apache.lucene.util.hnsw.math.util.FastMath;
 import org.apache.lucene.util.hnsw.math.util.MathUtils;
 import org.apache.lucene.util.hnsw.math.util.Precision;
-
-import java.io.Serializable;
 
 /**
  * Implementation of a diagonal matrix.

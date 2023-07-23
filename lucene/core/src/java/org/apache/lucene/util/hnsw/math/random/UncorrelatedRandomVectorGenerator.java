@@ -17,9 +17,9 @@
 
 package org.apache.lucene.util.hnsw.math.random;
 
-import org.apache.lucene.util.hnsw.math.exception.DimensionMismatchException;
-
 import java.util.Arrays;
+
+import org.apache.lucene.util.hnsw.math.exception.DimensionMismatchException;
 
 /**
  * A {@link RandomVectorGenerator} that generates vectors with uncorrelated

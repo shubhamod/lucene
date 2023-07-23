@@ -17,17 +17,17 @@
 
 package org.apache.lucene.util.hnsw.math.complex;
 
+import java.text.FieldPosition;
+import java.text.NumberFormat;
+import java.text.ParsePosition;
+import java.util.Locale;
+
 import org.apache.lucene.util.hnsw.math.exception.MathIllegalArgumentException;
 import org.apache.lucene.util.hnsw.math.exception.MathParseException;
 import org.apache.lucene.util.hnsw.math.exception.NoDataException;
 import org.apache.lucene.util.hnsw.math.exception.NullArgumentException;
 import org.apache.lucene.util.hnsw.math.exception.util.LocalizedFormats;
 import org.apache.lucene.util.hnsw.math.util.CompositeFormat;
-
-import java.text.FieldPosition;
-import java.text.NumberFormat;
-import java.text.ParsePosition;
-import java.util.Locale;
 
 /**
  * Formats a Complex number in cartesian format "Re(c) + Im(c)i".  'i' can

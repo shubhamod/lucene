@@ -16,8 +16,8 @@
  */
 package org.apache.lucene.util.hnsw.math.exception;
 
-import org.apache.lucene.util.hnsw.math.exception.util.Localizable;
 import org.apache.lucene.util.hnsw.math.exception.util.LocalizedFormats;
+import org.apache.lucene.util.hnsw.math.exception.util.Localizable;
 
 /**
  * Exception to be thrown when some argument is out of range.

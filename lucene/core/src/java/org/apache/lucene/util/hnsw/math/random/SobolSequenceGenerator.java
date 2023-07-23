@@ -16,9 +16,6 @@
  */
 package org.apache.lucene.util.hnsw.math.random;
 
-import org.apache.lucene.util.hnsw.math.exception.*;
-import org.apache.lucene.util.hnsw.math.util.FastMath;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -27,6 +24,13 @@ import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.NoSuchElementException;
 import java.util.StringTokenizer;
+
+import org.apache.lucene.util.hnsw.math.exception.MathInternalError;
+import org.apache.lucene.util.hnsw.math.exception.MathParseException;
+import org.apache.lucene.util.hnsw.math.exception.NotPositiveException;
+import org.apache.lucene.util.hnsw.math.exception.NotStrictlyPositiveException;
+import org.apache.lucene.util.hnsw.math.exception.OutOfRangeException;
+import org.apache.lucene.util.hnsw.math.util.FastMath;
 
 /**
  * Implementation of a Sobol sequence.

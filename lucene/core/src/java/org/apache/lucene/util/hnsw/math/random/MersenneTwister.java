@@ -16,9 +16,9 @@
  */
 package org.apache.lucene.util.hnsw.math.random;
 
-import org.apache.lucene.util.hnsw.math.util.FastMath;
-
 import java.io.Serializable;
+
+import org.apache.lucene.util.hnsw.math.util.FastMath;
 
 
 /** This class implements a powerful pseudo-random number generator

@@ -16,6 +16,11 @@
  */
 package org.apache.lucene.util.hnsw.math.analysis.differentiation;
 
+import java.io.Serializable;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.apache.lucene.util.hnsw.math.Field;
 import org.apache.lucene.util.hnsw.math.FieldElement;
 import org.apache.lucene.util.hnsw.math.RealFieldElement;
@@ -24,11 +29,6 @@ import org.apache.lucene.util.hnsw.math.util.FastMath;
 import org.apache.lucene.util.hnsw.math.util.MathArrays;
 import org.apache.lucene.util.hnsw.math.util.MathUtils;
 import org.apache.lucene.util.hnsw.math.util.Precision;
-
-import java.io.Serializable;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * First derivative computation with large number of variables.

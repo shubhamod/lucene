@@ -16,15 +16,14 @@
  */
 package org.apache.lucene.util.hnsw.math.util;
 
-import org.apache.lucene.util.hnsw.math.exception.DimensionMismatchException;
-import org.apache.lucene.util.hnsw.math.exception.MathInternalError;
-import org.apache.lucene.util.hnsw.math.exception.OutOfRangeException;
-
-import java.io.Serializable;
-import java.util.Arrays;
-import java.util.Comparator;
 import java.util.Iterator;
+import java.util.Comparator;
+import java.util.Arrays;
 import java.util.NoSuchElementException;
+import java.io.Serializable;
+import org.apache.lucene.util.hnsw.math.exception.MathInternalError;
+import org.apache.lucene.util.hnsw.math.exception.DimensionMismatchException;
+import org.apache.lucene.util.hnsw.math.exception.OutOfRangeException;
 
 /**
  * Utility to create <a href="http://en.wikipedia.org/wiki/Combination">

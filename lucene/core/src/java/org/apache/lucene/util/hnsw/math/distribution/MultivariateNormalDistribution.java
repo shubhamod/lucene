@@ -17,7 +17,11 @@
 package org.apache.lucene.util.hnsw.math.distribution;
 
 import org.apache.lucene.util.hnsw.math.exception.DimensionMismatchException;
-import org.apache.lucene.util.hnsw.math.linear.*;
+import org.apache.lucene.util.hnsw.math.linear.Array2DRowRealMatrix;
+import org.apache.lucene.util.hnsw.math.linear.EigenDecomposition;
+import org.apache.lucene.util.hnsw.math.linear.NonPositiveDefiniteMatrixException;
+import org.apache.lucene.util.hnsw.math.linear.RealMatrix;
+import org.apache.lucene.util.hnsw.math.linear.SingularMatrixException;
 import org.apache.lucene.util.hnsw.math.random.RandomGenerator;
 import org.apache.lucene.util.hnsw.math.random.Well19937c;
 import org.apache.lucene.util.hnsw.math.util.FastMath;

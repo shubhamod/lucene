@@ -17,9 +17,9 @@
 
 package org.apache.lucene.util.hnsw.math.analysis.function;
 
-import org.apache.lucene.util.hnsw.math.analysis.DifferentiableUnivariateFunction;
 import org.apache.lucene.util.hnsw.math.analysis.FunctionUtils;
 import org.apache.lucene.util.hnsw.math.analysis.UnivariateFunction;
+import org.apache.lucene.util.hnsw.math.analysis.DifferentiableUnivariateFunction;
 import org.apache.lucene.util.hnsw.math.analysis.differentiation.DerivativeStructure;
 import org.apache.lucene.util.hnsw.math.analysis.differentiation.UnivariateDifferentiableFunction;
 

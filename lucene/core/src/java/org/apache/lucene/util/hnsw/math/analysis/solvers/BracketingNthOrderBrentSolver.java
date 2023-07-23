@@ -18,7 +18,11 @@ package org.apache.lucene.util.hnsw.math.analysis.solvers;
 
 
 import org.apache.lucene.util.hnsw.math.analysis.UnivariateFunction;
-import org.apache.lucene.util.hnsw.math.exception.*;
+import org.apache.lucene.util.hnsw.math.exception.MathInternalError;
+import org.apache.lucene.util.hnsw.math.exception.NoBracketingException;
+import org.apache.lucene.util.hnsw.math.exception.NumberIsTooLargeException;
+import org.apache.lucene.util.hnsw.math.exception.NumberIsTooSmallException;
+import org.apache.lucene.util.hnsw.math.exception.TooManyEvaluationsException;
 import org.apache.lucene.util.hnsw.math.util.FastMath;
 import org.apache.lucene.util.hnsw.math.util.Precision;
 

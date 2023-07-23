@@ -16,10 +16,10 @@
  */
 package org.apache.lucene.util.hnsw.math.util;
 
-import org.apache.lucene.util.hnsw.math.exception.MaxCountExceededException;
-
 import java.util.Collection;
 import java.util.concurrent.CopyOnWriteArrayList;
+
+import org.apache.lucene.util.hnsw.math.exception.MaxCountExceededException;
 
 /**
  * This abstract class provides a general framework for managing iterative

@@ -16,9 +16,9 @@
  */
 package org.apache.lucene.util.hnsw.math.exception;
 
+import org.apache.lucene.util.hnsw.math.exception.util.Localizable;
 import org.apache.lucene.util.hnsw.math.exception.util.ExceptionContext;
 import org.apache.lucene.util.hnsw.math.exception.util.ExceptionContextProvider;
-import org.apache.lucene.util.hnsw.math.exception.util.Localizable;
 
 /**
  * As of release 4.0, all exceptions thrown by the Commons Math code (except

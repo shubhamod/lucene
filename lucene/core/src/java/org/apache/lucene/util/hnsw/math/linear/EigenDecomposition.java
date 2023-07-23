@@ -18,13 +18,13 @@
 package org.apache.lucene.util.hnsw.math.linear;
 
 import org.apache.lucene.util.hnsw.math.complex.Complex;
-import org.apache.lucene.util.hnsw.math.exception.DimensionMismatchException;
 import org.apache.lucene.util.hnsw.math.exception.MathArithmeticException;
 import org.apache.lucene.util.hnsw.math.exception.MathUnsupportedOperationException;
 import org.apache.lucene.util.hnsw.math.exception.MaxCountExceededException;
+import org.apache.lucene.util.hnsw.math.exception.DimensionMismatchException;
 import org.apache.lucene.util.hnsw.math.exception.util.LocalizedFormats;
-import org.apache.lucene.util.hnsw.math.util.FastMath;
 import org.apache.lucene.util.hnsw.math.util.Precision;
+import org.apache.lucene.util.hnsw.math.util.FastMath;
 
 /**
  * Calculates the eigen decomposition of a real matrix.

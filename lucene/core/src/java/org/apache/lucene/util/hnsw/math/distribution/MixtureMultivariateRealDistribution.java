@@ -16,6 +16,9 @@
  */
 package org.apache.lucene.util.hnsw.math.distribution;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.apache.lucene.util.hnsw.math.exception.DimensionMismatchException;
 import org.apache.lucene.util.hnsw.math.exception.MathArithmeticException;
 import org.apache.lucene.util.hnsw.math.exception.NotPositiveException;
@@ -23,9 +26,6 @@ import org.apache.lucene.util.hnsw.math.exception.util.LocalizedFormats;
 import org.apache.lucene.util.hnsw.math.random.RandomGenerator;
 import org.apache.lucene.util.hnsw.math.random.Well19937c;
 import org.apache.lucene.util.hnsw.math.util.Pair;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Class for representing <a href="http://en.wikipedia.org/wiki/Mixture_model">

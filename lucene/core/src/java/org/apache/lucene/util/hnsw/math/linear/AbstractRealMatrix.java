@@ -17,13 +17,19 @@
 
 package org.apache.lucene.util.hnsw.math.linear;
 
-import org.apache.lucene.util.hnsw.math.exception.*;
-import org.apache.lucene.util.hnsw.math.exception.util.LocalizedFormats;
-import org.apache.lucene.util.hnsw.math.util.FastMath;
-import org.apache.lucene.util.hnsw.math.util.MathUtils;
-
 import java.util.ArrayList;
 import java.util.Locale;
+
+import org.apache.lucene.util.hnsw.math.exception.NoDataException;
+import org.apache.lucene.util.hnsw.math.exception.NotPositiveException;
+import org.apache.lucene.util.hnsw.math.exception.NotStrictlyPositiveException;
+import org.apache.lucene.util.hnsw.math.exception.DimensionMismatchException;
+import org.apache.lucene.util.hnsw.math.exception.NullArgumentException;
+import org.apache.lucene.util.hnsw.math.exception.NumberIsTooSmallException;
+import org.apache.lucene.util.hnsw.math.exception.OutOfRangeException;
+import org.apache.lucene.util.hnsw.math.exception.util.LocalizedFormats;
+import org.apache.lucene.util.hnsw.math.util.MathUtils;
+import org.apache.lucene.util.hnsw.math.util.FastMath;
 
 /**
  * Basic implementation of RealMatrix methods regardless of the underlying storage.

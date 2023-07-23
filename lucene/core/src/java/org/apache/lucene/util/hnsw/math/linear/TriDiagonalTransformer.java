@@ -17,9 +17,9 @@
 
 package org.apache.lucene.util.hnsw.math.linear;
 
-import org.apache.lucene.util.hnsw.math.util.FastMath;
-
 import java.util.Arrays;
+
+import org.apache.lucene.util.hnsw.math.util.FastMath;
 
 
 /**

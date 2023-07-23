@@ -17,10 +17,10 @@
 
 package org.apache.lucene.util.hnsw.math.linear;
 
+import java.util.Arrays;
+
 import org.apache.lucene.util.hnsw.math.exception.DimensionMismatchException;
 import org.apache.lucene.util.hnsw.math.util.FastMath;
-
-import java.util.Arrays;
 
 
 /**

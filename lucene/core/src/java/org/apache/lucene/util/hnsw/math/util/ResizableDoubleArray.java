@@ -16,11 +16,16 @@
  */
 package org.apache.lucene.util.hnsw.math.util;
 
-import org.apache.lucene.util.hnsw.math.exception.*;
-import org.apache.lucene.util.hnsw.math.exception.util.LocalizedFormats;
-
 import java.io.Serializable;
 import java.util.Arrays;
+
+import org.apache.lucene.util.hnsw.math.exception.MathIllegalArgumentException;
+import org.apache.lucene.util.hnsw.math.exception.MathIllegalStateException;
+import org.apache.lucene.util.hnsw.math.exception.MathInternalError;
+import org.apache.lucene.util.hnsw.math.exception.NullArgumentException;
+import org.apache.lucene.util.hnsw.math.exception.NotStrictlyPositiveException;
+import org.apache.lucene.util.hnsw.math.exception.NumberIsTooSmallException;
+import org.apache.lucene.util.hnsw.math.exception.util.LocalizedFormats;
 
 /**
  * <p>

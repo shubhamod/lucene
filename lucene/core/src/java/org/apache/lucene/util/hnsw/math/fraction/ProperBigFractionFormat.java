@@ -16,13 +16,13 @@
  */
 package org.apache.lucene.util.hnsw.math.fraction;
 
-import org.apache.lucene.util.hnsw.math.exception.NullArgumentException;
-import org.apache.lucene.util.hnsw.math.exception.util.LocalizedFormats;
-
 import java.math.BigInteger;
 import java.text.FieldPosition;
 import java.text.NumberFormat;
 import java.text.ParsePosition;
+
+import org.apache.lucene.util.hnsw.math.exception.util.LocalizedFormats;
+import org.apache.lucene.util.hnsw.math.exception.NullArgumentException;
 
 /**
  * Formats a BigFraction number in proper format.  The number format for each of

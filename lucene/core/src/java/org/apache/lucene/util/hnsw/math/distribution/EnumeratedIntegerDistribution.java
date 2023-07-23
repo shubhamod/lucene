@@ -16,16 +16,20 @@
  */
 package org.apache.lucene.util.hnsw.math.distribution;
 
-import org.apache.lucene.util.hnsw.math.exception.*;
-import org.apache.lucene.util.hnsw.math.random.RandomGenerator;
-import org.apache.lucene.util.hnsw.math.random.Well19937c;
-import org.apache.lucene.util.hnsw.math.util.Pair;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+
+import org.apache.lucene.util.hnsw.math.exception.DimensionMismatchException;
+import org.apache.lucene.util.hnsw.math.exception.MathArithmeticException;
+import org.apache.lucene.util.hnsw.math.exception.NotANumberException;
+import org.apache.lucene.util.hnsw.math.exception.NotFiniteNumberException;
+import org.apache.lucene.util.hnsw.math.exception.NotPositiveException;
+import org.apache.lucene.util.hnsw.math.random.RandomGenerator;
+import org.apache.lucene.util.hnsw.math.random.Well19937c;
+import org.apache.lucene.util.hnsw.math.util.Pair;
 
 /**
  * <p>Implementation of an integer-valued {@link EnumeratedDistribution}.</p>

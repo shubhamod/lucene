@@ -17,6 +17,9 @@
 
 package org.apache.lucene.util.hnsw.math.distribution;
 
+import java.io.Serializable;
+import java.math.BigDecimal;
+
 import org.apache.lucene.util.hnsw.math.exception.MathArithmeticException;
 import org.apache.lucene.util.hnsw.math.exception.NotStrictlyPositiveException;
 import org.apache.lucene.util.hnsw.math.exception.NumberIsTooLargeException;
@@ -29,9 +32,6 @@ import org.apache.lucene.util.hnsw.math.linear.Array2DRowRealMatrix;
 import org.apache.lucene.util.hnsw.math.linear.FieldMatrix;
 import org.apache.lucene.util.hnsw.math.linear.RealMatrix;
 import org.apache.lucene.util.hnsw.math.util.FastMath;
-
-import java.io.Serializable;
-import java.math.BigDecimal;
 
 /**
  * Implementation of the Kolmogorov-Smirnov distribution.

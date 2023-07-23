@@ -16,18 +16,17 @@
  */
 
 package org.apache.lucene.util.hnsw.math.random;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.MalformedURLException;
+import java.net.URL;
 
 import org.apache.lucene.util.hnsw.math.exception.MathIllegalArgumentException;
 import org.apache.lucene.util.hnsw.math.exception.MathIllegalStateException;
 import org.apache.lucene.util.hnsw.math.exception.NullArgumentException;
 import org.apache.lucene.util.hnsw.math.exception.ZeroException;
 import org.apache.lucene.util.hnsw.math.exception.util.LocalizedFormats;
-
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.MalformedURLException;
-import java.net.URL;
 
 /**
  * Generates values for use in simulation applications.

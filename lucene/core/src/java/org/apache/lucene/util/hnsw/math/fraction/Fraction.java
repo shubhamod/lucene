@@ -16,15 +16,15 @@
  */
 package org.apache.lucene.util.hnsw.math.fraction;
 
-import org.apache.lucene.util.hnsw.math.FieldElement;
-import org.apache.lucene.util.hnsw.math.exception.MathArithmeticException;
-import org.apache.lucene.util.hnsw.math.exception.NullArgumentException;
-import org.apache.lucene.util.hnsw.math.exception.util.LocalizedFormats;
-import org.apache.lucene.util.hnsw.math.util.ArithmeticUtils;
-import org.apache.lucene.util.hnsw.math.util.FastMath;
-
 import java.io.Serializable;
 import java.math.BigInteger;
+
+import org.apache.lucene.util.hnsw.math.FieldElement;
+import org.apache.lucene.util.hnsw.math.exception.util.LocalizedFormats;
+import org.apache.lucene.util.hnsw.math.exception.MathArithmeticException;
+import org.apache.lucene.util.hnsw.math.exception.NullArgumentException;
+import org.apache.lucene.util.hnsw.math.util.ArithmeticUtils;
+import org.apache.lucene.util.hnsw.math.util.FastMath;
 
 /**
  * Representation of a rational number.

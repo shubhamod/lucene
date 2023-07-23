@@ -16,13 +16,13 @@
  */
 package org.apache.lucene.util.hnsw.math.distribution;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.apache.lucene.util.hnsw.math.exception.DimensionMismatchException;
 import org.apache.lucene.util.hnsw.math.exception.NotPositiveException;
 import org.apache.lucene.util.hnsw.math.random.RandomGenerator;
 import org.apache.lucene.util.hnsw.math.util.Pair;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Multivariate normal mixture distribution.

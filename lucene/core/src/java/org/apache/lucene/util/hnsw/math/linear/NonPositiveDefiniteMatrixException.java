@@ -17,8 +17,8 @@
 package org.apache.lucene.util.hnsw.math.linear;
 
 import org.apache.lucene.util.hnsw.math.exception.NumberIsTooSmallException;
-import org.apache.lucene.util.hnsw.math.exception.util.ExceptionContext;
 import org.apache.lucene.util.hnsw.math.exception.util.LocalizedFormats;
+import org.apache.lucene.util.hnsw.math.exception.util.ExceptionContext;
 
 /**
  * Exception to be thrown when a positive definite matrix is expected.

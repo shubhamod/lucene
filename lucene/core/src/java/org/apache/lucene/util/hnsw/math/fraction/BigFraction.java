@@ -16,6 +16,10 @@
  */
 package org.apache.lucene.util.hnsw.math.fraction;
 
+import java.io.Serializable;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+
 import org.apache.lucene.util.hnsw.math.FieldElement;
 import org.apache.lucene.util.hnsw.math.exception.MathArithmeticException;
 import org.apache.lucene.util.hnsw.math.exception.MathIllegalArgumentException;
@@ -25,10 +29,6 @@ import org.apache.lucene.util.hnsw.math.exception.util.LocalizedFormats;
 import org.apache.lucene.util.hnsw.math.util.ArithmeticUtils;
 import org.apache.lucene.util.hnsw.math.util.FastMath;
 import org.apache.lucene.util.hnsw.math.util.MathUtils;
-
-import java.io.Serializable;
-import java.math.BigDecimal;
-import java.math.BigInteger;
 
 /**
  * Representation of a rational number without any overflow. This class is

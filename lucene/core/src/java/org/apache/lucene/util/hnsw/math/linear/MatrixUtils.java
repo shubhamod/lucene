@@ -17,9 +17,20 @@
 
 package org.apache.lucene.util.hnsw.math.linear;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.util.Arrays;
+
 import org.apache.lucene.util.hnsw.math.Field;
 import org.apache.lucene.util.hnsw.math.FieldElement;
-import org.apache.lucene.util.hnsw.math.exception.*;
+import org.apache.lucene.util.hnsw.math.exception.DimensionMismatchException;
+import org.apache.lucene.util.hnsw.math.exception.MathArithmeticException;
+import org.apache.lucene.util.hnsw.math.exception.NoDataException;
+import org.apache.lucene.util.hnsw.math.exception.NullArgumentException;
+import org.apache.lucene.util.hnsw.math.exception.NumberIsTooSmallException;
+import org.apache.lucene.util.hnsw.math.exception.OutOfRangeException;
+import org.apache.lucene.util.hnsw.math.exception.ZeroException;
 import org.apache.lucene.util.hnsw.math.exception.util.LocalizedFormats;
 import org.apache.lucene.util.hnsw.math.fraction.BigFraction;
 import org.apache.lucene.util.hnsw.math.fraction.Fraction;
@@ -27,11 +38,6 @@ import org.apache.lucene.util.hnsw.math.util.FastMath;
 import org.apache.lucene.util.hnsw.math.util.MathArrays;
 import org.apache.lucene.util.hnsw.math.util.MathUtils;
 import org.apache.lucene.util.hnsw.math.util.Precision;
-
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.util.Arrays;
 
 /**
  * A collection of static methods that operate on or return matrices.
@@ -110,7 +116,7 @@ public class MatrixUtils {
      *
      * @param data input array
      * @return  RealMatrix containing the values of the array
-     * @throws org.apache.lucene.util.hnsw.math.exception.DimensionMismatchException
+     * @throws DimensionMismatchException
      * if {@code data} is not rectangular (not all rows have the same length).
      * @throws NoDataException if a row or column is empty.
      * @throws NullArgumentException if either {@code data} or {@code data[0]}
@@ -140,7 +146,7 @@ public class MatrixUtils {
      * @param <T> the type of the field elements
      * @param data input array
      * @return a matrix containing the values of the array.
-     * @throws org.apache.lucene.util.hnsw.math.exception.DimensionMismatchException
+     * @throws DimensionMismatchException
      * if {@code data} is not rectangular (not all rows have the same length).
      * @throws NoDataException if a row or column is empty.
      * @throws NullArgumentException if either {@code data} or {@code data[0]}

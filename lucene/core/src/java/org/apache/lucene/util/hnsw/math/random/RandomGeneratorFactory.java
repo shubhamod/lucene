@@ -16,9 +16,8 @@
  */
 package org.apache.lucene.util.hnsw.math.random;
 
-import org.apache.lucene.util.hnsw.math.exception.NotStrictlyPositiveException;
-
 import java.util.Random;
+import org.apache.lucene.util.hnsw.math.exception.NotStrictlyPositiveException;
 
 /**
  * Utilities for creating {@link RandomGenerator} instances.

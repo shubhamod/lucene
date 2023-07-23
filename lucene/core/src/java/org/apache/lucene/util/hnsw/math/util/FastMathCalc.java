@@ -16,9 +16,9 @@
  */
 package org.apache.lucene.util.hnsw.math.util;
 
-import org.apache.lucene.util.hnsw.math.exception.DimensionMismatchException;
-
 import java.io.PrintStream;
+
+import org.apache.lucene.util.hnsw.math.exception.DimensionMismatchException;
 
 /** Class used to compute the classical functions tables.
  * @since 3.0

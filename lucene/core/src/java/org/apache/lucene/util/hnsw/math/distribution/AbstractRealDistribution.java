@@ -16,6 +16,8 @@
  */
 package org.apache.lucene.util.hnsw.math.distribution;
 
+import java.io.Serializable;
+
 import org.apache.lucene.util.hnsw.math.analysis.UnivariateFunction;
 import org.apache.lucene.util.hnsw.math.analysis.solvers.UnivariateSolverUtils;
 import org.apache.lucene.util.hnsw.math.exception.NotStrictlyPositiveException;
@@ -24,8 +26,6 @@ import org.apache.lucene.util.hnsw.math.exception.OutOfRangeException;
 import org.apache.lucene.util.hnsw.math.exception.util.LocalizedFormats;
 import org.apache.lucene.util.hnsw.math.random.RandomGenerator;
 import org.apache.lucene.util.hnsw.math.util.FastMath;
-
-import java.io.Serializable;
 
 /**
  * Base class for probability distributions on the reals.

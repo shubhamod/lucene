@@ -17,6 +17,10 @@
 
 package org.apache.lucene.util.hnsw.math.complex;
 
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.apache.lucene.util.hnsw.math.FieldElement;
 import org.apache.lucene.util.hnsw.math.exception.NotPositiveException;
 import org.apache.lucene.util.hnsw.math.exception.NullArgumentException;
@@ -24,10 +28,6 @@ import org.apache.lucene.util.hnsw.math.exception.util.LocalizedFormats;
 import org.apache.lucene.util.hnsw.math.util.FastMath;
 import org.apache.lucene.util.hnsw.math.util.MathUtils;
 import org.apache.lucene.util.hnsw.math.util.Precision;
-
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Representation of a Complex number, i.e. a number which has both a

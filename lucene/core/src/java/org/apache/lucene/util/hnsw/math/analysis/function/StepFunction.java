@@ -17,14 +17,14 @@
 
 package org.apache.lucene.util.hnsw.math.analysis.function;
 
+import java.util.Arrays;
+
 import org.apache.lucene.util.hnsw.math.analysis.UnivariateFunction;
 import org.apache.lucene.util.hnsw.math.exception.DimensionMismatchException;
 import org.apache.lucene.util.hnsw.math.exception.NoDataException;
 import org.apache.lucene.util.hnsw.math.exception.NonMonotonicSequenceException;
 import org.apache.lucene.util.hnsw.math.exception.NullArgumentException;
 import org.apache.lucene.util.hnsw.math.util.MathArrays;
-
-import java.util.Arrays;
 
 /**
  * <a href="http://en.wikipedia.org/wiki/Step_function">

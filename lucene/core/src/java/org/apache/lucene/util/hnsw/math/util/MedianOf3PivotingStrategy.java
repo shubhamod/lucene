@@ -16,9 +16,9 @@
  */
 package org.apache.lucene.util.hnsw.math.util;
 
-import org.apache.lucene.util.hnsw.math.exception.MathIllegalArgumentException;
-
 import java.io.Serializable;
+
+import org.apache.lucene.util.hnsw.math.exception.MathIllegalArgumentException;
 
 
 /**

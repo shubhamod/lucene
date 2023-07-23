@@ -17,11 +17,11 @@
 
 package org.apache.lucene.util.hnsw.math.util;
 
+import java.io.Serializable;
+
+import org.apache.lucene.util.hnsw.math.exception.util.LocalizedFormats;
 import org.apache.lucene.util.hnsw.math.exception.MathIllegalArgumentException;
 import org.apache.lucene.util.hnsw.math.exception.NullArgumentException;
-import org.apache.lucene.util.hnsw.math.exception.util.LocalizedFormats;
-
-import java.io.Serializable;
 
 /**
  * A Default NumberTransformer for java.lang.Numbers and Numeric Strings. This

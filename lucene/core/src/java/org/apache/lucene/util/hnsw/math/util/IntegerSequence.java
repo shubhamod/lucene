@@ -16,9 +16,12 @@
  */
 package org.apache.lucene.util.hnsw.math.util;
 
-import org.apache.lucene.util.hnsw.math.exception.*;
-
 import java.util.Iterator;
+import org.apache.lucene.util.hnsw.math.exception.MaxCountExceededException;
+import org.apache.lucene.util.hnsw.math.exception.NullArgumentException;
+import org.apache.lucene.util.hnsw.math.exception.MathUnsupportedOperationException;
+import org.apache.lucene.util.hnsw.math.exception.NotStrictlyPositiveException;
+import org.apache.lucene.util.hnsw.math.exception.ZeroException;
 
 /**
  * Provides a sequence of integers.

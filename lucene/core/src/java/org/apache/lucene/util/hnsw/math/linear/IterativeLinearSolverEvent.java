@@ -16,8 +16,8 @@
  */
 package org.apache.lucene.util.hnsw.math.linear;
 
-import org.apache.lucene.util.hnsw.math.exception.MathUnsupportedOperationException;
 import org.apache.lucene.util.hnsw.math.util.IterationEvent;
+import org.apache.lucene.util.hnsw.math.exception.MathUnsupportedOperationException;
 
 /**
  * This is the base class for all events occurring during the iterations of a

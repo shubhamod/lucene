@@ -16,15 +16,15 @@
  */
 package org.apache.lucene.util.hnsw.math.util;
 
-import org.apache.lucene.util.hnsw.math.Field;
-import org.apache.lucene.util.hnsw.math.FieldElement;
-
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.lang.reflect.Array;
 import java.util.ConcurrentModificationException;
 import java.util.NoSuchElementException;
+
+import org.apache.lucene.util.hnsw.math.Field;
+import org.apache.lucene.util.hnsw.math.FieldElement;
 
 /**
  * Open addressed map from int to FieldElement.

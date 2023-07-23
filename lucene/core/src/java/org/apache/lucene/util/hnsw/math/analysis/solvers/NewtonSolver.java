@@ -18,8 +18,8 @@
 package org.apache.lucene.util.hnsw.math.analysis.solvers;
 
 import org.apache.lucene.util.hnsw.math.analysis.DifferentiableUnivariateFunction;
-import org.apache.lucene.util.hnsw.math.exception.TooManyEvaluationsException;
 import org.apache.lucene.util.hnsw.math.util.FastMath;
+import org.apache.lucene.util.hnsw.math.exception.TooManyEvaluationsException;
 
 /**
  * Implements <a href="http://mathworld.wolfram.com/NewtonsMethod.html">
@@ -57,7 +57,7 @@ public class NewtonSolver extends AbstractDifferentiableUnivariateSolver {
      * @param max Upper bound for the interval.
      * @param maxEval Maximum number of evaluations.
      * @return the value where the function is zero.
-     * @throws org.apache.lucene.util.hnsw.math.exception.TooManyEvaluationsException
+     * @throws TooManyEvaluationsException
      * if the maximum evaluation count is exceeded.
      * @throws org.apache.lucene.util.hnsw.math.exception.NumberIsTooLargeException
      * if {@code min >= max}.

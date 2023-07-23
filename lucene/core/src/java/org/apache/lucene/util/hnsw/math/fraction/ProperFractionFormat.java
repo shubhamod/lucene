@@ -16,14 +16,14 @@
  */
 package org.apache.lucene.util.hnsw.math.fraction;
 
-import org.apache.lucene.util.hnsw.math.exception.NullArgumentException;
-import org.apache.lucene.util.hnsw.math.exception.util.LocalizedFormats;
-import org.apache.lucene.util.hnsw.math.util.FastMath;
-import org.apache.lucene.util.hnsw.math.util.MathUtils;
-
 import java.text.FieldPosition;
 import java.text.NumberFormat;
 import java.text.ParsePosition;
+
+import org.apache.lucene.util.hnsw.math.exception.util.LocalizedFormats;
+import org.apache.lucene.util.hnsw.math.exception.NullArgumentException;
+import org.apache.lucene.util.hnsw.math.util.FastMath;
+import org.apache.lucene.util.hnsw.math.util.MathUtils;
 
 /**
  * Formats a Fraction number in proper format.  The number format for each of

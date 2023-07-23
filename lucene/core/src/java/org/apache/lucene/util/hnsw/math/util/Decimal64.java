@@ -16,8 +16,8 @@
  */
 package org.apache.lucene.util.hnsw.math.util;
 
-import org.apache.lucene.util.hnsw.math.Field;
 import org.apache.lucene.util.hnsw.math.RealFieldElement;
+import org.apache.lucene.util.hnsw.math.Field;
 import org.apache.lucene.util.hnsw.math.exception.DimensionMismatchException;
 
 /**

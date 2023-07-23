@@ -16,8 +16,8 @@
  */
 package org.apache.lucene.util.hnsw.math.exception;
 
-import org.apache.lucene.util.hnsw.math.exception.util.LocalizedFormats;
 import org.apache.lucene.util.hnsw.math.util.MathArrays;
+import org.apache.lucene.util.hnsw.math.exception.util.LocalizedFormats;
 
 /**
  * Exception to be thrown when the a sequence of values is not monotonically

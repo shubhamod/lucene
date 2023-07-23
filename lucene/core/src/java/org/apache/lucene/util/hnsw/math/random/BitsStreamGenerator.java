@@ -16,11 +16,11 @@
  */
 package org.apache.lucene.util.hnsw.math.random;
 
+import java.io.Serializable;
+
 import org.apache.lucene.util.hnsw.math.exception.NotStrictlyPositiveException;
 import org.apache.lucene.util.hnsw.math.exception.OutOfRangeException;
 import org.apache.lucene.util.hnsw.math.util.FastMath;
-
-import java.io.Serializable;
 
 /** Base class for random number generators that generates bits streams.
  *

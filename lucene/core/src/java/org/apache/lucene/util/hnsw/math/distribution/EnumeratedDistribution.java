@@ -16,18 +16,23 @@
  */
 package org.apache.lucene.util.hnsw.math.distribution;
 
-import org.apache.lucene.util.hnsw.math.exception.*;
-import org.apache.lucene.util.hnsw.math.exception.util.LocalizedFormats;
-import org.apache.lucene.util.hnsw.math.random.RandomGenerator;
-import org.apache.lucene.util.hnsw.math.random.Well19937c;
-import org.apache.lucene.util.hnsw.math.util.MathArrays;
-import org.apache.lucene.util.hnsw.math.util.Pair;
-
 import java.io.Serializable;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
+import org.apache.lucene.util.hnsw.math.exception.MathArithmeticException;
+import org.apache.lucene.util.hnsw.math.exception.NotANumberException;
+import org.apache.lucene.util.hnsw.math.exception.NotFiniteNumberException;
+import org.apache.lucene.util.hnsw.math.exception.NotPositiveException;
+import org.apache.lucene.util.hnsw.math.exception.NotStrictlyPositiveException;
+import org.apache.lucene.util.hnsw.math.exception.NullArgumentException;
+import org.apache.lucene.util.hnsw.math.exception.util.LocalizedFormats;
+import org.apache.lucene.util.hnsw.math.random.RandomGenerator;
+import org.apache.lucene.util.hnsw.math.random.Well19937c;
+import org.apache.lucene.util.hnsw.math.util.MathArrays;
+import org.apache.lucene.util.hnsw.math.util.Pair;
 
 /**
  * <p>A generic implementation of a

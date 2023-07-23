@@ -17,13 +17,13 @@
 
 package org.apache.lucene.util.hnsw.math.linear;
 
+import java.io.Serializable;
+
 import org.apache.lucene.util.hnsw.math.exception.DimensionMismatchException;
 import org.apache.lucene.util.hnsw.math.exception.NotStrictlyPositiveException;
 import org.apache.lucene.util.hnsw.math.exception.NumberIsTooLargeException;
 import org.apache.lucene.util.hnsw.math.exception.OutOfRangeException;
 import org.apache.lucene.util.hnsw.math.util.OpenIntToDoubleHashMap;
-
-import java.io.Serializable;
 
 /**
  * Sparse matrix implementation based on an open addressed map.
