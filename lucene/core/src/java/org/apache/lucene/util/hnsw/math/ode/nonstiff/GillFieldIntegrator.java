@@ -24,44 +24,17 @@ import org.apache.lucene.util.hnsw.math.ode.FieldODEStateAndDerivative;
 import org.apache.lucene.util.hnsw.math.util.MathArrays;
 
 
-/**
- * This class implements the Gill fourth order Runge-Kutta
- * integrator for Ordinary Differential Equations .
 
- * <p>This method is an explicit Runge-Kutta method, its Butcher-array
- * is the following one :
- * <pre>
- *    0  |    0        0       0      0
- *   1/2 |   1/2       0       0      0
- *   1/2 | (q-1)/2  (2-q)/2    0      0
- *    1  |    0       -q/2  (2+q)/2   0
- *       |-------------------------------
- *       |   1/6    (2-q)/6 (2+q)/6  1/6
- * </pre>
- * where q = sqrt(2)</p>
- *
- * @see EulerFieldIntegrator
- * @see ClassicalRungeKuttaFieldIntegrator
- * @see MidpointFieldIntegrator
- * @see ThreeEighthesFieldIntegrator
- * @see LutherFieldIntegrator
- * @param <T> the type of the field elements
- * @since 3.6
- */
 
 public class GillFieldIntegrator<T extends RealFieldElement<T>>
     extends RungeKuttaFieldIntegrator<T> {
 
-    /** Simple constructor.
-     * Build a fourth-order Gill integrator with the given step.
-     * @param field field to which the time and state vector elements belong
-     * @param step integration step
-     */
+    
     public GillFieldIntegrator(final Field<T> field, final T step) {
         super(field, "Gill", step);
     }
 
-    /** {@inheritDoc} */
+    
     public T[] getC() {
         final T[] c = MathArrays.buildArray(getField(), 3);
         c[0] = fraction(1, 2);
@@ -70,7 +43,7 @@ public class GillFieldIntegrator<T extends RealFieldElement<T>>
         return c;
     }
 
-    /** {@inheritDoc} */
+    
     public T[][] getA() {
 
         final T two     = getField().getZero().add(2);
@@ -89,7 +62,7 @@ public class GillFieldIntegrator<T extends RealFieldElement<T>>
         return a;
     }
 
-    /** {@inheritDoc} */
+    
     public T[] getB() {
 
         final T two     = getField().getZero().add(2);
@@ -105,7 +78,7 @@ public class GillFieldIntegrator<T extends RealFieldElement<T>>
 
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     protected GillFieldStepInterpolator<T>
         createInterpolator(final boolean forward, T[][] yDotK,

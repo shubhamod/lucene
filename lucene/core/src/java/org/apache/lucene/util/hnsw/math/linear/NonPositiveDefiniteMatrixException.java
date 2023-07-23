@@ -20,26 +20,16 @@ import org.apache.lucene.util.hnsw.math.exception.NumberIsTooSmallException;
 import org.apache.lucene.util.hnsw.math.exception.util.LocalizedFormats;
 import org.apache.lucene.util.hnsw.math.exception.util.ExceptionContext;
 
-/**
- * Exception to be thrown when a positive definite matrix is expected.
- *
- * @since 3.0
- */
+
 public class NonPositiveDefiniteMatrixException extends NumberIsTooSmallException {
-    /** Serializable version Id. */
+    
     private static final long serialVersionUID = 1641613838113738061L;
-    /** Index (diagonal element). */
+    
     private final int index;
-    /** Threshold. */
+    
     private final double threshold;
 
-    /**
-     * Construct an exception.
-     *
-     * @param wrong Value that fails the positivity check.
-     * @param index Row (and column) index.
-     * @param threshold Absolute positivity threshold.
-     */
+    
     public NonPositiveDefiniteMatrixException(double wrong,
                                               int index,
                                               double threshold) {
@@ -52,21 +42,15 @@ public class NonPositiveDefiniteMatrixException extends NumberIsTooSmallExceptio
         context.addMessage(LocalizedFormats.ARRAY_ELEMENT, wrong, index);
     }
 
-    /**
-     * @return the row index.
-     */
+    
     public int getRow() {
         return index;
     }
-    /**
-     * @return the column index.
-     */
+    
     public int getColumn() {
         return index;
     }
-    /**
-     * @return the absolute positivity threshold.
-     */
+    
     public double getThreshold() {
         return threshold;
     }

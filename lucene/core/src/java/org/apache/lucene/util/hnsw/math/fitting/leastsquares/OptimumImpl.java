@@ -21,27 +21,17 @@ import org.apache.lucene.util.hnsw.math.fitting.leastsquares.LeastSquaresProblem
 import org.apache.lucene.util.hnsw.math.linear.RealMatrix;
 import org.apache.lucene.util.hnsw.math.linear.RealVector;
 
-/**
- * A pedantic implementation of {@link Optimum}.
- *
- * @since 3.3
- */
+
 class OptimumImpl implements Optimum {
 
-    /** abscissa and ordinate */
+    
     private final Evaluation value;
-    /** number of evaluations to compute this optimum */
+    
     private final int evaluations;
-    /** number of iterations to compute this optimum */
+    
     private final int iterations;
 
-    /**
-     * Construct an optimum from an evaluation and the values of the counters.
-     *
-     * @param value       the function value
-     * @param evaluations number of times the function was evaluated
-     * @param iterations  number of iterations of the algorithm
-     */
+    
     OptimumImpl(final Evaluation value, final int evaluations, final int iterations) {
         this.value = value;
         this.evaluations = evaluations;
@@ -50,47 +40,47 @@ class OptimumImpl implements Optimum {
 
     /* auto-generated implementations */
 
-    /** {@inheritDoc} */
+    
     public int getEvaluations() {
         return evaluations;
     }
 
-    /** {@inheritDoc} */
+    
     public int getIterations() {
         return iterations;
     }
 
-    /** {@inheritDoc} */
+    
     public RealMatrix getCovariances(double threshold) {
         return value.getCovariances(threshold);
     }
 
-    /** {@inheritDoc} */
+    
     public RealVector getSigma(double covarianceSingularityThreshold) {
         return value.getSigma(covarianceSingularityThreshold);
     }
 
-    /** {@inheritDoc} */
+    
     public double getRMS() {
         return value.getRMS();
     }
 
-    /** {@inheritDoc} */
+    
     public RealMatrix getJacobian() {
         return value.getJacobian();
     }
 
-    /** {@inheritDoc} */
+    
     public double getCost() {
         return value.getCost();
     }
 
-    /** {@inheritDoc} */
+    
     public RealVector getResiduals() {
         return value.getResiduals();
     }
 
-    /** {@inheritDoc} */
+    
     public RealVector getPoint() {
         return value.getPoint();
     }

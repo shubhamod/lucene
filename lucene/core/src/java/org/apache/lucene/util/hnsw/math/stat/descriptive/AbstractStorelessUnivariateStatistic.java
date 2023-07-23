@@ -22,39 +22,12 @@ import org.apache.lucene.util.hnsw.math.exception.NullArgumentException;
 import org.apache.lucene.util.hnsw.math.util.MathUtils;
 import org.apache.lucene.util.hnsw.math.util.Precision;
 
-/**
- *
- * Abstract implementation of the {@link StorelessUnivariateStatistic} interface.
- * <p>
- * Provides default <code>evaluate()</code> and <code>incrementAll(double[])</code>
- * implementations.</p>
- * <p>
- * <strong>Note that these implementations are not synchronized.</strong></p>
- *
- */
+
 public abstract class AbstractStorelessUnivariateStatistic
     extends AbstractUnivariateStatistic
     implements StorelessUnivariateStatistic {
 
-    /**
-     * This default implementation calls {@link #clear}, then invokes
-     * {@link #increment} in a loop over the the input array, and then uses
-     * {@link #getResult} to compute the return value.
-     * <p>
-     * Note that this implementation changes the internal state of the
-     * statistic.  Its side effects are the same as invoking {@link #clear} and
-     * then {@link #incrementAll(double[])}.</p>
-     * <p>
-     * Implementations may override this method with a more efficient and
-     * possibly more accurate implementation that works directly with the
-     * input array.</p>
-     * <p>
-     * If the array is null, a MathIllegalArgumentException is thrown.</p>
-     * @param values input array
-     * @return the value of the statistic applied to the input array
-     * @throws MathIllegalArgumentException if values is null
-     * @see org.apache.lucene.util.hnsw.math.stat.descriptive.UnivariateStatistic#evaluate(double[])
-     */
+    
     @Override
     public double evaluate(final double[] values) throws MathIllegalArgumentException {
         if (values == null) {
@@ -63,28 +36,7 @@ public abstract class AbstractStorelessUnivariateStatistic
         return evaluate(values, 0, values.length);
     }
 
-    /**
-     * This default implementation calls {@link #clear}, then invokes
-     * {@link #increment} in a loop over the specified portion of the input
-     * array, and then uses {@link #getResult} to compute the return value.
-     * <p>
-     * Note that this implementation changes the internal state of the
-     * statistic.  Its side effects are the same as invoking {@link #clear} and
-     * then {@link #incrementAll(double[], int, int)}.</p>
-     * <p>
-     * Implementations may override this method with a more efficient and
-     * possibly more accurate implementation that works directly with the
-     * input array.</p>
-     * <p>
-     * If the array is null or the index parameters are not valid, an
-     * MathIllegalArgumentException is thrown.</p>
-     * @param values the input array
-     * @param begin the index of the first element to include
-     * @param length the number of elements to include
-     * @return the value of the statistic applied to the included array entries
-     * @throws MathIllegalArgumentException if the array is null or the indices are not valid
-     * @see org.apache.lucene.util.hnsw.math.stat.descriptive.UnivariateStatistic#evaluate(double[], int, int)
-     */
+    
     @Override
     public double evaluate(final double[] values, final int begin,
             final int length) throws MathIllegalArgumentException {
@@ -95,37 +47,20 @@ public abstract class AbstractStorelessUnivariateStatistic
         return getResult();
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    
     @Override
     public abstract StorelessUnivariateStatistic copy();
 
-    /**
-     * {@inheritDoc}
-     */
+    
     public abstract void clear();
 
-    /**
-     * {@inheritDoc}
-     */
+    
     public abstract double getResult();
 
-    /**
-     * {@inheritDoc}
-     */
+    
     public abstract void increment(final double d);
 
-    /**
-     * This default implementation just calls {@link #increment} in a loop over
-     * the input array.
-     * <p>
-     * Throws IllegalArgumentException if the input values array is null.</p>
-     *
-     * @param values values to add
-     * @throws MathIllegalArgumentException if values is null
-     * @see org.apache.lucene.util.hnsw.math.stat.descriptive.StorelessUnivariateStatistic#incrementAll(double[])
-     */
+    
     public void incrementAll(double[] values) throws MathIllegalArgumentException {
         if (values == null) {
             throw new NullArgumentException(LocalizedFormats.INPUT_ARRAY);
@@ -133,18 +68,7 @@ public abstract class AbstractStorelessUnivariateStatistic
         incrementAll(values, 0, values.length);
     }
 
-    /**
-     * This default implementation just calls {@link #increment} in a loop over
-     * the specified portion of the input array.
-     * <p>
-     * Throws IllegalArgumentException if the input values array is null.</p>
-     *
-     * @param values  array holding values to add
-     * @param begin   index of the first array element to add
-     * @param length  number of array elements to add
-     * @throws MathIllegalArgumentException if values is null
-     * @see org.apache.lucene.util.hnsw.math.stat.descriptive.StorelessUnivariateStatistic#incrementAll(double[], int, int)
-     */
+    
     public void incrementAll(double[] values, int begin, int length) throws MathIllegalArgumentException {
         if (test(values, begin, length)) {
             int k = begin + length;
@@ -154,13 +78,7 @@ public abstract class AbstractStorelessUnivariateStatistic
         }
     }
 
-    /**
-     * Returns true iff <code>object</code> is an
-     * <code>AbstractStorelessUnivariateStatistic</code> returning the same
-     * values as this for <code>getResult()</code> and <code>getN()</code>
-     * @param object object to test equality against.
-     * @return true if object returns the same value as this
-     */
+    
     @Override
     public boolean equals(Object object) {
         if (object == this ) {
@@ -174,11 +92,7 @@ public abstract class AbstractStorelessUnivariateStatistic
                Precision.equalsIncludingNaN(stat.getN(), this.getN());
     }
 
-    /**
-     * Returns hash code based on getResult() and getN()
-     *
-     * @return hash code
-     */
+    
     @Override
     public int hashCode() {
         return 31* (31 + MathUtils.hash(getResult())) + MathUtils.hash(getN());

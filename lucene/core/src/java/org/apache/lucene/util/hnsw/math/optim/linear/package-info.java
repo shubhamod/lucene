@@ -15,7 +15,5 @@
  * limitations under the License.
  */
 
-/**
- * Optimization algorithms for linear constrained problems.
- */
+
 package org.apache.lucene.util.hnsw.math.optim.linear;

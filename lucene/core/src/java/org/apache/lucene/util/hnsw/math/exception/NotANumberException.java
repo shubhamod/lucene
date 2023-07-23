@@ -18,18 +18,12 @@ package org.apache.lucene.util.hnsw.math.exception;
 
 import org.apache.lucene.util.hnsw.math.exception.util.LocalizedFormats;
 
-/**
- * Exception to be thrown when a number is not a number.
- *
- * @since 3.1
- */
+
 public class NotANumberException extends MathIllegalNumberException {
-    /** Serializable version Id. */
+    
     private static final long serialVersionUID = 20120906L;
 
-    /**
-     * Construct the exception.
-     */
+    
     public NotANumberException() {
         super(LocalizedFormats.NAN_NOT_ALLOWED, Double.valueOf(Double.NaN));
     }

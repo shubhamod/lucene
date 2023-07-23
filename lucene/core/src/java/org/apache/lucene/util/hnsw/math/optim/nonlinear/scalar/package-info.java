@@ -15,7 +15,5 @@
  * limitations under the License.
  */
 
-/**
- * Algorithms for optimizing a scalar function.
- */
+
 package org.apache.lucene.util.hnsw.math.optim.nonlinear.scalar;

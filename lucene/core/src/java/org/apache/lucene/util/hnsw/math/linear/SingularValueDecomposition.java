@@ -21,66 +21,34 @@ import org.apache.lucene.util.hnsw.math.exception.util.LocalizedFormats;
 import org.apache.lucene.util.hnsw.math.util.FastMath;
 import org.apache.lucene.util.hnsw.math.util.Precision;
 
-/**
- * Calculates the compact Singular Value Decomposition of a matrix.
- * <p>
- * The Singular Value Decomposition of matrix A is a set of three matrices: U,
- * &Sigma; and V such that A = U &times; &Sigma; &times; V<sup>T</sup>. Let A be
- * a m &times; n matrix, then U is a m &times; p orthogonal matrix, &Sigma; is a
- * p &times; p diagonal matrix with positive or null elements, V is a p &times;
- * n orthogonal matrix (hence V<sup>T</sup> is also orthogonal) where
- * p=min(m,n).
- * </p>
- * <p>This class is similar to the class with similar name from the
- * <a href="http://math.nist.gov/javanumerics/jama/">JAMA</a> library, with the
- * following changes:</p>
- * <ul>
- *   <li>the {@code norm2} method which has been renamed as {@link #getNorm()
- *   getNorm},</li>
- *   <li>the {@code cond} method which has been renamed as {@link
- *   #getConditionNumber() getConditionNumber},</li>
- *   <li>the {@code rank} method which has been renamed as {@link #getRank()
- *   getRank},</li>
- *   <li>a {@link #getUT() getUT} method has been added,</li>
- *   <li>a {@link #getVT() getVT} method has been added,</li>
- *   <li>a {@link #getSolver() getSolver} method has been added,</li>
- *   <li>a {@link #getCovariance(double) getCovariance} method has been added.</li>
- * </ul>
- * @see <a href="http://mathworld.wolfram.com/SingularValueDecomposition.html">MathWorld</a>
- * @see <a href="http://en.wikipedia.org/wiki/Singular_value_decomposition">Wikipedia</a>
- * @since 2.0 (changed to concrete class in 3.0)
- */
+
 public class SingularValueDecomposition {
-    /** Relative threshold for small singular values. */
+    
     private static final double EPS = 0x1.0p-52;
-    /** Absolute threshold for small singular values. */
+    
     private static final double TINY = 0x1.0p-966;
-    /** Computed singular values. */
+    
     private final double[] singularValues;
-    /** max(row dimension, column dimension). */
+    
     private final int m;
-    /** min(row dimension, column dimension). */
+    
     private final int n;
-    /** Indicator for transposed matrix. */
+    
     private final boolean transposed;
-    /** Cached value of U matrix. */
+    
     private final RealMatrix cachedU;
-    /** Cached value of transposed U matrix. */
+    
     private RealMatrix cachedUt;
-    /** Cached value of S (diagonal) matrix. */
+    
     private RealMatrix cachedS;
-    /** Cached value of V matrix. */
+    
     private final RealMatrix cachedV;
-    /** Cached value of transposed V matrix. */
+    
     private RealMatrix cachedVt;
     
     private final double tol;
 
-    /**
-     * Calculates the compact Singular Value Decomposition of the given matrix.
-     *
-     * @param matrix Matrix to decompose.
-     */
+    
     public SingularValueDecomposition(final RealMatrix matrix) {
         final double[][] A;
 
@@ -480,24 +448,14 @@ public class SingularValueDecomposition {
         }
     }
 
-    /**
-     * Returns the matrix U of the decomposition.
-     * <p>U is an orthogonal matrix, i.e. its transpose is also its inverse.</p>
-     * @return the U matrix
-     * @see #getUT()
-     */
+    
     public RealMatrix getU() {
         // return the cached matrix
         return cachedU;
 
     }
 
-    /**
-     * Returns the transpose of the matrix U of the decomposition.
-     * <p>U is an orthogonal matrix, i.e. its transpose is also its inverse.</p>
-     * @return the U matrix (or null if decomposed matrix is singular)
-     * @see #getU()
-     */
+    
     public RealMatrix getUT() {
         if (cachedUt == null) {
             cachedUt = getU().transpose();
@@ -506,12 +464,7 @@ public class SingularValueDecomposition {
         return cachedUt;
     }
 
-    /**
-     * Returns the diagonal matrix &Sigma; of the decomposition.
-     * <p>&Sigma; is a diagonal matrix. The singular values are provided in
-     * non-increasing order, for compatibility with Jama.</p>
-     * @return the &Sigma; matrix
-     */
+    
     public RealMatrix getS() {
         if (cachedS == null) {
             // cache the matrix for subsequent calls
@@ -520,33 +473,18 @@ public class SingularValueDecomposition {
         return cachedS;
     }
 
-    /**
-     * Returns the diagonal elements of the matrix &Sigma; of the decomposition.
-     * <p>The singular values are provided in non-increasing order, for
-     * compatibility with Jama.</p>
-     * @return the diagonal elements of the &Sigma; matrix
-     */
+    
     public double[] getSingularValues() {
         return singularValues.clone();
     }
 
-    /**
-     * Returns the matrix V of the decomposition.
-     * <p>V is an orthogonal matrix, i.e. its transpose is also its inverse.</p>
-     * @return the V matrix (or null if decomposed matrix is singular)
-     * @see #getVT()
-     */
+    
     public RealMatrix getV() {
         // return the cached matrix
         return cachedV;
     }
 
-    /**
-     * Returns the transpose of the matrix V of the decomposition.
-     * <p>V is an orthogonal matrix, i.e. its transpose is also its inverse.</p>
-     * @return the V matrix (or null if decomposed matrix is singular)
-     * @see #getV()
-     */
+    
     public RealMatrix getVT() {
         if (cachedVt == null) {
             cachedVt = getV().transpose();
@@ -555,17 +493,7 @@ public class SingularValueDecomposition {
         return cachedVt;
     }
 
-    /**
-     * Returns the n &times; n covariance matrix.
-     * <p>The covariance matrix is V &times; J &times; V<sup>T</sup>
-     * where J is the diagonal matrix of the inverse of the squares of
-     * the singular values.</p>
-     * @param minSingularValue value below which singular values are ignored
-     * (a 0 or negative value implies all singular value will be used)
-     * @return covariance matrix
-     * @exception IllegalArgumentException if minSingularValue is larger than
-     * the largest singular value, meaning all singular values are ignored
-     */
+    
     public RealMatrix getCovariance(final double minSingularValue) {
         // get the number of singular values to consider
         final int p = singularValues.length;
@@ -582,7 +510,7 @@ public class SingularValueDecomposition {
 
         final double[][] data = new double[dimension][p];
         getVT().walkInOptimizedOrder(new DefaultRealMatrixPreservingVisitor() {
-            /** {@inheritDoc} */
+            
             @Override
             public void visit(final int row, final int column,
                     final double value) {
@@ -594,44 +522,22 @@ public class SingularValueDecomposition {
         return jv.transpose().multiply(jv);
     }
 
-    /**
-     * Returns the L<sub>2</sub> norm of the matrix.
-     * <p>The L<sub>2</sub> norm is max(|A &times; u|<sub>2</sub> /
-     * |u|<sub>2</sub>), where |.|<sub>2</sub> denotes the vectorial 2-norm
-     * (i.e. the traditional euclidian norm).</p>
-     * @return norm
-     */
+    
     public double getNorm() {
         return singularValues[0];
     }
 
-    /**
-     * Return the condition number of the matrix.
-     * @return condition number of the matrix
-     */
+    
     public double getConditionNumber() {
         return singularValues[0] / singularValues[n - 1];
     }
 
-    /**
-     * Computes the inverse of the condition number.
-     * In cases of rank deficiency, the {@link #getConditionNumber() condition
-     * number} will become undefined.
-     *
-     * @return the inverse of the condition number.
-     */
+    
     public double getInverseConditionNumber() {
         return singularValues[n - 1] / singularValues[0];
     }
 
-    /**
-     * Return the effective numerical matrix rank.
-     * <p>The effective numerical rank is the number of non-negligible
-     * singular values. The threshold used to identify non-negligible
-     * terms is max(m,n) &times; ulp(s<sub>1</sub>) where ulp(s<sub>1</sub>)
-     * is the least significant bit of the largest singular value.</p>
-     * @return effective numerical matrix rank
-     */
+    
     public int getRank() {
         int r = 0;
         for (int i = 0; i < singularValues.length; i++) {
@@ -642,30 +548,19 @@ public class SingularValueDecomposition {
         return r;
     }
 
-    /**
-     * Get a solver for finding the A &times; X = B solution in least square sense.
-     * @return a solver
-     */
+    
     public DecompositionSolver getSolver() {
         return new Solver(singularValues, getUT(), getV(), getRank() == m, tol);
     }
 
-    /** Specialized solver. */
+    
     private static class Solver implements DecompositionSolver {
-        /** Pseudo-inverse of the initial matrix. */
+        
         private final RealMatrix pseudoInverse;
-        /** Singularity indicator. */
+        
         private boolean nonSingular;
 
-        /**
-         * Build a solver from decomposed matrix.
-         *
-         * @param singularValues Singular values.
-         * @param uT U<sup>T</sup> matrix of the decomposition.
-         * @param v V matrix of the decomposition.
-         * @param nonSingular Singularity indicator.
-         * @param tol tolerance for singular values
-         */
+        
         private Solver(final double[] singularValues, final RealMatrix uT,
                        final RealMatrix v, final boolean nonSingular, final double tol) {
             final double[][] suT = uT.getData();
@@ -685,51 +580,22 @@ public class SingularValueDecomposition {
             this.nonSingular = nonSingular;
         }
 
-        /**
-         * Solve the linear equation A &times; X = B in least square sense.
-         * <p>
-         * The m&times;n matrix A may not be square, the solution X is such that
-         * ||A &times; X - B|| is minimal.
-         * </p>
-         * @param b Right-hand side of the equation A &times; X = B
-         * @return a vector X that minimizes the two norm of A &times; X - B
-         * @throws org.apache.lucene.util.hnsw.math.exception.DimensionMismatchException
-         * if the matrices dimensions do not match.
-         */
+        
         public RealVector solve(final RealVector b) {
             return pseudoInverse.operate(b);
         }
 
-        /**
-         * Solve the linear equation A &times; X = B in least square sense.
-         * <p>
-         * The m&times;n matrix A may not be square, the solution X is such that
-         * ||A &times; X - B|| is minimal.
-         * </p>
-         *
-         * @param b Right-hand side of the equation A &times; X = B
-         * @return a matrix X that minimizes the two norm of A &times; X - B
-         * @throws org.apache.lucene.util.hnsw.math.exception.DimensionMismatchException
-         * if the matrices dimensions do not match.
-         */
+        
         public RealMatrix solve(final RealMatrix b) {
             return pseudoInverse.multiply(b);
         }
 
-        /**
-         * Check if the decomposed matrix is non-singular.
-         *
-         * @return {@code true} if the decomposed matrix is non-singular.
-         */
+        
         public boolean isNonSingular() {
             return nonSingular;
         }
 
-        /**
-         * Get the pseudo-inverse of the decomposed matrix.
-         *
-         * @return the inverse matrix.
-         */
+        
         public RealMatrix getInverse() {
             return pseudoInverse;
         }

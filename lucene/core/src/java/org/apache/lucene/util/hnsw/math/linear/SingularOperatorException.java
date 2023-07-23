@@ -19,19 +19,13 @@ package org.apache.lucene.util.hnsw.math.linear;
 import org.apache.lucene.util.hnsw.math.exception.MathIllegalArgumentException;
 import org.apache.lucene.util.hnsw.math.exception.util.LocalizedFormats;
 
-/**
- * Exception to be thrown when trying to invert a singular operator.
- *
- * @since 3.0
- */
+
 public class SingularOperatorException
     extends MathIllegalArgumentException {
-    /** Serializable version Id. */
+    
     private static final long serialVersionUID = -476049978595245033L;
 
-    /**
-     * Creates a new instance of this class.
-     */
+    
     public SingularOperatorException() {
         super(LocalizedFormats.SINGULAR_OPERATOR);
     }

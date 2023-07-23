@@ -17,20 +17,12 @@
 
 package org.apache.lucene.util.hnsw.math.analysis;
 
-/**
- * Extension of {@link MultivariateVectorFunction} representing a differentiable
- * multivariate vectorial function.
- * @since 2.0
- * @deprecated as of 3.1 replaced by {@link org.apache.lucene.util.hnsw.math.analysis.differentiation.MultivariateDifferentiableVectorFunction}
- */
+
 @Deprecated
 public interface DifferentiableMultivariateVectorFunction
     extends MultivariateVectorFunction {
 
-    /**
-     * Returns the jacobian function.
-     * @return the jacobian function
-     */
+    
     MultivariateMatrixFunction jacobian();
 
 }

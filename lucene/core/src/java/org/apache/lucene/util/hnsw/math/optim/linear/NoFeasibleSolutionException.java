@@ -19,18 +19,12 @@ package org.apache.lucene.util.hnsw.math.optim.linear;
 import org.apache.lucene.util.hnsw.math.exception.MathIllegalStateException;
 import org.apache.lucene.util.hnsw.math.exception.util.LocalizedFormats;
 
-/**
- * This class represents exceptions thrown by optimizers when no solution fulfills the constraints.
- *
- * @since 2.0
- */
+
 public class NoFeasibleSolutionException extends MathIllegalStateException {
-    /** Serializable version identifier. */
+    
     private static final long serialVersionUID = -3044253632189082760L;
 
-    /**
-     * Simple constructor using a default message.
-     */
+    
     public NoFeasibleSolutionException() {
         super(LocalizedFormats.NO_FEASIBLE_SOLUTION);
     }

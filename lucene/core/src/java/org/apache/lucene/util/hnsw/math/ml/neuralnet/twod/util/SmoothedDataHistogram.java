@@ -23,28 +23,16 @@ import org.apache.lucene.util.hnsw.math.ml.neuralnet.twod.NeuronSquareMesh2D;
 import org.apache.lucene.util.hnsw.math.ml.distance.DistanceMeasure;
 import org.apache.lucene.util.hnsw.math.exception.NumberIsTooSmallException;
 
-/**
- * Visualization of high-dimensional data projection on a 2D-map.
- * The method is described in
- * <quote>
- *  <em>Using Smoothed Data Histograms for Cluster Visualization in Self-Organizing Maps</em>
- *  <br>
- *  by Elias Pampalk, Andreas Rauber and Dieter Merkl.
- * </quote>
- * @since 3.6
- */
+
 public class SmoothedDataHistogram implements MapDataVisualization {
-    /** Smoothing parameter. */
+    
     private final int smoothingBins;
-    /** Distance. */
+    
     private final DistanceMeasure distance;
-    /** Normalization factor. */
+    
     private final double membershipNormalization;
 
-    /**
-     * @param smoothingBins Number of bins.
-     * @param distance Distance.
-     */
+    
     public SmoothedDataHistogram(int smoothingBins,
                                  DistanceMeasure distance) {
         this.smoothingBins = smoothingBins;
@@ -58,13 +46,7 @@ public class SmoothedDataHistogram implements MapDataVisualization {
         this.membershipNormalization = 1d / sum;
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @throws NumberIsTooSmallException if the size of the {@code map}
-     * is smaller than the number of {@link #SmoothedDataHistogram(int,DistanceMeasure)
-     * smoothing bins}.
-     */
+    
     public double[][] computeImage(NeuronSquareMesh2D map,
                                    Iterable<double[]> data) {
         final int nR = map.getNumberOfRows();

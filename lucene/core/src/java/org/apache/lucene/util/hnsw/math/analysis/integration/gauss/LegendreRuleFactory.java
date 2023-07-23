@@ -19,18 +19,9 @@ package org.apache.lucene.util.hnsw.math.analysis.integration.gauss;
 import org.apache.lucene.util.hnsw.math.exception.DimensionMismatchException;
 import org.apache.lucene.util.hnsw.math.util.Pair;
 
-/**
- * Factory that creates Gauss-type quadrature rule using Legendre polynomials.
- * In this implementation, the lower and upper bounds of the natural interval
- * of integration are -1 and 1, respectively.
- * The Legendre polynomials are evaluated using the recurrence relation
- * presented in <a href="http://en.wikipedia.org/wiki/Abramowitz_and_Stegun">
- * Abramowitz and Stegun, 1964</a>.
- *
- * @since 3.1
- */
+
 public class LegendreRuleFactory extends BaseRuleFactory<Double> {
-    /** {@inheritDoc} */
+    
     @Override
     protected Pair<Double[], Double[]> computeRule(int numberOfPoints)
         throws DimensionMismatchException {

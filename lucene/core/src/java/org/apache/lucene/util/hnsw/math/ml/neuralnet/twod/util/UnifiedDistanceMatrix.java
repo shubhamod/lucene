@@ -23,44 +23,21 @@ import org.apache.lucene.util.hnsw.math.ml.neuralnet.Network;
 import org.apache.lucene.util.hnsw.math.ml.neuralnet.twod.NeuronSquareMesh2D;
 import org.apache.lucene.util.hnsw.math.ml.distance.DistanceMeasure;
 
-/**
- * <a href="http://en.wikipedia.org/wiki/U-Matrix">U-Matrix</a>
- * visualization of high-dimensional data projection.
- * @since 3.6
- */
+
 public class UnifiedDistanceMatrix implements MapVisualization {
-    /** Whether to show distance between each pair of neighbouring units. */
+    
     private final boolean individualDistances;
-    /** Distance. */
+    
     private final DistanceMeasure distance;
 
-    /**
-     * Simple constructor.
-     *
-     * @param individualDistances If {@code true}, the 8 individual
-     * inter-units distances will be {@link #computeImage(NeuronSquareMesh2D)
-     * computed}.  They will be stored in additional pixels around each of
-     * the original units of the 2D-map.  The additional pixels that lie
-     * along a "diagonal" are shared by <em>two</em> pairs of units: their
-     * value will be set to the average distance between the units belonging
-     * to each of the pairs.  The value zero will be stored in the pixel
-     * corresponding to the location of a unit of the 2D-map.
-     * <br>
-     * If {@code false}, only the average distance between a unit and all its
-     * neighbours will be computed (and stored in the pixel corresponding to
-     * that unit of the 2D-map).  In that case, the number of neighbours taken
-     * into account depends on the network's
-     * {@link org.apache.lucene.util.hnsw.math.ml.neuralnet.SquareNeighbourhood
-     * neighbourhood type}.
-     * @param distance Distance.
-     */
+    
     public UnifiedDistanceMatrix(boolean individualDistances,
                                  DistanceMeasure distance) {
         this.individualDistances = individualDistances;
         this.distance = distance;
     }
 
-    /** {@inheritDoc} */
+    
     public double[][] computeImage(NeuronSquareMesh2D map) {
         if (individualDistances) {
             return individualDistances(map);
@@ -69,17 +46,7 @@ public class UnifiedDistanceMatrix implements MapVisualization {
         }
     }
 
-    /**
-     * Computes the distances between a unit of the map and its
-     * neighbours.
-     * The image will contain more pixels than the number of neurons
-     * in the given {@code map} because each neuron has 8 neighbours.
-     * The value zero will be stored in the pixels corresponding to
-     * the location of a map unit.
-     *
-     * @param map Map.
-     * @return an image representing the individual distances.
-     */
+    
     private double[][] individualDistances(NeuronSquareMesh2D map) {
         final int numRows = map.getNumberOfRows();
         final int numCols = map.getNumberOfColumns();
@@ -174,12 +141,7 @@ public class UnifiedDistanceMatrix implements MapVisualization {
         return uMatrix;
     }
 
-    /**
-     * Computes the distances between a unit of the map and its neighbours.
-     *
-     * @param map Map.
-     * @return an image representing the average distances.
-     */
+    
     private double[][] averageDistances(NeuronSquareMesh2D map) {
         final int numRows = map.getNumberOfRows();
         final int numCols = map.getNumberOfColumns();

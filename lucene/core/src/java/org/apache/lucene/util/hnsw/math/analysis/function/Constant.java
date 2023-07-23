@@ -21,38 +21,28 @@ import org.apache.lucene.util.hnsw.math.analysis.DifferentiableUnivariateFunctio
 import org.apache.lucene.util.hnsw.math.analysis.differentiation.DerivativeStructure;
 import org.apache.lucene.util.hnsw.math.analysis.differentiation.UnivariateDifferentiableFunction;
 
-/**
- * Constant function.
- *
- * @since 3.0
- */
+
 public class Constant implements UnivariateDifferentiableFunction, DifferentiableUnivariateFunction {
-    /** Constant. */
+    
     private final double c;
 
-    /**
-     * @param c Constant.
-     */
+    
     public Constant(double c) {
         this.c = c;
     }
 
-    /** {@inheritDoc} */
+    
     public double value(double x) {
         return c;
     }
 
-    /** {@inheritDoc}
-     * @deprecated as of 3.1, replaced by {@link #value(DerivativeStructure)}
-     */
+    
     @Deprecated
     public DifferentiableUnivariateFunction derivative() {
         return new Constant(0);
     }
 
-    /** {@inheritDoc}
-     * @since 3.1
-     */
+    
     public DerivativeStructure value(final DerivativeStructure t) {
         return new DerivativeStructure(t.getFreeParameters(), t.getOrder(), c);
     }

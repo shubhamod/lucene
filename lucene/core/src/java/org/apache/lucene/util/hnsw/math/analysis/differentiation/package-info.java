@@ -14,29 +14,5 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/**
- *
- * <p>
- *   This package holds the main interfaces and basic building block classes
- *   dealing with differentiation.
- *   The core class is {@link org.apache.lucene.util.hnsw.math.analysis.differentiation.DerivativeStructure
- *   DerivativeStructure} which holds the value and the differentials of a function. This class
- *   handles some arbitrary number of free parameters and arbitrary differentiation order. It is used
- *   both as the input and the output type for the {@link
- *   org.apache.lucene.util.hnsw.math.analysis.differentiation.UnivariateDifferentiableFunction
- *   UnivariateDifferentiableFunction} interface. Any differentiable function should implement this
- *   interface.
- * </p>
- * <p>
- *   The {@link org.apache.lucene.util.hnsw.math.analysis.differentiation.UnivariateFunctionDifferentiator
- *   UnivariateFunctionDifferentiator} interface defines a way to differentiate a simple {@link
- *   org.apache.lucene.util.hnsw.math.analysis.UnivariateFunction UnivariateFunction} and get a {@link
- *   org.apache.lucene.util.hnsw.math.analysis.differentiation.UnivariateDifferentiableFunction
- *   UnivariateDifferentiableFunction}.
- * </p>
- * <p>
- *   Similar interfaces also exist for multivariate functions and for vector or matrix valued functions.
- * </p>
- *
- */
+
 package org.apache.lucene.util.hnsw.math.analysis.differentiation;

@@ -18,29 +18,17 @@ package org.apache.lucene.util.hnsw.math.optim.linear;
 
 import org.apache.lucene.util.hnsw.math.optim.OptimizationData;
 
-/**
- * A constraint for a linear optimization problem indicating whether all
- * variables must be restricted to non-negative values.
- *
- * @since 3.1
- */
+
 public class NonNegativeConstraint implements OptimizationData {
-    /** Whether the variables are all positive. */
+    
     private final boolean isRestricted;
 
-    /**
-     * @param restricted If {@code true}, all the variables must be positive.
-     */
+    
     public NonNegativeConstraint(boolean restricted) {
         isRestricted = restricted;
     }
 
-    /**
-     * Indicates whether all the variables must be restricted to non-negative
-     * values.
-     *
-     * @return {@code true} if all the variables must be positive.
-     */
+    
     public boolean isRestrictedToNonNegative() {
         return isRestricted;
     }

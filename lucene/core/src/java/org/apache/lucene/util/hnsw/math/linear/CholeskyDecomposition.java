@@ -21,85 +21,26 @@ import org.apache.lucene.util.hnsw.math.exception.DimensionMismatchException;
 import org.apache.lucene.util.hnsw.math.util.FastMath;
 
 
-/**
- * Calculates the Cholesky decomposition of a matrix.
- * <p>The Cholesky decomposition of a real symmetric positive-definite
- * matrix A consists of a lower triangular matrix L with same size such
- * that: A = LL<sup>T</sup>. In a sense, this is the square root of A.</p>
- * <p>This class is based on the class with similar name from the
- * <a href="http://math.nist.gov/javanumerics/jama/">JAMA</a> library, with the
- * following changes:</p>
- * <ul>
- *   <li>a {@link #getLT() getLT} method has been added,</li>
- *   <li>the {@code isspd} method has been removed, since the constructor of
- *   this class throws a {@link NonPositiveDefiniteMatrixException} when a
- *   matrix cannot be decomposed,</li>
- *   <li>a {@link #getDeterminant() getDeterminant} method has been added,</li>
- *   <li>the {@code solve} method has been replaced by a {@link #getSolver()
- *   getSolver} method and the equivalent method provided by the returned
- *   {@link DecompositionSolver}.</li>
- * </ul>
- *
- * @see <a href="http://mathworld.wolfram.com/CholeskyDecomposition.html">MathWorld</a>
- * @see <a href="http://en.wikipedia.org/wiki/Cholesky_decomposition">Wikipedia</a>
- * @since 2.0 (changed to concrete class in 3.0)
- */
+
 public class CholeskyDecomposition {
-    /**
-     * Default threshold above which off-diagonal elements are considered too different
-     * and matrix not symmetric.
-     */
+    
     public static final double DEFAULT_RELATIVE_SYMMETRY_THRESHOLD = 1.0e-15;
-    /**
-     * Default threshold below which diagonal elements are considered null
-     * and matrix not positive definite.
-     */
+    
     public static final double DEFAULT_ABSOLUTE_POSITIVITY_THRESHOLD = 1.0e-10;
-    /** Row-oriented storage for L<sup>T</sup> matrix data. */
+    
     private double[][] lTData;
-    /** Cached value of L. */
+    
     private RealMatrix cachedL;
-    /** Cached value of LT. */
+    
     private RealMatrix cachedLT;
 
-    /**
-     * Calculates the Cholesky decomposition of the given matrix.
-     * <p>
-     * Calling this constructor is equivalent to call {@link
-     * #CholeskyDecomposition(RealMatrix, double, double)} with the
-     * thresholds set to the default values {@link
-     * #DEFAULT_RELATIVE_SYMMETRY_THRESHOLD} and {@link
-     * #DEFAULT_ABSOLUTE_POSITIVITY_THRESHOLD}
-     * </p>
-     * @param matrix the matrix to decompose
-     * @throws NonSquareMatrixException if the matrix is not square.
-     * @throws NonSymmetricMatrixException if the matrix is not symmetric.
-     * @throws NonPositiveDefiniteMatrixException if the matrix is not
-     * strictly positive definite.
-     * @see #CholeskyDecomposition(RealMatrix, double, double)
-     * @see #DEFAULT_RELATIVE_SYMMETRY_THRESHOLD
-     * @see #DEFAULT_ABSOLUTE_POSITIVITY_THRESHOLD
-     */
+    
     public CholeskyDecomposition(final RealMatrix matrix) {
         this(matrix, DEFAULT_RELATIVE_SYMMETRY_THRESHOLD,
              DEFAULT_ABSOLUTE_POSITIVITY_THRESHOLD);
     }
 
-    /**
-     * Calculates the Cholesky decomposition of the given matrix.
-     * @param matrix the matrix to decompose
-     * @param relativeSymmetryThreshold threshold above which off-diagonal
-     * elements are considered too different and matrix not symmetric
-     * @param absolutePositivityThreshold threshold below which diagonal
-     * elements are considered null and matrix not positive definite
-     * @throws NonSquareMatrixException if the matrix is not square.
-     * @throws NonSymmetricMatrixException if the matrix is not symmetric.
-     * @throws NonPositiveDefiniteMatrixException if the matrix is not
-     * strictly positive definite.
-     * @see #CholeskyDecomposition(RealMatrix)
-     * @see #DEFAULT_RELATIVE_SYMMETRY_THRESHOLD
-     * @see #DEFAULT_ABSOLUTE_POSITIVITY_THRESHOLD
-     */
+    
     public CholeskyDecomposition(final RealMatrix matrix,
                                      final double relativeSymmetryThreshold,
                                      final double absolutePositivityThreshold) {
@@ -154,11 +95,7 @@ public class CholeskyDecomposition {
         }
     }
 
-    /**
-     * Returns the matrix L of the decomposition.
-     * <p>L is an lower-triangular matrix</p>
-     * @return the L matrix
-     */
+    
     public RealMatrix getL() {
         if (cachedL == null) {
             cachedL = getLT().transpose();
@@ -166,11 +103,7 @@ public class CholeskyDecomposition {
         return cachedL;
     }
 
-    /**
-     * Returns the transpose of the matrix L of the decomposition.
-     * <p>L<sup>T</sup> is an upper-triangular matrix</p>
-     * @return the transpose of the matrix L of the decomposition
-     */
+    
     public RealMatrix getLT() {
 
         if (cachedLT == null) {
@@ -181,10 +114,7 @@ public class CholeskyDecomposition {
         return cachedLT;
     }
 
-    /**
-     * Return the determinant of the matrix
-     * @return determinant of the matrix
-     */
+    
     public double getDeterminant() {
         double determinant = 1.0;
         for (int i = 0; i < lTData.length; ++i) {
@@ -194,34 +124,28 @@ public class CholeskyDecomposition {
         return determinant;
     }
 
-    /**
-     * Get a solver for finding the A &times; X = B solution in least square sense.
-     * @return a solver
-     */
+    
     public DecompositionSolver getSolver() {
         return new Solver(lTData);
     }
 
-    /** Specialized solver. */
+    
     private static class Solver implements DecompositionSolver {
-        /** Row-oriented storage for L<sup>T</sup> matrix data. */
+        
         private final double[][] lTData;
 
-        /**
-         * Build a solver from decomposed matrix.
-         * @param lTData row-oriented storage for L<sup>T</sup> matrix data
-         */
+        
         private Solver(final double[][] lTData) {
             this.lTData = lTData;
         }
 
-        /** {@inheritDoc} */
+        
         public boolean isNonSingular() {
             // if we get this far, the matrix was positive definite, hence non-singular
             return true;
         }
 
-        /** {@inheritDoc} */
+        
         public RealVector solve(final RealVector b) {
             final int m = lTData.length;
             if (b.getDimension() != m) {
@@ -252,7 +176,7 @@ public class CholeskyDecomposition {
             return new ArrayRealVector(x, false);
         }
 
-        /** {@inheritDoc} */
+        
         public RealMatrix solve(RealMatrix b) {
             final int m = lTData.length;
             if (b.getRowDimension() != m) {
@@ -298,11 +222,7 @@ public class CholeskyDecomposition {
             return new Array2DRowRealMatrix(x);
         }
 
-        /**
-         * Get the inverse of the decomposed matrix.
-         *
-         * @return the inverse matrix.
-         */
+        
         public RealMatrix getInverse() {
             return solve(MatrixUtils.createRealIdentityMatrix(lTData.length));
         }

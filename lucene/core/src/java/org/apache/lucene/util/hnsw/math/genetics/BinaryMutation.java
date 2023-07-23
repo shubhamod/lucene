@@ -22,20 +22,10 @@ import java.util.List;
 import org.apache.lucene.util.hnsw.math.exception.MathIllegalArgumentException;
 import org.apache.lucene.util.hnsw.math.exception.util.LocalizedFormats;
 
-/**
- * Mutation for {@link BinaryChromosome}s. Randomly changes one gene.
- *
- * @since 2.0
- */
+
 public class BinaryMutation implements MutationPolicy {
 
-    /**
-     * Mutate the given chromosome. Randomly changes one gene.
-     *
-     * @param original the original chromosome.
-     * @return the mutated chromosome.
-     * @throws MathIllegalArgumentException if <code>original</code> is not an instance of {@link BinaryChromosome}.
-     */
+    
     public Chromosome mutate(Chromosome original) throws MathIllegalArgumentException {
         if (!(original instanceof BinaryChromosome)) {
             throw new MathIllegalArgumentException(LocalizedFormats.INVALID_BINARY_CHROMOSOME);

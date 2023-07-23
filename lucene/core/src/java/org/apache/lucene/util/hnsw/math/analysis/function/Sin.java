@@ -22,28 +22,20 @@ import org.apache.lucene.util.hnsw.math.analysis.differentiation.DerivativeStruc
 import org.apache.lucene.util.hnsw.math.analysis.differentiation.UnivariateDifferentiableFunction;
 import org.apache.lucene.util.hnsw.math.util.FastMath;
 
-/**
- * Sine function.
- *
- * @since 3.0
- */
+
 public class Sin implements UnivariateDifferentiableFunction, DifferentiableUnivariateFunction {
-    /** {@inheritDoc} */
+    
     public double value(double x) {
         return FastMath.sin(x);
     }
 
-    /** {@inheritDoc}
-     * @deprecated as of 3.1, replaced by {@link #value(DerivativeStructure)}
-     */
+    
     @Deprecated
     public DifferentiableUnivariateFunction derivative() {
         return new Cos();
     }
 
-    /** {@inheritDoc}
-     * @since 3.1
-     */
+    
     public DerivativeStructure value(final DerivativeStructure t) {
         return t.sin();
     }

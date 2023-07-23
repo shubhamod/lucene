@@ -14,7 +14,5 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/**
- * Methods related to prime numbers like primality test, factor decomposition.
- */
+
 package org.apache.lucene.util.hnsw.math.primes;

@@ -23,72 +23,33 @@ import org.apache.lucene.util.hnsw.math.exception.TooManyEvaluationsException;
 import org.apache.lucene.util.hnsw.math.util.FastMath;
 import org.apache.lucene.util.hnsw.math.util.Precision;
 
-/**
- * This class implements the <a href="http://mathworld.wolfram.com/BrentsMethod.html">
- * Brent algorithm</a> for finding zeros of real univariate functions.
- * The function should be continuous but not necessarily smooth.
- * The {@code solve} method returns a zero {@code x} of the function {@code f}
- * in the given interval {@code [a, b]} to within a tolerance
- * {@code 2 eps abs(x) + t} where {@code eps} is the relative accuracy and
- * {@code t} is the absolute accuracy.
- * <p>The given interval must bracket the root.</p>
- * <p>
- *  The reference implementation is given in chapter 4 of
- *  <blockquote>
- *   <b>Algorithms for Minimization Without Derivatives</b>,
- *   <em>Richard P. Brent</em>,
- *   Dover, 2002
- *  </blockquote>
- *
- * @see BaseAbstractUnivariateSolver
- */
+
 public class BrentSolver extends AbstractUnivariateSolver {
 
-    /** Default absolute accuracy. */
+    
     private static final double DEFAULT_ABSOLUTE_ACCURACY = 1e-6;
 
-    /**
-     * Construct a solver with default absolute accuracy (1e-6).
-     */
+    
     public BrentSolver() {
         this(DEFAULT_ABSOLUTE_ACCURACY);
     }
-    /**
-     * Construct a solver.
-     *
-     * @param absoluteAccuracy Absolute accuracy.
-     */
+    
     public BrentSolver(double absoluteAccuracy) {
         super(absoluteAccuracy);
     }
-    /**
-     * Construct a solver.
-     *
-     * @param relativeAccuracy Relative accuracy.
-     * @param absoluteAccuracy Absolute accuracy.
-     */
+    
     public BrentSolver(double relativeAccuracy,
                        double absoluteAccuracy) {
         super(relativeAccuracy, absoluteAccuracy);
     }
-    /**
-     * Construct a solver.
-     *
-     * @param relativeAccuracy Relative accuracy.
-     * @param absoluteAccuracy Absolute accuracy.
-     * @param functionValueAccuracy Function value accuracy.
-     *
-     * @see BaseAbstractUnivariateSolver#BaseAbstractUnivariateSolver(double,double,double)
-     */
+    
     public BrentSolver(double relativeAccuracy,
                        double absoluteAccuracy,
                        double functionValueAccuracy) {
         super(relativeAccuracy, absoluteAccuracy, functionValueAccuracy);
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    
     @Override
     protected double doSolve()
         throws NoBracketingException,
@@ -132,22 +93,7 @@ public class BrentSolver extends AbstractUnivariateSolver {
         throw new NoBracketingException(min, max, yMin, yMax);
     }
 
-    /**
-     * Search for a zero inside the provided interval.
-     * This implementation is based on the algorithm described at page 58 of
-     * the book
-     * <blockquote>
-     *  <b>Algorithms for Minimization Without Derivatives</b>,
-     *  <it>Richard P. Brent</it>,
-     *  Dover 0-486-41998-3
-     * </blockquote>
-     *
-     * @param lo Lower bound of the search interval.
-     * @param hi Higher bound of the search interval.
-     * @param fLo Function value at the lower bound of the search interval.
-     * @param fHi Function value at the higher bound of the search interval.
-     * @return the value where the function is zero.
-     */
+    
     private double brent(double lo, double hi,
                          double fLo, double fHi) {
         double a = lo;

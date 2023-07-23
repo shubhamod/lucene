@@ -22,60 +22,36 @@ import java.util.Arrays;
 import org.apache.lucene.util.hnsw.math.exception.NullArgumentException;
 
 
-/**
- * A Simple K<sup>th</sup> selector implementation to pick up the
- * K<sup>th</sup> ordered element from a work array containing the input
- * numbers.
- * @since 3.4
- */
+
 public class KthSelector implements Serializable {
 
-    /** Serializable UID. */
+    
     private static final long serialVersionUID = 20140713L;
 
-    /** Minimum selection size for insertion sort rather than selection. */
+    
     private static final int MIN_SELECT_SIZE = 15;
 
-    /** A {@link PivotingStrategyInterface} used for pivoting  */
+    
     private final PivotingStrategyInterface pivotingStrategy;
 
-    /**
-     * Constructor with default {@link MedianOf3PivotingStrategy median of 3} pivoting strategy
-     */
+    
     public KthSelector() {
         this.pivotingStrategy = new MedianOf3PivotingStrategy();
     }
 
-    /**
-     * Constructor with specified pivoting strategy
-     *
-     * @param pivotingStrategy pivoting strategy to use
-     * @throws NullArgumentException when pivotingStrategy is null
-     * @see MedianOf3PivotingStrategy
-     * @see RandomPivotingStrategy
-     * @see CentralPivotingStrategy
-     */
+    
     public KthSelector(final PivotingStrategyInterface pivotingStrategy)
         throws NullArgumentException {
         MathUtils.checkNotNull(pivotingStrategy);
         this.pivotingStrategy = pivotingStrategy;
     }
 
-    /** Get the pivotin strategy.
-     * @return pivoting strategy
-     */
+    
     public PivotingStrategyInterface getPivotingStrategy() {
         return pivotingStrategy;
     }
 
-    /**
-     * Select K<sup>th</sup> value in the array.
-     *
-     * @param work work array to use to find out the K<sup>th</sup> value
-     * @param pivotsHeap cached pivots heap that can be used for efficient estimation
-     * @param k the index whose value in the array is of interest
-     * @return K<sup>th</sup> value
-     */
+    
     public double select(final double[] work, final int[] pivotsHeap, final int k) {
         int begin = 0;
         int end = work.length;
@@ -114,17 +90,7 @@ public class KthSelector implements Serializable {
         return work[k];
     }
 
-    /**
-     * Partition an array slice around a pivot.Partitioning exchanges array
-     * elements such that all elements smaller than pivot are before it and
-     * all elements larger than pivot are after it.
-     *
-     * @param work work array
-     * @param begin index of the first element of the slice of work array
-     * @param end index after the last element of the slice of work array
-     * @param pivot initial index of the pivot
-     * @return index of the pivot after partition
-     */
+    
     private int partition(final double[] work, final int begin, final int end, final int pivot) {
 
         final double value = work[pivot];

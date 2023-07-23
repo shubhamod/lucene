@@ -20,19 +20,13 @@ import org.apache.lucene.util.hnsw.math.exception.DimensionMismatchException;
 import org.apache.lucene.util.hnsw.math.util.FastMath;
 import org.apache.lucene.util.hnsw.math.util.MathArrays;
 
-/**
- * Calculates the Earh Mover's distance (also known as Wasserstein metric) between two distributions.
- *
- * @see <a href="http://en.wikipedia.org/wiki/Earth_mover's_distance">Earth Mover's distance (Wikipedia)</a>
- *
- * @since 3.3
- */
+
 public class EarthMoversDistance implements DistanceMeasure {
 
-    /** Serializable version identifier. */
+    
     private static final long serialVersionUID = -5406732779747414922L;
 
-    /** {@inheritDoc} */
+    
     public double compute(double[] a, double[] b)
     throws DimensionMismatchException {
         MathArrays.checkEqualLength(a, b);

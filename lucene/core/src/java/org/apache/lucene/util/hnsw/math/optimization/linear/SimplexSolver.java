@@ -25,49 +25,34 @@ import org.apache.lucene.util.hnsw.math.optimization.PointValuePair;
 import org.apache.lucene.util.hnsw.math.util.Precision;
 
 
-/**
- * Solves a linear problem using the Two-Phase Simplex Method.
- *
- * @deprecated As of 3.1 (to be removed in 4.0).
- * @since 2.0
- */
+
 @Deprecated
 public class SimplexSolver extends AbstractLinearOptimizer {
 
-    /** Default amount of error to accept for algorithm convergence. */
+    
     private static final double DEFAULT_EPSILON = 1.0e-6;
 
-    /** Default amount of error to accept in floating point comparisons (as ulps). */
+    
     private static final int DEFAULT_ULPS = 10;
 
-    /** Amount of error to accept for algorithm convergence. */
+    
     private final double epsilon;
 
-    /** Amount of error to accept in floating point comparisons (as ulps). */
+    
     private final int maxUlps;
 
-    /**
-     * Build a simplex solver with default settings.
-     */
+    
     public SimplexSolver() {
         this(DEFAULT_EPSILON, DEFAULT_ULPS);
     }
 
-    /**
-     * Build a simplex solver with a specified accepted amount of error
-     * @param epsilon the amount of error to accept for algorithm convergence
-     * @param maxUlps amount of error to accept in floating point comparisons
-     */
+    
     public SimplexSolver(final double epsilon, final int maxUlps) {
         this.epsilon = epsilon;
         this.maxUlps = maxUlps;
     }
 
-    /**
-     * Returns the column with the most negative coefficient in the objective function row.
-     * @param tableau simple tableau for the problem
-     * @return column with the most negative coefficient
-     */
+    
     private Integer getPivotColumn(SimplexTableau tableau) {
         double minValue = 0;
         Integer minPos = null;
@@ -83,12 +68,7 @@ public class SimplexSolver extends AbstractLinearOptimizer {
         return minPos;
     }
 
-    /**
-     * Returns the row with the minimum ratio as given by the minimum ratio test (MRT).
-     * @param tableau simple tableau for the problem
-     * @param col the column to test the ratio of.  See {@link #getPivotColumn(SimplexTableau)}
-     * @return row with the minimum ratio
-     */
+    
     private Integer getPivotRow(SimplexTableau tableau, final int col) {
         // create a list of all the rows that tie for the lowest score in the minimum ratio test
         List<Integer> minRatioPositions = new ArrayList<Integer>();
@@ -159,12 +139,7 @@ public class SimplexSolver extends AbstractLinearOptimizer {
         return minRatioPositions.get(0);
     }
 
-    /**
-     * Runs one iteration of the Simplex method on the given model.
-     * @param tableau simple tableau for the problem
-     * @throws MaxCountExceededException if the maximal iteration count has been exceeded
-     * @throws UnboundedSolutionException if the model is found not to have a bounded solution
-     */
+    
     protected void doIteration(final SimplexTableau tableau)
         throws MaxCountExceededException, UnboundedSolutionException {
 
@@ -189,13 +164,7 @@ public class SimplexSolver extends AbstractLinearOptimizer {
         }
     }
 
-    /**
-     * Solves Phase 1 of the Simplex method.
-     * @param tableau simple tableau for the problem
-     * @throws MaxCountExceededException if the maximal iteration count has been exceeded
-     * @throws UnboundedSolutionException if the model is found not to have a bounded solution
-     * @throws NoFeasibleSolutionException if there is no feasible solution
-     */
+    
     protected void solvePhase1(final SimplexTableau tableau)
         throws MaxCountExceededException, UnboundedSolutionException, NoFeasibleSolutionException {
 
@@ -214,7 +183,7 @@ public class SimplexSolver extends AbstractLinearOptimizer {
         }
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     public PointValuePair doOptimize()
         throws MaxCountExceededException, UnboundedSolutionException, NoFeasibleSolutionException {

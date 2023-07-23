@@ -14,7 +14,5 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/**
- * Convenience routines and common data structures used throughout the commons-math library.
- */
+
 package org.apache.lucene.util.hnsw.math.util;

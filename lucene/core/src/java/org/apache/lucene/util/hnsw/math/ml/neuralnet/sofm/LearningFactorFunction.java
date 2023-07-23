@@ -17,18 +17,8 @@
 
 package org.apache.lucene.util.hnsw.math.ml.neuralnet.sofm;
 
-/**
- * Provides the learning rate as a function of the number of calls
- * already performed during the learning task.
- *
- * @since 3.3
- */
+
 public interface LearningFactorFunction {
-    /**
-     * Computes the learning rate at the current call.
-     *
-     * @param numCall Current step of the training task.
-     * @return the value of the function at {@code numCall}.
-     */
+    
     double value(long numCall);
 }

@@ -20,49 +20,26 @@ import org.apache.lucene.util.hnsw.math.util.FastMath;
 import org.apache.lucene.util.hnsw.math.exception.NoBracketingException;
 import org.apache.lucene.util.hnsw.math.exception.TooManyEvaluationsException;
 
-/**
- * Implements the <a href="http://mathworld.wolfram.com/RiddersMethod.html">
- * Ridders' Method</a> for root finding of real univariate functions. For
- * reference, see C. Ridders, <i>A new algorithm for computing a single root
- * of a real continuous function </i>, IEEE Transactions on Circuits and
- * Systems, 26 (1979), 979 - 980.
- * <p>
- * The function should be continuous but not necessarily smooth.</p>
- *
- * @since 1.2
- */
+
 public class RiddersSolver extends AbstractUnivariateSolver {
-    /** Default absolute accuracy. */
+    
     private static final double DEFAULT_ABSOLUTE_ACCURACY = 1e-6;
 
-    /**
-     * Construct a solver with default accuracy (1e-6).
-     */
+    
     public RiddersSolver() {
         this(DEFAULT_ABSOLUTE_ACCURACY);
     }
-    /**
-     * Construct a solver.
-     *
-     * @param absoluteAccuracy Absolute accuracy.
-     */
+    
     public RiddersSolver(double absoluteAccuracy) {
         super(absoluteAccuracy);
     }
-    /**
-     * Construct a solver.
-     *
-     * @param relativeAccuracy Relative accuracy.
-     * @param absoluteAccuracy Absolute accuracy.
-     */
+    
     public RiddersSolver(double relativeAccuracy,
                          double absoluteAccuracy) {
         super(relativeAccuracy, absoluteAccuracy);
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    
     @Override
     protected double doSolve()
         throws TooManyEvaluationsException,

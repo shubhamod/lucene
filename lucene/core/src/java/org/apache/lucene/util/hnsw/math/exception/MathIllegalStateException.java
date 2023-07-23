@@ -21,39 +21,22 @@ import org.apache.lucene.util.hnsw.math.exception.util.LocalizedFormats;
 import org.apache.lucene.util.hnsw.math.exception.util.ExceptionContext;
 import org.apache.lucene.util.hnsw.math.exception.util.ExceptionContextProvider;
 
-/**
- * Base class for all exceptions that signal that the process
- * throwing the exception is in a state that does not comply with
- * the set of states that it is designed to be in.
- *
- * @since 2.2
- */
+
 public class MathIllegalStateException extends IllegalStateException
     implements ExceptionContextProvider {
-    /** Serializable version Id. */
+    
     private static final long serialVersionUID = -6024911025449780478L;
-    /** Context. */
+    
     private final ExceptionContext context;
 
-    /**
-     * Simple constructor.
-     *
-     * @param pattern Message pattern explaining the cause of the error.
-     * @param args Arguments.
-     */
+    
     public MathIllegalStateException(Localizable pattern,
                                      Object ... args) {
         context = new ExceptionContext(this);
         context.addMessage(pattern, args);
     }
 
-    /**
-     * Simple constructor.
-     *
-     * @param cause Root cause.
-     * @param pattern Message pattern explaining the cause of the error.
-     * @param args Arguments.
-     */
+    
     public MathIllegalStateException(Throwable cause,
                                      Localizable pattern,
                                      Object ... args) {
@@ -62,25 +45,23 @@ public class MathIllegalStateException extends IllegalStateException
         context.addMessage(pattern, args);
     }
 
-    /**
-     * Default constructor.
-     */
+    
     public MathIllegalStateException() {
         this(LocalizedFormats.ILLEGAL_STATE);
     }
 
-    /** {@inheritDoc} */
+    
     public ExceptionContext getContext() {
         return context;
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     public String getMessage() {
         return context.getMessage();
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     public String getLocalizedMessage() {
         return context.getLocalizedMessage();

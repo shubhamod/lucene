@@ -20,26 +20,16 @@ package org.apache.lucene.util.hnsw.math.ml.neuralnet.sofm;
 import java.util.Iterator;
 import org.apache.lucene.util.hnsw.math.ml.neuralnet.Network;
 
-/**
- * Trainer for Kohonen's Self-Organizing Map.
- *
- * @since 3.3
- */
+
 public class KohonenTrainingTask implements Runnable {
-    /** SOFM to be trained. */
+    
     private final Network net;
-    /** Training data. */
+    
     private final Iterator<double[]> featuresIterator;
-    /** Update procedure. */
+    
     private final KohonenUpdateAction updateAction;
 
-    /**
-     * Creates a (sequential) trainer for the given network.
-     *
-     * @param net Network to be trained with the SOFM algorithm.
-     * @param featuresIterator Training data iterator.
-     * @param updateAction SOFM update procedure.
-     */
+    
     public KohonenTrainingTask(Network net,
                                Iterator<double[]> featuresIterator,
                                KohonenUpdateAction updateAction) {
@@ -48,9 +38,7 @@ public class KohonenTrainingTask implements Runnable {
         this.updateAction = updateAction;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    
     public void run() {
         while (featuresIterator.hasNext()) {
             updateAction.update(net, featuresIterator.next());

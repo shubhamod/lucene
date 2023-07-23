@@ -22,43 +22,12 @@ import org.apache.lucene.util.hnsw.math.RealFieldElement;
 import org.apache.lucene.util.hnsw.math.ode.FieldEquationsMapper;
 import org.apache.lucene.util.hnsw.math.ode.FieldODEStateAndDerivative;
 
-/**
- * This class implements a linear interpolator for step.
- *
- * <p>This interpolator computes dense output inside the last
- * step computed. The interpolation equation is consistent with the
- * integration scheme :
- * <ul>
- *   <li>Using reference point at step start:<br>
- *     y(t<sub>n</sub> + &theta; h) = y (t<sub>n</sub>) + &theta; h y'
- *   </li>
- *   <li>Using reference point at step end:<br>
- *     y(t<sub>n</sub> + &theta; h) = y (t<sub>n</sub> + h) - (1-&theta;) h y'
- *   </li>
- * </ul>
- * </p>
- *
- * where &theta; belongs to [0 ; 1] and where y' is the evaluation of
- * the derivatives already computed during the step.</p>
- *
- * @see EulerFieldIntegrator
- * @param <T> the type of the field elements
- * @since 3.6
- */
+
 
 class EulerFieldStepInterpolator<T extends RealFieldElement<T>>
     extends RungeKuttaFieldStepInterpolator<T> {
 
-    /** Simple constructor.
-     * @param field field to which the time and state vector elements belong
-     * @param forward integration direction indicator
-     * @param yDotK slopes at the intermediate points
-     * @param globalPreviousState start of the global step
-     * @param globalCurrentState end of the global step
-     * @param softPreviousState start of the restricted step
-     * @param softCurrentState end of the restricted step
-     * @param mapper equations mapper for the all equations
-     */
+    
     EulerFieldStepInterpolator(final Field<T> field, final boolean forward,
                                              final T[][] yDotK,
                                              final FieldODEStateAndDerivative<T> globalPreviousState,
@@ -71,7 +40,7 @@ class EulerFieldStepInterpolator<T extends RealFieldElement<T>>
               mapper);
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     protected EulerFieldStepInterpolator<T> create(final Field<T> newField, final boolean newForward, final T[][] newYDotK,
                                                                  final FieldODEStateAndDerivative<T> newGlobalPreviousState,
@@ -85,7 +54,7 @@ class EulerFieldStepInterpolator<T extends RealFieldElement<T>>
                                                  newMapper);
     }
 
-    /** {@inheritDoc} */
+    
     @SuppressWarnings("unchecked")
     @Override
     protected FieldODEStateAndDerivative<T> computeInterpolatedStateAndDerivatives(final FieldEquationsMapper<T> mapper,

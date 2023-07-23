@@ -26,34 +26,15 @@ import org.apache.lucene.util.hnsw.math.random.RandomVectorGenerator;
 import org.apache.lucene.util.hnsw.math.optim.BaseMultiStartMultivariateOptimizer;
 import org.apache.lucene.util.hnsw.math.optim.PointValuePair;
 
-/**
- * Multi-start optimizer.
- *
- * This class wraps an optimizer in order to use it several times in
- * turn with different starting points (trying to avoid being trapped
- * in a local extremum when looking for a global one).
- *
- * @since 3.0
- */
+
 public class MultiStartMultivariateOptimizer
     extends BaseMultiStartMultivariateOptimizer<PointValuePair> {
-    /** Underlying optimizer. */
+    
     private final MultivariateOptimizer optimizer;
-    /** Found optima. */
+    
     private final List<PointValuePair> optima = new ArrayList<PointValuePair>();
 
-    /**
-     * Create a multi-start optimizer from a single-start optimizer.
-     *
-     * @param optimizer Single-start optimizer to wrap.
-     * @param starts Number of starts to perform.
-     * If {@code starts == 1}, the result will be same as if {@code optimizer}
-     * is called directly.
-     * @param generator Random vector generator to use for restarts.
-     * @throws NullArgumentException if {@code optimizer} or {@code generator}
-     * is {@code null}.
-     * @throws NotStrictlyPositiveException if {@code starts < 1}.
-     */
+    
     public MultiStartMultivariateOptimizer(final MultivariateOptimizer optimizer,
                                            final int starts,
                                            final RandomVectorGenerator generator)
@@ -63,37 +44,29 @@ public class MultiStartMultivariateOptimizer
         this.optimizer = optimizer;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    
     @Override
     public PointValuePair[] getOptima() {
         Collections.sort(optima, getPairComparator());
         return optima.toArray(new PointValuePair[0]);
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    
     @Override
     protected void store(PointValuePair optimum) {
         optima.add(optimum);
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    
     @Override
     protected void clear() {
         optima.clear();
     }
 
-    /**
-     * @return a comparator for sorting the optima.
-     */
+    
     private Comparator<PointValuePair> getPairComparator() {
         return new Comparator<PointValuePair>() {
-            /** {@inheritDoc} */
+            
             public int compare(final PointValuePair o1,
                                final PointValuePair o2) {
                 if (o1 == null) {

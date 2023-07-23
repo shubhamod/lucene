@@ -26,87 +26,36 @@ import org.apache.lucene.util.hnsw.math.ode.sampling.AbstractStepInterpolator;
 import org.apache.lucene.util.hnsw.math.ode.sampling.StepInterpolator;
 import org.apache.lucene.util.hnsw.math.util.FastMath;
 
-/**
- * This class implements an interpolator for the Gragg-Bulirsch-Stoer
- * integrator.
- *
- * <p>This interpolator compute dense output inside the last step
- * produced by a Gragg-Bulirsch-Stoer integrator.</p>
- *
- * <p>
- * This implementation is basically a reimplementation in Java of the
- * <a
- * href="http://www.unige.ch/math/folks/hairer/prog/nonstiff/odex.f">odex</a>
- * fortran code by E. Hairer and G. Wanner. The redistribution policy
- * for this code is available <a
- * href="http://www.unige.ch/~hairer/prog/licence.txt">here</a>, for
- * convenience, it is reproduced below.</p>
- * </p>
- *
- * <table border="0" width="80%" cellpadding="10" align="center" bgcolor="#E0E0E0">
- * <tr><td>Copyright (c) 2004, Ernst Hairer</td></tr>
- *
- * <tr><td>Redistribution and use in source and binary forms, with or
- * without modification, are permitted provided that the following
- * conditions are met:
- * <ul>
- *  <li>Redistributions of source code must retain the above copyright
- *      notice, this list of conditions and the following disclaimer.</li>
- *  <li>Redistributions in binary form must reproduce the above copyright
- *      notice, this list of conditions and the following disclaimer in the
- *      documentation and/or other materials provided with the distribution.</li>
- * </ul></td></tr>
- *
- * <tr><td><strong>THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
- * CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING,
- * BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A  PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR
- * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
- * PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
- * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
- * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</strong></td></tr>
- * </table>
- *
- * @see GraggBulirschStoerIntegrator
- * @since 1.2
- */
+
 
 class GraggBulirschStoerStepInterpolator
   extends AbstractStepInterpolator {
 
-    /** Serializable version identifier. */
+    
     private static final long serialVersionUID = 20110928L;
 
-    /** Slope at the beginning of the step. */
+    
     private double[] y0Dot;
 
-    /** State at the end of the step. */
+    
     private double[] y1;
 
-    /** Slope at the end of the step. */
+    
     private double[] y1Dot;
 
-    /** Derivatives at the middle of the step.
-     * element 0 is state at midpoint, element 1 is first derivative ...
-     */
+    
     private double[][] yMidDots;
 
-    /** Interpolation polynomials. */
+    
     private double[][] polynomials;
 
-    /** Error coefficients for the interpolation. */
+    
     private double[] errfac;
 
-    /** Degree of the interpolation polynomials. */
+    
     private int currentDegree;
 
-  /** Simple constructor.
-   * This constructor should not be used directly, it is only intended
-   * for the serialization process.
-   */
+  
     // CHECKSTYLE: stop RedundantModifier
     // the public modifier here is needed for serialization
   public GraggBulirschStoerStepInterpolator() {
@@ -118,20 +67,7 @@ class GraggBulirschStoerStepInterpolator
   }
   // CHECKSTYLE: resume RedundantModifier
 
-  /** Simple constructor.
-   * @param y reference to the integrator array holding the current state
-   * @param y0Dot reference to the integrator array holding the slope
-   * at the beginning of the step
-   * @param y1 reference to the integrator array holding the state at
-   * the end of the step
-   * @param y1Dot reference to the integrator array holding the slope
-   * at the end of the step
-   * @param yMidDots reference to the integrator array holding the
-   * derivatives at the middle point of the step
-   * @param forward integration direction indicator
-   * @param primaryMapper equations mapper for the primary equations set
-   * @param secondaryMappers equations mappers for the secondary equations sets
-   */
+  
   GraggBulirschStoerStepInterpolator(final double[] y, final double[] y0Dot,
                                      final double[] y1, final double[] y1Dot,
                                      final double[][] yMidDots,
@@ -149,11 +85,7 @@ class GraggBulirschStoerStepInterpolator
 
   }
 
-  /** Copy constructor.
-   * @param interpolator interpolator to copy from. The copy is a deep
-   * copy: its arrays are separated from the original arrays of the
-   * instance
-   */
+  
   GraggBulirschStoerStepInterpolator(final GraggBulirschStoerStepInterpolator interpolator) {
 
     super(interpolator);
@@ -183,11 +115,7 @@ class GraggBulirschStoerStepInterpolator
 
   }
 
-  /** Reallocate the internal tables.
-   * Reallocate the internal tables in order to be able to handle
-   * interpolation polynomials up to the given degree
-   * @param maxDegree maximal degree to handle
-   */
+  
   private void resetTables(final int maxDegree) {
 
     if (maxDegree < 0) {
@@ -230,17 +158,14 @@ class GraggBulirschStoerStepInterpolator
 
   }
 
-  /** {@inheritDoc} */
+  
   @Override
   protected StepInterpolator doCopy() {
     return new GraggBulirschStoerStepInterpolator(this);
   }
 
 
-  /** Compute the interpolation coefficients for dense output.
-   * @param mu degree of the interpolation polynomial
-   * @param h current step
-   */
+  
   public void computeCoefficients(final int mu, final double h) {
 
     if ((polynomials == null) || (polynomials.length <= (mu + 4))) {
@@ -296,10 +221,7 @@ class GraggBulirschStoerStepInterpolator
 
   }
 
-  /** Estimate interpolation error.
-   * @param scale scaling array
-   * @return estimate of the interpolation error
-   */
+  
   public double estimateError(final double[] scale) {
     double error = 0;
     if (currentDegree >= 5) {
@@ -312,7 +234,7 @@ class GraggBulirschStoerStepInterpolator
     return error;
   }
 
-  /** {@inheritDoc} */
+  
   @Override
   protected void computeInterpolatedStateAndDerivatives(final double theta,
                                                         final double oneMinusThetaH) {
@@ -359,7 +281,7 @@ class GraggBulirschStoerStepInterpolator
 
   }
 
-  /** {@inheritDoc} */
+  
   @Override
   public void writeExternal(final ObjectOutput out)
     throws IOException {
@@ -379,7 +301,7 @@ class GraggBulirschStoerStepInterpolator
 
   }
 
-  /** {@inheritDoc} */
+  
   @Override
   public void readExternal(final ObjectInput in)
     throws IOException, ClassNotFoundException {

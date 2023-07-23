@@ -24,68 +24,35 @@ import org.apache.lucene.util.hnsw.math.exception.MaxCountExceededException;
 import org.apache.lucene.util.hnsw.math.analysis.UnivariateFunction;
 import org.apache.lucene.util.hnsw.math.optim.nonlinear.scalar.GoalType;
 
-/**
- * Provide an interval that brackets a local optimum of a function.
- * This code is based on a Python implementation (from <em>SciPy</em>,
- * module {@code optimize.py} v0.5).
- *
- * @since 2.2
- */
+
 public class BracketFinder {
-    /** Tolerance to avoid division by zero. */
+    
     private static final double EPS_MIN = 1e-21;
-    /**
-     * Golden section.
-     */
+    
     private static final double GOLD = 1.618034;
-    /**
-     * Factor for expanding the interval.
-     */
+    
     private final double growLimit;
-    /**
-     * Counter for function evaluations.
-     */
+    
     private IntegerSequence.Incrementor evaluations;
-    /**
-     * Lower bound of the bracket.
-     */
+    
     private double lo;
-    /**
-     * Higher bound of the bracket.
-     */
+    
     private double hi;
-    /**
-     * Point inside the bracket.
-     */
+    
     private double mid;
-    /**
-     * Function value at {@link #lo}.
-     */
+    
     private double fLo;
-    /**
-     * Function value at {@link #hi}.
-     */
+    
     private double fHi;
-    /**
-     * Function value at {@link #mid}.
-     */
+    
     private double fMid;
 
-    /**
-     * Constructor with default values {@code 100, 500} (see the
-     * {@link #BracketFinder(double,int) other constructor}).
-     */
+    
     public BracketFinder() {
         this(100, 500);
     }
 
-    /**
-     * Create a bracketing interval finder.
-     *
-     * @param growLimit Expanding factor.
-     * @param maxEvaluations Maximum number of evaluations allowed for finding
-     * a bracketing interval.
-     */
+    
     public BracketFinder(double growLimit,
                          int maxEvaluations) {
         if (growLimit <= 0) {
@@ -99,16 +66,7 @@ public class BracketFinder {
         evaluations = IntegerSequence.Incrementor.create().withMaximalCount(maxEvaluations);
     }
 
-    /**
-     * Search new points that bracket a local optimum of the function.
-     *
-     * @param func Function whose optimum should be bracketed.
-     * @param goal {@link GoalType Goal type}.
-     * @param xA Initial point.
-     * @param xB Initial point.
-     * @throws TooManyEvaluationsException if the maximum number of evaluations
-     * is exceeded.
-     */
+    
     public void search(UnivariateFunction func,
                        GoalType goal,
                        double xA,
@@ -210,75 +168,47 @@ public class BracketFinder {
         }
     }
 
-    /**
-     * @return the number of evalutations.
-     */
+    
     public int getMaxEvaluations() {
         return evaluations.getMaximalCount();
     }
 
-    /**
-     * @return the number of evalutations.
-     */
+    
     public int getEvaluations() {
         return evaluations.getCount();
     }
 
-    /**
-     * @return the lower bound of the bracket.
-     * @see #getFLo()
-     */
+    
     public double getLo() {
         return lo;
     }
 
-    /**
-     * Get function value at {@link #getLo()}.
-     * @return function value at {@link #getLo()}
-     */
+    
     public double getFLo() {
         return fLo;
     }
 
-    /**
-     * @return the higher bound of the bracket.
-     * @see #getFHi()
-     */
+    
     public double getHi() {
         return hi;
     }
 
-    /**
-     * Get function value at {@link #getHi()}.
-     * @return function value at {@link #getHi()}
-     */
+    
     public double getFHi() {
         return fHi;
     }
 
-    /**
-     * @return a point in the middle of the bracket.
-     * @see #getFMid()
-     */
+    
     public double getMid() {
         return mid;
     }
 
-    /**
-     * Get function value at {@link #getMid()}.
-     * @return function value at {@link #getMid()}
-     */
+    
     public double getFMid() {
         return fMid;
     }
 
-    /**
-     * @param f Function.
-     * @param x Argument.
-     * @return {@code f(x)}
-     * @throws TooManyEvaluationsException if the maximal number of evaluations is
-     * exceeded.
-     */
+    
     private double eval(UnivariateFunction f, double x) {
         try {
             evaluations.increment();

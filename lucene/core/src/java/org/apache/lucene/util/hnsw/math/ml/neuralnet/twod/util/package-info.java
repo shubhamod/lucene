@@ -15,8 +15,6 @@
  * limitations under the License.
  */
 
-/**
- * Utilities to visualize two-dimensional neural networks.
- */
+
 
 package org.apache.lucene.util.hnsw.math.ml.neuralnet.twod.util;

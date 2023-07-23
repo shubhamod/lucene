@@ -14,11 +14,5 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/**
- *
- * <p>
- * This package provides optimization algorithms that don't require derivatives.
- * </p>
- *
- */
+
 package org.apache.lucene.util.hnsw.math.optimization.direct;

@@ -20,13 +20,9 @@ package org.apache.lucene.util.hnsw.math.analysis.function;
 import org.apache.lucene.util.hnsw.math.analysis.UnivariateFunction;
 import org.apache.lucene.util.hnsw.math.util.FastMath;
 
-/**
- * Absolute value function.
- *
- * @since 3.0
- */
+
 public class Abs implements UnivariateFunction {
-    /** {@inheritDoc} */
+    
     public double value(double x) {
         return FastMath.abs(x);
     }

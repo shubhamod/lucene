@@ -23,28 +23,20 @@ import org.apache.lucene.util.hnsw.math.analysis.DifferentiableUnivariateFunctio
 import org.apache.lucene.util.hnsw.math.analysis.differentiation.DerivativeStructure;
 import org.apache.lucene.util.hnsw.math.analysis.differentiation.UnivariateDifferentiableFunction;
 
-/**
- * Inverse function.
- *
- * @since 3.0
- */
+
 public class Inverse implements UnivariateDifferentiableFunction, DifferentiableUnivariateFunction {
-    /** {@inheritDoc} */
+    
     public double value(double x) {
         return 1 / x;
     }
 
-    /** {@inheritDoc}
-     * @deprecated as of 3.1, replaced by {@link #value(DerivativeStructure)}
-     */
+    
     @Deprecated
     public UnivariateFunction derivative() {
         return FunctionUtils.toDifferentiableUnivariateFunction(this).derivative();
     }
 
-    /** {@inheritDoc}
-     * @since 3.1
-     */
+    
     public DerivativeStructure value(final DerivativeStructure t) {
         return t.reciprocal();
     }

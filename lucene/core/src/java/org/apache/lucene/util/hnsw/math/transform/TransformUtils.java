@@ -23,17 +23,9 @@ import org.apache.lucene.util.hnsw.math.exception.DimensionMismatchException;
 import org.apache.lucene.util.hnsw.math.exception.MathIllegalArgumentException;
 import org.apache.lucene.util.hnsw.math.exception.util.LocalizedFormats;
 
-/**
- * Useful functions for the implementation of various transforms.
- *
- * @since 3.0
- */
+
 public class TransformUtils {
-    /**
-     * Table of the powers of 2 to facilitate binary search lookup.
-     *
-     * @see #exactLog2(int)
-     */
+    
     private static final int[] POWERS_OF_TWO = {
         0x00000001, 0x00000002, 0x00000004, 0x00000008, 0x00000010, 0x00000020,
         0x00000040, 0x00000080, 0x00000100, 0x00000200, 0x00000400, 0x00000800,
@@ -43,19 +35,12 @@ public class TransformUtils {
         0x40000000
     };
 
-    /** Private constructor. */
+    
     private TransformUtils() {
         super();
     }
 
-    /**
-     * Multiply every component in the given real array by the
-     * given real number. The change is made in place.
-     *
-     * @param f the real array to be scaled
-     * @param d the real scaling coefficient
-     * @return a reference to the scaled array
-     */
+    
     public static double[] scaleArray(double[] f, double d) {
 
         for (int i = 0; i < f.length; i++) {
@@ -64,14 +49,7 @@ public class TransformUtils {
         return f;
     }
 
-    /**
-     * Multiply every component in the given complex array by the
-     * given real number. The change is made in place.
-     *
-     * @param f the complex array to be scaled
-     * @param d the real scaling coefficient
-     * @return a reference to the scaled array
-     */
+    
     public static Complex[] scaleArray(Complex[] f, double d) {
 
         for (int i = 0; i < f.length; i++) {
@@ -81,19 +59,7 @@ public class TransformUtils {
     }
 
 
-    /**
-     * Builds a new two dimensional array of {@code double} filled with the real
-     * and imaginary parts of the specified {@link Complex} numbers. In the
-     * returned array {@code dataRI}, the data is laid out as follows
-     * <ul>
-     * <li>{@code dataRI[0][i] = dataC[i].getReal()},</li>
-     * <li>{@code dataRI[1][i] = dataC[i].getImaginary()}.</li>
-     * </ul>
-     *
-     * @param dataC the array of {@link Complex} data to be transformed
-     * @return a two dimensional array filled with the real and imaginary parts
-     *   of the specified complex input
-     */
+    
     public static double[][] createRealImaginaryArray(final Complex[] dataC) {
         final double[][] dataRI = new double[2][dataC.length];
         final double[] dataR = dataRI[0];
@@ -106,20 +72,7 @@ public class TransformUtils {
         return dataRI;
     }
 
-    /**
-     * Builds a new array of {@link Complex} from the specified two dimensional
-     * array of real and imaginary parts. In the returned array {@code dataC},
-     * the data is laid out as follows
-     * <ul>
-     * <li>{@code dataC[i].getReal() = dataRI[0][i]},</li>
-     * <li>{@code dataC[i].getImaginary() = dataRI[1][i]}.</li>
-     * </ul>
-     *
-     * @param dataRI the array of real and imaginary parts to be transformed
-     * @return an array of {@link Complex} with specified real and imaginary parts.
-     * @throws DimensionMismatchException if the number of rows of the specified
-     *   array is not two, or the array is not rectangular
-     */
+    
     public static Complex[] createComplexArray(final double[][] dataRI)
         throws DimensionMismatchException{
 
@@ -141,14 +94,7 @@ public class TransformUtils {
     }
 
 
-    /**
-     * Returns the base-2 logarithm of the specified {@code int}. Throws an
-     * exception if {@code n} is not a power of two.
-     *
-     * @param n the {@code int} whose base-2 logarithm is to be evaluated
-     * @return the base-2 logarithm of {@code n}
-     * @throws MathIllegalArgumentException if {@code n} is not a power of two
-     */
+    
     public static int exactLog2(final int n)
         throws MathIllegalArgumentException {
 

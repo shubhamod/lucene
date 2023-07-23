@@ -21,39 +21,12 @@ import org.apache.lucene.util.hnsw.math.ml.neuralnet.sofm.util.ExponentialDecayF
 import org.apache.lucene.util.hnsw.math.ml.neuralnet.sofm.util.QuasiSigmoidDecayFunction;
 import org.apache.lucene.util.hnsw.math.exception.OutOfRangeException;
 
-/**
- * Factory for creating instances of {@link LearningFactorFunction}.
- *
- * @since 3.3
- */
+
 public class LearningFactorFunctionFactory {
-    /** Class contains only static methods. */
+    
     private LearningFactorFunctionFactory() {}
 
-    /**
-     * Creates an exponential decay {@link LearningFactorFunction function}.
-     * It will compute <code>a e<sup>-x / b</sup></code>,
-     * where {@code x} is the (integer) independent variable and
-     * <ul>
-     *  <li><code>a = initValue</code>
-     *  <li><code>b = -numCall / ln(valueAtNumCall / initValue)</code>
-     * </ul>
-     *
-     * @param initValue Initial value, i.e.
-     * {@link LearningFactorFunction#value(long) value(0)}.
-     * @param valueAtNumCall Value of the function at {@code numCall}.
-     * @param numCall Argument for which the function returns
-     * {@code valueAtNumCall}.
-     * @return the learning factor function.
-     * @throws OutOfRangeException
-     * if {@code initValue <= 0} or {@code initValue > 1}.
-     * @throws org.apache.lucene.util.hnsw.math.exception.NotStrictlyPositiveException
-     * if {@code valueAtNumCall <= 0}.
-     * @throws org.apache.lucene.util.hnsw.math.exception.NumberIsTooLargeException
-     * if {@code valueAtNumCall >= initValue}.
-     * @throws org.apache.lucene.util.hnsw.math.exception.NotStrictlyPositiveException
-     * if {@code numCall <= 0}.
-     */
+    
     public static LearningFactorFunction exponentialDecay(final double initValue,
                                                           final double valueAtNumCall,
                                                           final long numCall) {
@@ -63,38 +36,18 @@ public class LearningFactorFunctionFactory {
         }
 
         return new LearningFactorFunction() {
-            /** DecayFunction. */
+            
             private final ExponentialDecayFunction decay
                 = new ExponentialDecayFunction(initValue, valueAtNumCall, numCall);
 
-            /** {@inheritDoc} */
+            
             public double value(long n) {
                 return decay.value(n);
             }
         };
     }
 
-    /**
-     * Creates an sigmoid-like {@code LearningFactorFunction function}.
-     * The function {@code f} will have the following properties:
-     * <ul>
-     *  <li>{@code f(0) = initValue}</li>
-     *  <li>{@code numCall} is the inflexion point</li>
-     *  <li>{@code slope = f'(numCall)}</li>
-     * </ul>
-     *
-     * @param initValue Initial value, i.e.
-     * {@link LearningFactorFunction#value(long) value(0)}.
-     * @param slope Value of the function derivative at {@code numCall}.
-     * @param numCall Inflexion point.
-     * @return the learning factor function.
-     * @throws OutOfRangeException
-     * if {@code initValue <= 0} or {@code initValue > 1}.
-     * @throws org.apache.lucene.util.hnsw.math.exception.NumberIsTooLargeException
-     * if {@code slope >= 0}.
-     * @throws org.apache.lucene.util.hnsw.math.exception.NotStrictlyPositiveException
-     * if {@code numCall <= 0}.
-     */
+    
     public static LearningFactorFunction quasiSigmoidDecay(final double initValue,
                                                            final double slope,
                                                            final long numCall) {
@@ -104,11 +57,11 @@ public class LearningFactorFunctionFactory {
         }
 
         return new LearningFactorFunction() {
-            /** DecayFunction. */
+            
             private final QuasiSigmoidDecayFunction decay
                 = new QuasiSigmoidDecayFunction(initValue, slope, numCall);
 
-            /** {@inheritDoc} */
+            
             public double value(long n) {
                 return decay.value(n);
             }

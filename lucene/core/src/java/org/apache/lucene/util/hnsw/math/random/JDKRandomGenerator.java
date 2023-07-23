@@ -18,40 +18,28 @@ package org.apache.lucene.util.hnsw.math.random;
 
 import java.util.Random;
 
-/**
- * Extension of <code>java.util.Random</code> to implement
- * {@link RandomGenerator}.
- *
- * @since 1.1
- */
+
 public class JDKRandomGenerator extends Random implements RandomGenerator {
 
-    /** Serializable version identifier. */
+    
     private static final long serialVersionUID = -7745277476784028798L;
 
-    /**
-     * Create a new JDKRandomGenerator with a default seed.
-     */
+    
     public JDKRandomGenerator() {
         super();
     }
 
-    /**
-     * Create a new JDKRandomGenerator with the given seed.
-     *
-     * @param seed initial seed
-     * @since 3.6
-     */
+    
     public JDKRandomGenerator(int seed) {
         setSeed(seed);
     }
 
-    /** {@inheritDoc} */
+    
     public void setSeed(int seed) {
         setSeed((long) seed);
     }
 
-    /** {@inheritDoc} */
+    
     public void setSeed(int[] seed) {
         setSeed(RandomGeneratorFactory.convertToLong(seed));
     }

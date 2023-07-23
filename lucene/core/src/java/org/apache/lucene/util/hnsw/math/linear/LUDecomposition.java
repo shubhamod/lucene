@@ -20,68 +20,31 @@ package org.apache.lucene.util.hnsw.math.linear;
 import org.apache.lucene.util.hnsw.math.exception.DimensionMismatchException;
 import org.apache.lucene.util.hnsw.math.util.FastMath;
 
-/**
- * Calculates the LUP-decomposition of a square matrix.
- * <p>The LUP-decomposition of a matrix A consists of three matrices L, U and
- * P that satisfy: P&times;A = L&times;U. L is lower triangular (with unit
- * diagonal terms), U is upper triangular and P is a permutation matrix. All
- * matrices are m&times;m.</p>
- * <p>As shown by the presence of the P matrix, this decomposition is
- * implemented using partial pivoting.</p>
- * <p>This class is based on the class with similar name from the
- * <a href="http://math.nist.gov/javanumerics/jama/">JAMA</a> library.</p>
- * <ul>
- *   <li>a {@link #getP() getP} method has been added,</li>
- *   <li>the {@code det} method has been renamed as {@link #getDeterminant()
- *   getDeterminant},</li>
- *   <li>the {@code getDoublePivot} method has been removed (but the int based
- *   {@link #getPivot() getPivot} method has been kept),</li>
- *   <li>the {@code solve} and {@code isNonSingular} methods have been replaced
- *   by a {@link #getSolver() getSolver} method and the equivalent methods
- *   provided by the returned {@link DecompositionSolver}.</li>
- * </ul>
- *
- * @see <a href="http://mathworld.wolfram.com/LUDecomposition.html">MathWorld</a>
- * @see <a href="http://en.wikipedia.org/wiki/LU_decomposition">Wikipedia</a>
- * @since 2.0 (changed to concrete class in 3.0)
- */
+
 public class LUDecomposition {
-    /** Default bound to determine effective singularity in LU decomposition. */
+    
     private static final double DEFAULT_TOO_SMALL = 1e-11;
-    /** Entries of LU decomposition. */
+    
     private final double[][] lu;
-    /** Pivot permutation associated with LU decomposition. */
+    
     private final int[] pivot;
-    /** Parity of the permutation associated with the LU decomposition. */
+    
     private boolean even;
-    /** Singularity indicator. */
+    
     private boolean singular;
-    /** Cached value of L. */
+    
     private RealMatrix cachedL;
-    /** Cached value of U. */
+    
     private RealMatrix cachedU;
-    /** Cached value of P. */
+    
     private RealMatrix cachedP;
 
-    /**
-     * Calculates the LU-decomposition of the given matrix.
-     * This constructor uses 1e-11 as default value for the singularity
-     * threshold.
-     *
-     * @param matrix Matrix to decompose.
-     * @throws NonSquareMatrixException if matrix is not square.
-     */
+    
     public LUDecomposition(RealMatrix matrix) {
         this(matrix, DEFAULT_TOO_SMALL);
     }
 
-    /**
-     * Calculates the LU-decomposition of the given matrix.
-     * @param matrix The matrix to decompose.
-     * @param singularityThreshold threshold (based on partial row norm)
-     * under which a matrix is considered singular
-     * @throws NonSquareMatrixException if matrix is not square
-     */
+    
     public LUDecomposition(RealMatrix matrix, double singularityThreshold) {
         if (!matrix.isSquare()) {
             throw new NonSquareMatrixException(matrix.getRowDimension(),
@@ -163,11 +126,7 @@ public class LUDecomposition {
         }
     }
 
-    /**
-     * Returns the matrix L of the decomposition.
-     * <p>L is a lower-triangular matrix</p>
-     * @return the L matrix (or null if decomposed matrix is singular)
-     */
+    
     public RealMatrix getL() {
         if ((cachedL == null) && !singular) {
             final int m = pivot.length;
@@ -183,11 +142,7 @@ public class LUDecomposition {
         return cachedL;
     }
 
-    /**
-     * Returns the matrix U of the decomposition.
-     * <p>U is an upper-triangular matrix</p>
-     * @return the U matrix (or null if decomposed matrix is singular)
-     */
+    
     public RealMatrix getU() {
         if ((cachedU == null) && !singular) {
             final int m = pivot.length;
@@ -202,15 +157,7 @@ public class LUDecomposition {
         return cachedU;
     }
 
-    /**
-     * Returns the P rows permutation matrix.
-     * <p>P is a sparse matrix with exactly one element set to 1.0 in
-     * each row and each column, all other elements being set to 0.0.</p>
-     * <p>The positions of the 1 elements are given by the {@link #getPivot()
-     * pivot permutation vector}.</p>
-     * @return the P rows permutation matrix (or null if decomposed matrix is singular)
-     * @see #getPivot()
-     */
+    
     public RealMatrix getP() {
         if ((cachedP == null) && !singular) {
             final int m = pivot.length;
@@ -222,19 +169,12 @@ public class LUDecomposition {
         return cachedP;
     }
 
-    /**
-     * Returns the pivot permutation vector.
-     * @return the pivot permutation vector
-     * @see #getP()
-     */
+    
     public int[] getPivot() {
         return pivot.clone();
     }
 
-    /**
-     * Return the determinant of the matrix
-     * @return determinant of the matrix
-     */
+    
     public double getDeterminant() {
         if (singular) {
             return 0;
@@ -248,45 +188,36 @@ public class LUDecomposition {
         }
     }
 
-    /**
-     * Get a solver for finding the A &times; X = B solution in exact linear
-     * sense.
-     * @return a solver
-     */
+    
     public DecompositionSolver getSolver() {
         return new Solver(lu, pivot, singular);
     }
 
-    /** Specialized solver. */
+    
     private static class Solver implements DecompositionSolver {
 
-        /** Entries of LU decomposition. */
+        
         private final double[][] lu;
 
-        /** Pivot permutation associated with LU decomposition. */
+        
         private final int[] pivot;
 
-        /** Singularity indicator. */
+        
         private final boolean singular;
 
-        /**
-         * Build a solver from decomposed matrix.
-         * @param lu entries of LU decomposition
-         * @param pivot pivot permutation associated with LU decomposition
-         * @param singular singularity indicator
-         */
+        
         private Solver(final double[][] lu, final int[] pivot, final boolean singular) {
             this.lu       = lu;
             this.pivot    = pivot;
             this.singular = singular;
         }
 
-        /** {@inheritDoc} */
+        
         public boolean isNonSingular() {
             return !singular;
         }
 
-        /** {@inheritDoc} */
+        
         public RealVector solve(RealVector b) {
             final int m = pivot.length;
             if (b.getDimension() != m) {
@@ -323,7 +254,7 @@ public class LUDecomposition {
             return new ArrayRealVector(bp, false);
         }
 
-        /** {@inheritDoc} */
+        
         public RealMatrix solve(RealMatrix b) {
 
             final int m = pivot.length;
@@ -377,12 +308,7 @@ public class LUDecomposition {
             return new Array2DRowRealMatrix(bp, false);
         }
 
-        /**
-         * Get the inverse of the decomposed matrix.
-         *
-         * @return the inverse matrix.
-         * @throws SingularMatrixException if the decomposed matrix is singular.
-         */
+        
         public RealMatrix getInverse() {
             return solve(MatrixUtils.createRealIdentityMatrix(pivot.length));
         }

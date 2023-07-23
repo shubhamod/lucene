@@ -34,45 +34,11 @@ import org.apache.lucene.util.hnsw.math.fitting.leastsquares.LeastSquaresProblem
 import org.apache.lucene.util.hnsw.math.linear.DiagonalMatrix;
 import org.apache.lucene.util.hnsw.math.util.FastMath;
 
-/**
- * Fits points to a {@link
- * Gaussian.Parametric Gaussian}
- * function.
- * <br/>
- * The {@link #withStartPoint(double[]) initial guess values} must be passed
- * in the following order:
- * <ul>
- *  <li>Normalization</li>
- *  <li>Mean</li>
- *  <li>Sigma</li>
- * </ul>
- * The optimal values will be returned in the same order.
- *
- * <p>
- * Usage example:
- * <pre>
- *   WeightedObservedPoints obs = new WeightedObservedPoints();
- *   obs.add(4.0254623,  531026.0);
- *   obs.add(4.03128248, 984167.0);
- *   obs.add(4.03839603, 1887233.0);
- *   obs.add(4.04421621, 2687152.0);
- *   obs.add(4.05132976, 3461228.0);
- *   obs.add(4.05326982, 3580526.0);
- *   obs.add(4.05779662, 3439750.0);
- *   obs.add(4.0636168,  2877648.0);
- *   obs.add(4.06943698, 2175960.0);
- *   obs.add(4.07525716, 1447024.0);
- *   obs.add(4.08237071, 717104.0);
- *   obs.add(4.08366408, 620014.0);
- *   double[] parameters = GaussianCurveFitter.create().fit(obs.toList());
- * </pre>
- *
- * @since 3.3
- */
+
 public class GaussianCurveFitter extends AbstractCurveFitter {
-    /** Parametric function to be fitted. */
+    
     private static final Gaussian.Parametric FUNCTION = new Gaussian.Parametric() {
-            /** {@inheritDoc} */
+            
             @Override
             public double value(double x, double ... p) {
                 double v = Double.POSITIVE_INFINITY;
@@ -84,7 +50,7 @@ public class GaussianCurveFitter extends AbstractCurveFitter {
                 return v;
             }
 
-            /** {@inheritDoc} */
+            
             @Override
             public double[] gradient(double x, double ... p) {
                 double[] v = { Double.POSITIVE_INFINITY,
@@ -98,60 +64,36 @@ public class GaussianCurveFitter extends AbstractCurveFitter {
                 return v;
             }
         };
-    /** Initial guess. */
+    
     private final double[] initialGuess;
-    /** Maximum number of iterations of the optimization algorithm. */
+    
     private final int maxIter;
 
-    /**
-     * Contructor used by the factory methods.
-     *
-     * @param initialGuess Initial guess. If set to {@code null}, the initial guess
-     * will be estimated using the {@link ParameterGuesser}.
-     * @param maxIter Maximum number of iterations of the optimization algorithm.
-     */
+    
     private GaussianCurveFitter(double[] initialGuess,
                                 int maxIter) {
         this.initialGuess = initialGuess;
         this.maxIter = maxIter;
     }
 
-    /**
-     * Creates a default curve fitter.
-     * The initial guess for the parameters will be {@link ParameterGuesser}
-     * computed automatically, and the maximum number of iterations of the
-     * optimization algorithm is set to {@link Integer#MAX_VALUE}.
-     *
-     * @return a curve fitter.
-     *
-     * @see #withStartPoint(double[])
-     * @see #withMaxIterations(int)
-     */
+    
     public static GaussianCurveFitter create() {
         return new GaussianCurveFitter(null, Integer.MAX_VALUE);
     }
 
-    /**
-     * Configure the start point (initial guess).
-     * @param newStart new start point (initial guess)
-     * @return a new instance.
-     */
+    
     public GaussianCurveFitter withStartPoint(double[] newStart) {
         return new GaussianCurveFitter(newStart.clone(),
                                        maxIter);
     }
 
-    /**
-     * Configure the maximum number of iterations.
-     * @param newMaxIter maximum number of iterations
-     * @return a new instance.
-     */
+    
     public GaussianCurveFitter withMaxIterations(int newMaxIter) {
         return new GaussianCurveFitter(initialGuess,
                                        newMaxIter);
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     protected LeastSquaresProblem getProblem(Collection<WeightedObservedPoint> observations) {
 
@@ -188,29 +130,16 @@ public class GaussianCurveFitter extends AbstractCurveFitter {
 
     }
 
-    /**
-     * Guesses the parameters {@code norm}, {@code mean}, and {@code sigma}
-     * of a {@link Gaussian.Parametric}
-     * based on the specified observed points.
-     */
+    
     public static class ParameterGuesser {
-        /** Normalization factor. */
+        
         private final double norm;
-        /** Mean. */
+        
         private final double mean;
-        /** Standard deviation. */
+        
         private final double sigma;
 
-        /**
-         * Constructs instance with the specified observed points.
-         *
-         * @param observations Observed points from which to guess the
-         * parameters of the Gaussian.
-         * @throws NullArgumentException if {@code observations} is
-         * {@code null}.
-         * @throws NumberIsTooSmallException if there are less than 3
-         * observations.
-         */
+        
         public ParameterGuesser(Collection<WeightedObservedPoint> observations) {
             if (observations == null) {
                 throw new NullArgumentException(LocalizedFormats.INPUT_ARRAY);
@@ -227,31 +156,17 @@ public class GaussianCurveFitter extends AbstractCurveFitter {
             sigma = params[2];
         }
 
-        /**
-         * Gets an estimation of the parameters.
-         *
-         * @return the guessed parameters, in the following order:
-         * <ul>
-         *  <li>Normalization factor</li>
-         *  <li>Mean</li>
-         *  <li>Standard deviation</li>
-         * </ul>
-         */
+        
         public double[] guess() {
             return new double[] { norm, mean, sigma };
         }
 
-        /**
-         * Sort the observations.
-         *
-         * @param unsorted Input observations.
-         * @return the input observations, sorted.
-         */
+        
         private List<WeightedObservedPoint> sortObservations(Collection<WeightedObservedPoint> unsorted) {
             final List<WeightedObservedPoint> observations = new ArrayList<WeightedObservedPoint>(unsorted);
 
             final Comparator<WeightedObservedPoint> cmp = new Comparator<WeightedObservedPoint>() {
-                /** {@inheritDoc} */
+                
                 public int compare(WeightedObservedPoint p1,
                                    WeightedObservedPoint p2) {
                     if (p1 == null && p2 == null) {
@@ -292,13 +207,7 @@ public class GaussianCurveFitter extends AbstractCurveFitter {
             return observations;
         }
 
-        /**
-         * Guesses the parameters based on the specified observed points.
-         *
-         * @param points Observed points, sorted.
-         * @return the guessed parameters (normalization factor, mean and
-         * sigma).
-         */
+        
         private double[] basicGuess(WeightedObservedPoint[] points) {
             final int maxYIdx = findMaxY(points);
             final double n = points[maxYIdx].getY();
@@ -319,12 +228,7 @@ public class GaussianCurveFitter extends AbstractCurveFitter {
             return new double[] { n, m, s };
         }
 
-        /**
-         * Finds index of point in specified points with the largest Y.
-         *
-         * @param points Points to search.
-         * @return the index in specified points array.
-         */
+        
         private int findMaxY(WeightedObservedPoint[] points) {
             int maxYIdx = 0;
             for (int i = 1; i < points.length; i++) {
@@ -335,20 +239,7 @@ public class GaussianCurveFitter extends AbstractCurveFitter {
             return maxYIdx;
         }
 
-        /**
-         * Interpolates using the specified points to determine X at the
-         * specified Y.
-         *
-         * @param points Points to use for interpolation.
-         * @param startIdx Index within points from which to start the search for
-         * interpolation bounds points.
-         * @param idxStep Index step for searching interpolation bounds points.
-         * @param y Y value for which X should be determined.
-         * @return the value of X for the specified Y.
-         * @throws ZeroException if {@code idxStep} is 0.
-         * @throws OutOfRangeException if specified {@code y} is not within the
-         * range of the specified {@code points}.
-         */
+        
         private double interpolateXAtY(WeightedObservedPoint[] points,
                                        int startIdx,
                                        int idxStep,
@@ -371,21 +262,7 @@ public class GaussianCurveFitter extends AbstractCurveFitter {
                                 (p2.getY() - p1.getY()));
         }
 
-        /**
-         * Gets the two bounding interpolation points from the specified points
-         * suitable for determining X at the specified Y.
-         *
-         * @param points Points to use for interpolation.
-         * @param startIdx Index within points from which to start search for
-         * interpolation bounds points.
-         * @param idxStep Index step for search for interpolation bounds points.
-         * @param y Y value for which X should be determined.
-         * @return the array containing two points suitable for determining X at
-         * the specified Y.
-         * @throws ZeroException if {@code idxStep} is 0.
-         * @throws OutOfRangeException if specified {@code y} is not within the
-         * range of the specified {@code points}.
-         */
+        
         private WeightedObservedPoint[] getInterpolationPointsForY(WeightedObservedPoint[] points,
                                                                    int startIdx,
                                                                    int idxStep,
@@ -416,16 +293,7 @@ public class GaussianCurveFitter extends AbstractCurveFitter {
                                           Double.POSITIVE_INFINITY);
         }
 
-        /**
-         * Determines whether a value is between two other values.
-         *
-         * @param value Value to test whether it is between {@code boundary1}
-         * and {@code boundary2}.
-         * @param boundary1 One end of the range.
-         * @param boundary2 Other end of the range.
-         * @return {@code true} if {@code value} is between {@code boundary1} and
-         * {@code boundary2} (inclusive), {@code false} otherwise.
-         */
+        
         private boolean isBetween(double value,
                                   double boundary1,
                                   double boundary2) {

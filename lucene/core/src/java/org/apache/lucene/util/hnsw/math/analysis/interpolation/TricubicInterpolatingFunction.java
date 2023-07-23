@@ -23,24 +23,10 @@ import org.apache.lucene.util.hnsw.math.exception.NonMonotonicSequenceException;
 import org.apache.lucene.util.hnsw.math.exception.OutOfRangeException;
 import org.apache.lucene.util.hnsw.math.util.MathArrays;
 
-/**
- * Function that implements the
- * <a href="http://en.wikipedia.org/wiki/Tricubic_interpolation">
- * tricubic spline interpolation</a>, as proposed in
- * <blockquote>
- *  Tricubic interpolation in three dimensions,
- *  F. Lekien and J. Marsden,
- *  <em>Int. J. Numer. Meth. Eng</em> 2005; <b>63</b>:455-471
- * </blockquote>
- *
- * @since 3.4.
- */
+
 public class TricubicInterpolatingFunction
     implements TrivariateFunction {
-    /**
-     * Matrix to compute the spline coefficients from the function values
-     * and function derivatives values
-     */
+    
     private static final double[][] AINV = {
         { 1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 },
         { 0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 },
@@ -108,31 +94,16 @@ public class TricubicInterpolatingFunction
         { 8,-8,-8,8,-8,8,8,-8,4,4,-4,-4,-4,-4,4,4,4,-4,4,-4,-4,4,-4,4,4,-4,-4,4,4,-4,-4,4,2,2,2,2,-2,-2,-2,-2,2,2,-2,-2,2,2,-2,-2,2,-2,2,-2,2,-2,2,-2,1,1,1,1,1,1,1,1 }
     };
 
-    /** Samples x-coordinates */
+    
     private final double[] xval;
-    /** Samples y-coordinates */
+    
     private final double[] yval;
-    /** Samples z-coordinates */
+    
     private final double[] zval;
-    /** Set of cubic splines patching the whole data grid */
+    
     private final TricubicFunction[][][] splines;
 
-    /**
-     * @param x Sample values of the x-coordinate, in increasing order.
-     * @param y Sample values of the y-coordinate, in increasing order.
-     * @param z Sample values of the y-coordinate, in increasing order.
-     * @param f Values of the function on every grid point.
-     * @param dFdX Values of the partial derivative of function with respect to x on every grid point.
-     * @param dFdY Values of the partial derivative of function with respect to y on every grid point.
-     * @param dFdZ Values of the partial derivative of function with respect to z on every grid point.
-     * @param d2FdXdY Values of the cross partial derivative of function on every grid point.
-     * @param d2FdXdZ Values of the cross partial derivative of function on every grid point.
-     * @param d2FdYdZ Values of the cross partial derivative of function on every grid point.
-     * @param d3FdXdYdZ Values of the cross partial derivative of function on every grid point.
-     * @throws NoDataException if any of the arrays has zero length.
-     * @throws DimensionMismatchException if the various arrays do not contain the expected number of elements.
-     * @throws NonMonotonicSequenceException if {@code x}, {@code y} or {@code z} are not strictly increasing.
-     */
+    
     public TricubicInterpolatingFunction(double[] x,
                                          double[] y,
                                          double[] z,
@@ -304,11 +275,7 @@ public class TricubicInterpolatingFunction
         }
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @throws OutOfRangeException if any of the variables is outside its interpolation range.
-     */
+    
     public double value(double x, double y, double z)
         throws OutOfRangeException {
         final int i = searchIndex(x, xval);
@@ -331,14 +298,7 @@ public class TricubicInterpolatingFunction
         return splines[i][j][k].value(xN, yN, zN);
     }
 
-    /**
-     * Indicates whether a point is within the interpolation range.
-     *
-     * @param x First coordinate.
-     * @param y Second coordinate.
-     * @param z Third coordinate.
-     * @return {@code true} if (x, y, z) is a valid point.
-     */
+    
     public boolean isValidPoint(double x, double y, double z) {
         if (x < xval[0] ||
             x > xval[xval.length - 1] ||
@@ -352,12 +312,7 @@ public class TricubicInterpolatingFunction
         }
     }
 
-    /**
-     * @param c Coordinate.
-     * @param val Coordinate samples.
-     * @return the index in {@code val} corresponding to the interval containing {@code c}, or {@code -1}
-     *   if {@code c} is out of the range defined by the end values of {@code val}.
-     */
+    
     private int searchIndex(double c, double[] val) {
         if (c < val[0]) {
             return -1;
@@ -373,54 +328,7 @@ public class TricubicInterpolatingFunction
         return -1;
     }
 
-    /**
-     * Compute the spline coefficients from the list of function values and
-     * function partial derivatives values at the four corners of a grid
-     * element. They must be specified in the following order:
-     * <ul>
-     *  <li>f(0,0,0)</li>
-     *  <li>f(1,0,0)</li>
-     *  <li>f(0,1,0)</li>
-     *  <li>f(1,1,0)</li>
-     *  <li>f(0,0,1)</li>
-     *  <li>f(1,0,1)</li>
-     *  <li>f(0,1,1)</li>
-     *  <li>f(1,1,1)</li>
-     *
-     *  <li>f<sub>x</sub>(0,0,0)</li>
-     *  <li>... <em>(same order as above)</em></li>
-     *  <li>f<sub>x</sub>(1,1,1)</li>
-     *
-     *  <li>f<sub>y</sub>(0,0,0)</li>
-     *  <li>... <em>(same order as above)</em></li>
-     *  <li>f<sub>y</sub>(1,1,1)</li>
-     *
-     *  <li>f<sub>z</sub>(0,0,0)</li>
-     *  <li>... <em>(same order as above)</em></li>
-     *  <li>f<sub>z</sub>(1,1,1)</li>
-     *
-     *  <li>f<sub>xy</sub>(0,0,0)</li>
-     *  <li>... <em>(same order as above)</em></li>
-     *  <li>f<sub>xy</sub>(1,1,1)</li>
-     *
-     *  <li>f<sub>xz</sub>(0,0,0)</li>
-     *  <li>... <em>(same order as above)</em></li>
-     *  <li>f<sub>xz</sub>(1,1,1)</li>
-     *
-     *  <li>f<sub>yz</sub>(0,0,0)</li>
-     *  <li>... <em>(same order as above)</em></li>
-     *  <li>f<sub>yz</sub>(1,1,1)</li>
-     *
-     *  <li>f<sub>xyz</sub>(0,0,0)</li>
-     *  <li>... <em>(same order as above)</em></li>
-     *  <li>f<sub>xyz</sub>(1,1,1)</li>
-     * </ul>
-     * where the subscripts indicate the partial derivative with respect to
-     * the corresponding variable(s).
-     *
-     * @param beta List of function values and function partial derivatives values.
-     * @return the spline coefficients.
-     */
+    
     private double[] computeCoefficients(double[] beta) {
         final int sz = 64;
         final double[] a = new double[sz];
@@ -438,20 +346,15 @@ public class TricubicInterpolatingFunction
     }
 }
 
-/**
- * 3D-spline function.
- *
- */
+
 class TricubicFunction
     implements TrivariateFunction {
-    /** Number of points. */
+    
     private static final short N = 4;
-    /** Coefficients */
+    
     private final double[][][] a = new double[N][N][N];
 
-    /**
-     * @param aV List of spline coefficients.
-     */
+    
     TricubicFunction(double[] aV) {
         for (int i = 0; i < N; i++) {
             for (int j = 0; j < N; j++) {
@@ -462,14 +365,7 @@ class TricubicFunction
         }
     }
 
-    /**
-     * @param x x-coordinate of the interpolation point.
-     * @param y y-coordinate of the interpolation point.
-     * @param z z-coordinate of the interpolation point.
-     * @return the interpolated value.
-     * @throws OutOfRangeException if {@code x}, {@code y} or
-     * {@code z} are not in the interval {@code [0, 1]}.
-     */
+    
     public double value(double x, double y, double z)
         throws OutOfRangeException {
         if (x < 0 || x > 1) {

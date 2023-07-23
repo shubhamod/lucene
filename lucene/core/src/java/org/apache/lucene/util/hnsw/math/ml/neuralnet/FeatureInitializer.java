@@ -17,16 +17,8 @@
 
 package org.apache.lucene.util.hnsw.math.ml.neuralnet;
 
-/**
- * Defines how to assign the first value of a neuron's feature.
- *
- * @since 3.3
- */
+
 public interface FeatureInitializer {
-    /**
-     * Selects the initial value.
-     *
-     * @return the initial value.
-     */
+    
     double value();
 }

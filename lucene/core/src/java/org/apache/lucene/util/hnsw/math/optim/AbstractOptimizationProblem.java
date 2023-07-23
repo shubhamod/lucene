@@ -20,36 +20,23 @@ import org.apache.lucene.util.hnsw.math.exception.TooManyEvaluationsException;
 import org.apache.lucene.util.hnsw.math.exception.TooManyIterationsException;
 import org.apache.lucene.util.hnsw.math.util.Incrementor;
 
-/**
- * Base class for implementing optimization problems. It contains the boiler-plate code
- * for counting the number of evaluations of the objective function and the number of
- * iterations of the algorithm, and storing the convergence checker.
- *
- * @param <PAIR> Type of the point/value pair returned by the optimization algorithm.
- * @since 3.3
- */
+
 public abstract class AbstractOptimizationProblem<PAIR>
         implements OptimizationProblem<PAIR> {
 
-    /** Callback to use for the evaluation counter. */
+    
     private static final MaxEvalCallback MAX_EVAL_CALLBACK = new MaxEvalCallback();
-    /** Callback to use for the iteration counter. */
+    
     private static final MaxIterCallback MAX_ITER_CALLBACK = new MaxIterCallback();
 
-    /** max evaluations */
+    
     private final int maxEvaluations;
-    /** max iterations */
+    
     private final int maxIterations;
-    /** Convergence checker. */
+    
     private final ConvergenceChecker<PAIR> checker;
 
-    /**
-     * Create an {@link AbstractOptimizationProblem} from the given data.
-     *
-     * @param maxEvaluations the number of allowed model function evaluations.
-     * @param maxIterations  the number of allowed iterations.
-     * @param checker        the convergence checker.
-     */
+    
     protected AbstractOptimizationProblem(final int maxEvaluations,
                                           final int maxIterations,
                                           final ConvergenceChecker<PAIR> checker) {
@@ -58,42 +45,34 @@ public abstract class AbstractOptimizationProblem<PAIR>
         this.checker = checker;
     }
 
-    /** {@inheritDoc} */
+    
     public Incrementor getEvaluationCounter() {
         return new Incrementor(this.maxEvaluations, MAX_EVAL_CALLBACK);
     }
 
-    /** {@inheritDoc} */
+    
     public Incrementor getIterationCounter() {
         return new Incrementor(this.maxIterations, MAX_ITER_CALLBACK);
     }
 
-    /** {@inheritDoc} */
+    
     public ConvergenceChecker<PAIR> getConvergenceChecker() {
         return checker;
     }
 
-    /** Defines the action to perform when reaching the maximum number of evaluations. */
+    
     private static class MaxEvalCallback
             implements Incrementor.MaxCountExceededCallback {
-        /**
-         * {@inheritDoc}
-         *
-         * @throws TooManyEvaluationsException
-         */
+        
         public void trigger(int max) {
             throw new TooManyEvaluationsException(max);
         }
     }
 
-    /** Defines the action to perform when reaching the maximum number of evaluations. */
+    
     private static class MaxIterCallback
             implements Incrementor.MaxCountExceededCallback {
-        /**
-         * {@inheritDoc}
-         *
-         * @throws TooManyIterationsException
-         */
+        
         public void trigger(int max) {
             throw new TooManyIterationsException(max);
         }

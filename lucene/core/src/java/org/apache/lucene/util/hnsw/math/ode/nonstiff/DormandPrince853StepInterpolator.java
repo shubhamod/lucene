@@ -26,157 +26,148 @@ import org.apache.lucene.util.hnsw.math.ode.AbstractIntegrator;
 import org.apache.lucene.util.hnsw.math.ode.EquationsMapper;
 import org.apache.lucene.util.hnsw.math.ode.sampling.StepInterpolator;
 
-/**
- * This class represents an interpolator over the last step during an
- * ODE integration for the 8(5,3) Dormand-Prince integrator.
- *
- * @see DormandPrince853Integrator
- *
- * @since 1.2
- */
+
 
 class DormandPrince853StepInterpolator
   extends RungeKuttaStepInterpolator {
 
-    /** Serializable version identifier. */
+    
     private static final long serialVersionUID = 20111120L;
 
-    /** Propagation weights, element 1. */
+    
     private static final double B_01 =         104257.0 / 1920240.0;
 
     // elements 2 to 5 are zero, so they are neither stored nor used
 
-    /** Propagation weights, element 6. */
+    
     private static final double B_06 =        3399327.0 / 763840.0;
 
-    /** Propagation weights, element 7. */
+    
     private static final double B_07 =       66578432.0 / 35198415.0;
 
-    /** Propagation weights, element 8. */
+    
     private static final double B_08 =    -1674902723.0 / 288716400.0;
 
-    /** Propagation weights, element 9. */
+    
     private static final double B_09 = 54980371265625.0 / 176692375811392.0;
 
-    /** Propagation weights, element 10. */
+    
     private static final double B_10 =        -734375.0 / 4826304.0;
 
-    /** Propagation weights, element 11. */
+    
     private static final double B_11 =      171414593.0 / 851261400.0;
 
-    /** Propagation weights, element 12. */
+    
     private static final double B_12 =         137909.0 / 3084480.0;
 
-    /** Time step for stage 14 (interpolation only). */
+    
     private static final double C14    = 1.0 / 10.0;
 
-    /** Internal weights for stage 14, element 1. */
+    
     private static final double K14_01 =       13481885573.0 / 240030000000.0      - B_01;
 
     // elements 2 to 5 are zero, so they are neither stored nor used
 
-    /** Internal weights for stage 14, element 6. */
+    
     private static final double K14_06 =                 0.0                       - B_06;
 
-    /** Internal weights for stage 14, element 7. */
+    
     private static final double K14_07 =      139418837528.0 / 549975234375.0      - B_07;
 
-    /** Internal weights for stage 14, element 8. */
+    
     private static final double K14_08 =   -11108320068443.0 / 45111937500000.0    - B_08;
 
-    /** Internal weights for stage 14, element 9. */
+    
     private static final double K14_09 = -1769651421925959.0 / 14249385146080000.0 - B_09;
 
-    /** Internal weights for stage 14, element 10. */
+    
     private static final double K14_10 =          57799439.0 / 377055000.0         - B_10;
 
-    /** Internal weights for stage 14, element 11. */
+    
     private static final double K14_11 =      793322643029.0 / 96734250000000.0    - B_11;
 
-    /** Internal weights for stage 14, element 12. */
+    
     private static final double K14_12 =        1458939311.0 / 192780000000.0      - B_12;
 
-    /** Internal weights for stage 14, element 13. */
+    
     private static final double K14_13 =             -4149.0 / 500000.0;
 
-    /** Time step for stage 15 (interpolation only). */
+    
     private static final double C15    = 1.0 / 5.0;
 
 
-    /** Internal weights for stage 15, element 1. */
+    
     private static final double K15_01 =     1595561272731.0 / 50120273500000.0    - B_01;
 
     // elements 2 to 5 are zero, so they are neither stored nor used
 
-    /** Internal weights for stage 15, element 6. */
+    
     private static final double K15_06 =      975183916491.0 / 34457688031250.0    - B_06;
 
-    /** Internal weights for stage 15, element 7. */
+    
     private static final double K15_07 =    38492013932672.0 / 718912673015625.0   - B_07;
 
-    /** Internal weights for stage 15, element 8. */
+    
     private static final double K15_08 = -1114881286517557.0 / 20298710767500000.0 - B_08;
 
-    /** Internal weights for stage 15, element 9. */
+    
     private static final double K15_09 =                 0.0                       - B_09;
 
-    /** Internal weights for stage 15, element 10. */
+    
     private static final double K15_10 =                 0.0                       - B_10;
 
-    /** Internal weights for stage 15, element 11. */
+    
     private static final double K15_11 =    -2538710946863.0 / 23431227861250000.0 - B_11;
 
-    /** Internal weights for stage 15, element 12. */
+    
     private static final double K15_12 =        8824659001.0 / 23066716781250.0    - B_12;
 
-    /** Internal weights for stage 15, element 13. */
+    
     private static final double K15_13 =      -11518334563.0 / 33831184612500.0;
 
-    /** Internal weights for stage 15, element 14. */
+    
     private static final double K15_14 =        1912306948.0 / 13532473845.0;
 
-    /** Time step for stage 16 (interpolation only). */
+    
     private static final double C16    = 7.0 / 9.0;
 
 
-    /** Internal weights for stage 16, element 1. */
+    
     private static final double K16_01 =      -13613986967.0 / 31741908048.0       - B_01;
 
     // elements 2 to 5 are zero, so they are neither stored nor used
 
-    /** Internal weights for stage 16, element 6. */
+    
     private static final double K16_06 =       -4755612631.0 / 1012344804.0        - B_06;
 
-    /** Internal weights for stage 16, element 7. */
+    
     private static final double K16_07 =    42939257944576.0 / 5588559685701.0     - B_07;
 
-    /** Internal weights for stage 16, element 8. */
+    
     private static final double K16_08 =    77881972900277.0 / 19140370552944.0    - B_08;
 
-    /** Internal weights for stage 16, element 9. */
+    
     private static final double K16_09 =    22719829234375.0 / 63689648654052.0    - B_09;
 
-    /** Internal weights for stage 16, element 10. */
+    
     private static final double K16_10 =                 0.0                       - B_10;
 
-    /** Internal weights for stage 16, element 11. */
+    
     private static final double K16_11 =                 0.0                       - B_11;
 
-    /** Internal weights for stage 16, element 12. */
+    
     private static final double K16_12 =                 0.0                       - B_12;
 
-    /** Internal weights for stage 16, element 13. */
+    
     private static final double K16_13 =       -1199007803.0 / 857031517296.0;
 
-    /** Internal weights for stage 16, element 14. */
+    
     private static final double K16_14 =      157882067000.0 / 53564469831.0;
 
-    /** Internal weights for stage 16, element 15. */
+    
     private static final double K16_15 =     -290468882375.0 / 31741908048.0;
 
-    /** Interpolation weights.
-     * (beware that only the non-null values are in the table)
-     */
+    
     private static final double[][] D = {
 
       {        -17751989329.0 / 2106076560.0,               4272954039.0 / 7539864640.0,
@@ -209,24 +200,16 @@ class DormandPrince853StepInterpolator
 
     };
 
-    /** Last evaluations. */
+    
     private double[][] yDotKLast;
 
-    /** Vectors for interpolation. */
+    
     private double[][] v;
 
-    /** Initialization indicator for the interpolation vectors. */
+    
     private boolean vectorsInitialized;
 
-  /** Simple constructor.
-   * This constructor builds an instance that is not usable yet, the
-   * {@link #reinitialize} method should be called before using the
-   * instance in order to initialize the internal arrays. This
-   * constructor is used only in order to delay the initialization in
-   * some cases. The {@link EmbeddedRungeKuttaIntegrator} uses the
-   * prototyping design pattern to create the step interpolators by
-   * cloning an uninitialized model and latter initializing the copy.
-   */
+  
   // CHECKSTYLE: stop RedundantModifier
   // the public modifier here is needed for serialization
   public DormandPrince853StepInterpolator() {
@@ -237,11 +220,7 @@ class DormandPrince853StepInterpolator
   }
   // CHECKSTYLE: resume RedundantModifier
 
-  /** Copy constructor.
-   * @param interpolator interpolator to copy from. The copy is a deep
-   * copy: its arrays are separated from the original arrays of the
-   * instance
-   */
+  
   DormandPrince853StepInterpolator(final DormandPrince853StepInterpolator interpolator) {
 
     super(interpolator);
@@ -275,13 +254,13 @@ class DormandPrince853StepInterpolator
 
   }
 
-  /** {@inheritDoc} */
+  
   @Override
   protected StepInterpolator doCopy() {
     return new DormandPrince853StepInterpolator(this);
   }
 
-  /** {@inheritDoc} */
+  
   @Override
   public void reinitialize(final AbstractIntegrator integrator,
                            final double[] y, final double[][] yDotK, final boolean forward,
@@ -306,14 +285,14 @@ class DormandPrince853StepInterpolator
 
   }
 
-  /** {@inheritDoc} */
+  
   @Override
   public void storeTime(final double t) {
     super.storeTime(t);
     vectorsInitialized = false;
   }
 
-  /** {@inheritDoc} */
+  
   @Override
   protected void computeInterpolatedStateAndDerivatives(final double theta,
                                           final double oneMinusThetaH)
@@ -404,7 +383,7 @@ class DormandPrince853StepInterpolator
 
   }
 
-  /** {@inheritDoc} */
+  
   @Override
   protected void doFinalize() throws MaxCountExceededException {
 
@@ -448,7 +427,7 @@ class DormandPrince853StepInterpolator
 
   }
 
-  /** {@inheritDoc} */
+  
   @Override
   public void writeExternal(final ObjectOutput out)
     throws IOException {
@@ -475,7 +454,7 @@ class DormandPrince853StepInterpolator
 
   }
 
-  /** {@inheritDoc} */
+  
   @Override
   public void readExternal(final ObjectInput in)
     throws IOException, ClassNotFoundException {

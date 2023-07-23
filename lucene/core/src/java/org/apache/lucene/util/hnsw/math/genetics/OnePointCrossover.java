@@ -24,56 +24,10 @@ import org.apache.lucene.util.hnsw.math.exception.MathIllegalArgumentException;
 import org.apache.lucene.util.hnsw.math.exception.util.LocalizedFormats;
 
 
-/**
- * One point crossover policy. A random crossover point is selected and the
- * first part from each parent is copied to the corresponding child, and the
- * second parts are copied crosswise.
- *
- * Example:
- * <pre>
- * -C- denotes a crossover point
- *                   -C-                                 -C-
- * p1 = (1 0 1 0 0 1  | 0 1 1)    X    p2 = (0 1 1 0 1 0  | 1 1 1)
- *      \------------/ \-----/              \------------/ \-----/
- *            ||         (*)                       ||        (**)
- *            VV         (**)                      VV        (*)
- *      /------------\ /-----\              /------------\ /-----\
- * c1 = (1 0 1 0 0 1  | 1 1 1)    X    c2 = (0 1 1 0 1 0  | 0 1 1)
- * </pre>
- *
- * This policy works only on {@link AbstractListChromosome}, and therefore it
- * is parameterized by T. Moreover, the chromosomes must have same lengths.
- *
- * @param <T> generic type of the {@link AbstractListChromosome}s for crossover
- * @since 2.0
- *
- */
+
 public class OnePointCrossover<T> implements CrossoverPolicy {
 
-    /**
-     * Performs one point crossover. A random crossover point is selected and the
-     * first part from each parent is copied to the corresponding child, and the
-     * second parts are copied crosswise.
-     *
-     * Example:
-     * <pre>
-     * -C- denotes a crossover point
-     *                   -C-                                 -C-
-     * p1 = (1 0 1 0 0 1  | 0 1 1)    X    p2 = (0 1 1 0 1 0  | 1 1 1)
-     *      \------------/ \-----/              \------------/ \-----/
-     *            ||         (*)                       ||        (**)
-     *            VV         (**)                      VV        (*)
-     *      /------------\ /-----\              /------------\ /-----\
-     * c1 = (1 0 1 0 0 1  | 1 1 1)    X    c2 = (0 1 1 0 1 0  | 0 1 1)
-     * </pre>
-     *
-     * @param first first parent (p1)
-     * @param second second parent (p2)
-     * @return pair of two children (c1,c2)
-     * @throws MathIllegalArgumentException iff one of the chromosomes is
-     *   not an instance of {@link AbstractListChromosome}
-     * @throws DimensionMismatchException if the length of the two chromosomes is different
-     */
+    
     @SuppressWarnings("unchecked") // OK because of instanceof checks
     public ChromosomePair crossover(final Chromosome first, final Chromosome second)
         throws DimensionMismatchException, MathIllegalArgumentException {
@@ -85,14 +39,7 @@ public class OnePointCrossover<T> implements CrossoverPolicy {
     }
 
 
-    /**
-     * Helper for {@link #crossover(Chromosome, Chromosome)}. Performs the actual crossover.
-     *
-     * @param first the first chromosome.
-     * @param second the second chromosome.
-     * @return the pair of new chromosomes that resulted from the crossover.
-     * @throws DimensionMismatchException if the length of the two chromosomes is different
-     */
+    
     private ChromosomePair crossover(final AbstractListChromosome<T> first,
                                      final AbstractListChromosome<T> second) throws DimensionMismatchException {
         final int length = first.getLength();

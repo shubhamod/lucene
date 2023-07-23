@@ -19,32 +19,22 @@ package org.apache.lucene.util.hnsw.math.ode;
 import org.apache.lucene.util.hnsw.math.exception.MathIllegalArgumentException;
 import org.apache.lucene.util.hnsw.math.exception.util.LocalizedFormats;
 
-/**
- * Exception to be thrown when a parameter is unknown.
- *
- * @since 3.1
- */
+
 public class UnknownParameterException extends MathIllegalArgumentException {
 
-    /** Serializable version Id. */
+    
     private static final long serialVersionUID = 20120902L;
 
-    /** Parameter name. */
+    
     private final String name;
 
-    /**
-     * Construct an exception from the unknown parameter.
-     *
-     * @param name parameter name.
-     */
+    
     public UnknownParameterException(final String name) {
         super(LocalizedFormats.UNKNOWN_PARAMETER, name);
         this.name = name;
     }
 
-    /**
-     * @return the name of the unknown parameter.
-     */
+    
     public String getName() {
         return name;
     }

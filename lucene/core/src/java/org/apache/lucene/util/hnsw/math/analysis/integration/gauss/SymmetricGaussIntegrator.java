@@ -21,49 +21,22 @@ import org.apache.lucene.util.hnsw.math.exception.DimensionMismatchException;
 import org.apache.lucene.util.hnsw.math.exception.NonMonotonicSequenceException;
 import org.apache.lucene.util.hnsw.math.util.Pair;
 
-/**
- * This class's implements {@link #integrate(UnivariateFunction) integrate}
- * method assuming that the integral is symmetric about 0.
- * This allows to reduce numerical errors.
- *
- * @since 3.3
- */
+
 public class SymmetricGaussIntegrator extends GaussIntegrator {
-    /**
-     * Creates an integrator from the given {@code points} and {@code weights}.
-     * The integration interval is defined by the first and last value of
-     * {@code points} which must be sorted in increasing order.
-     *
-     * @param points Integration points.
-     * @param weights Weights of the corresponding integration nodes.
-     * @throws NonMonotonicSequenceException if the {@code points} are not
-     * sorted in increasing order.
-     * @throws DimensionMismatchException if points and weights don't have the same length
-     */
+    
     public SymmetricGaussIntegrator(double[] points,
                                     double[] weights)
         throws NonMonotonicSequenceException, DimensionMismatchException {
         super(points, weights);
     }
 
-    /**
-     * Creates an integrator from the given pair of points (first element of
-     * the pair) and weights (second element of the pair.
-     *
-     * @param pointsAndWeights Integration points and corresponding weights.
-     * @throws NonMonotonicSequenceException if the {@code points} are not
-     * sorted in increasing order.
-     *
-     * @see #SymmetricGaussIntegrator(double[], double[])
-     */
+    
     public SymmetricGaussIntegrator(Pair<double[], double[]> pointsAndWeights)
         throws NonMonotonicSequenceException {
         this(pointsAndWeights.getFirst(), pointsAndWeights.getSecond());
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    
     @Override
     public double integrate(UnivariateFunction f) {
         final int ruleLength = getNumberOfPoints();

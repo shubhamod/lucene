@@ -20,84 +20,40 @@ package org.apache.lucene.util.hnsw.math.ode.nonstiff;
 import org.apache.lucene.util.hnsw.math.ode.sampling.StepInterpolator;
 import org.apache.lucene.util.hnsw.math.util.FastMath;
 
-/**
- * This class implements a step interpolator for the Gill fourth
- * order Runge-Kutta integrator.
- *
- * <p>This interpolator allows to compute dense output inside the last
- * step computed. The interpolation equation is consistent with the
- * integration scheme :
- * <ul>
- *   <li>Using reference point at step start:<br>
- *   y(t<sub>n</sub> + &theta; h) = y (t<sub>n</sub>)
- *                    + &theta; (h/6) [ (6 - 9 &theta; + 4 &theta;<sup>2</sup>) y'<sub>1</sub>
- *                                    + (    6 &theta; - 4 &theta;<sup>2</sup>) ((1-1/&radic;2) y'<sub>2</sub> + (1+1/&radic;2)) y'<sub>3</sub>)
- *                                    + (  - 3 &theta; + 4 &theta;<sup>2</sup>) y'<sub>4</sub>
- *                                    ]
- *   </li>
- *   <li>Using reference point at step start:<br>
- *   y(t<sub>n</sub> + &theta; h) = y (t<sub>n</sub> + h)
- *                    - (1 - &theta;) (h/6) [ (1 - 5 &theta; + 4 &theta;<sup>2</sup>) y'<sub>1</sub>
- *                                          + (2 + 2 &theta; - 4 &theta;<sup>2</sup>) ((1-1/&radic;2) y'<sub>2</sub> + (1+1/&radic;2)) y'<sub>3</sub>)
- *                                          + (1 +   &theta; + 4 &theta;<sup>2</sup>) y'<sub>4</sub>
- *                                          ]
- *   </li>
- * </ul>
- * </p>
- * where &theta; belongs to [0 ; 1] and where y'<sub>1</sub> to y'<sub>4</sub>
- * are the four evaluations of the derivatives already computed during
- * the step.</p>
- *
- * @see GillIntegrator
- * @since 1.2
- */
+
 
 class GillStepInterpolator
   extends RungeKuttaStepInterpolator {
 
-    /** First Gill coefficient. */
+    
     private static final double ONE_MINUS_INV_SQRT_2 = 1 - FastMath.sqrt(0.5);
 
-    /** Second Gill coefficient. */
+    
     private static final double ONE_PLUS_INV_SQRT_2 = 1 + FastMath.sqrt(0.5);
 
-    /** Serializable version identifier. */
+    
     private static final long serialVersionUID = 20111120L;
 
-  /** Simple constructor.
-   * This constructor builds an instance that is not usable yet, the
-   * {@link
-   * org.apache.lucene.util.hnsw.math.ode.sampling.AbstractStepInterpolator#reinitialize}
-   * method should be called before using the instance in order to
-   * initialize the internal arrays. This constructor is used only
-   * in order to delay the initialization in some cases. The {@link
-   * RungeKuttaIntegrator} class uses the prototyping design pattern
-   * to create the step interpolators by cloning an uninitialized model
-   * and later initializing the copy.
-   */
+  
   // CHECKSTYLE: stop RedundantModifier
   // the public modifier here is needed for serialization
   public GillStepInterpolator() {
   }
   // CHECKSTYLE: resume RedundantModifier
 
-  /** Copy constructor.
-   * @param interpolator interpolator to copy from. The copy is a deep
-   * copy: its arrays are separated from the original arrays of the
-   * instance
-   */
+  
   GillStepInterpolator(final GillStepInterpolator interpolator) {
     super(interpolator);
   }
 
-  /** {@inheritDoc} */
+  
   @Override
   protected StepInterpolator doCopy() {
     return new GillStepInterpolator(this);
   }
 
 
-  /** {@inheritDoc} */
+  
   @Override
   protected void computeInterpolatedStateAndDerivatives(final double theta,
                                           final double oneMinusThetaH) {

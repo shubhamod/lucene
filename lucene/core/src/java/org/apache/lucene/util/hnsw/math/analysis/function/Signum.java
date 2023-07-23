@@ -20,13 +20,9 @@ package org.apache.lucene.util.hnsw.math.analysis.function;
 import org.apache.lucene.util.hnsw.math.analysis.UnivariateFunction;
 import org.apache.lucene.util.hnsw.math.util.FastMath;
 
-/**
- * {@code signum} function.
- *
- * @since 3.0
- */
+
 public class Signum implements UnivariateFunction {
-    /** {@inheritDoc} */
+    
     public double value(double x) {
         return FastMath.signum(x);
     }

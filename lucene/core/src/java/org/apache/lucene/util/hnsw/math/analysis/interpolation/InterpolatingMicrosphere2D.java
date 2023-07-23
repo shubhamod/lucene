@@ -19,37 +19,12 @@ package org.apache.lucene.util.hnsw.math.analysis.interpolation;
 import org.apache.lucene.util.hnsw.math.util.FastMath;
 import org.apache.lucene.util.hnsw.math.util.MathUtils;
 
-/**
- * Utility class for the {@link MicrosphereProjectionInterpolator} algorithm.
- * For 2D interpolation, this class constructs the microsphere as a series of
- * evenly spaced facets (rather than generating random normals as in the
- * base implementation).
- *
- * @since 3.6
- */
+
 public class InterpolatingMicrosphere2D extends InterpolatingMicrosphere {
-    /** Space dimension. */
+    
     private static final int DIMENSION = 2;
 
-    /**
-     * Create a sphere from vectors regularly sampled around a circle.
-     *
-     * @param size Number of surface elements of the sphere.
-     * @param maxDarkFraction Maximum fraction of the facets that can be dark.
-     * If the fraction of "non-illuminated" facets is larger, no estimation
-     * of the value will be performed, and the {@code background} value will
-     * be returned instead.
-     * @param darkThreshold Value of the illumination below which a facet is
-     * considered dark.
-     * @param background Value returned when the {@code maxDarkFraction}
-     * threshold is exceeded.
-     * @throws org.apache.lucene.util.hnsw.math.exception.NotStrictlyPositiveException
-     * if {@code size <= 0}.
-     * @throws org.apache.lucene.util.hnsw.math.exception.NotPositiveException if
-     * {@code darkThreshold < 0}.
-     * @throws org.apache.lucene.util.hnsw.math.exception.OutOfRangeException if
-     * {@code maxDarkFraction} does not belong to the interval {@code [0, 1]}.
-     */
+    
     public InterpolatingMicrosphere2D(int size,
                                       double maxDarkFraction,
                                       double darkThreshold,
@@ -66,20 +41,12 @@ public class InterpolatingMicrosphere2D extends InterpolatingMicrosphere {
         }
     }
 
-    /**
-     * Copy constructor.
-     *
-     * @param other Instance to copy.
-     */
+    
     protected InterpolatingMicrosphere2D(InterpolatingMicrosphere2D other) {
         super(other);
     }
 
-    /**
-     * Perform a copy.
-     *
-     * @return a copy of this instance.
-     */
+    
     @Override
     public InterpolatingMicrosphere2D copy() {
         return new InterpolatingMicrosphere2D(this);

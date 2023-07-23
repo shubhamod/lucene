@@ -29,83 +29,26 @@ import org.apache.lucene.util.hnsw.math.optim.nonlinear.scalar.MultivariateOptim
 import org.apache.lucene.util.hnsw.math.optim.nonlinear.scalar.LineSearch;
 import org.apache.lucene.util.hnsw.math.optim.univariate.UnivariatePointValuePair;
 
-/**
- * Powell's algorithm.
- * This code is translated and adapted from the Python version of this
- * algorithm (as implemented in module {@code optimize.py} v0.5 of
- * <em>SciPy</em>).
- * <br/>
- * The default stopping criterion is based on the differences of the
- * function value between two successive iterations. It is however possible
- * to define a custom convergence checker that might terminate the algorithm
- * earlier.
- * <br/>
- * Line search is performed by the {@link LineSearch} class.
- * <br/>
- * Constraints are not supported: the call to
- * {@link #optimize(OptimizationData[]) optimize} will throw
- * {@link MathUnsupportedOperationException} if bounds are passed to it.
- * In order to impose simple constraints, the objective function must be
- * wrapped in an adapter like
- * {@link org.apache.lucene.util.hnsw.math.optim.nonlinear.scalar.MultivariateFunctionMappingAdapter
- * MultivariateFunctionMappingAdapter} or
- * {@link org.apache.lucene.util.hnsw.math.optim.nonlinear.scalar.MultivariateFunctionPenaltyAdapter
- * MultivariateFunctionPenaltyAdapter}.
- *
- * @since 2.2
- */
+
 public class PowellOptimizer
     extends MultivariateOptimizer {
-    /**
-     * Minimum relative tolerance.
-     */
+    
     private static final double MIN_RELATIVE_TOLERANCE = 2 * FastMath.ulp(1d);
-    /**
-     * Relative threshold.
-     */
+    
     private final double relativeThreshold;
-    /**
-     * Absolute threshold.
-     */
+    
     private final double absoluteThreshold;
-    /**
-     * Line search.
-     */
+    
     private final LineSearch line;
 
-    /**
-     * This constructor allows to specify a user-defined convergence checker,
-     * in addition to the parameters that control the default convergence
-     * checking procedure.
-     * <br/>
-     * The internal line search tolerances are set to the square-root of their
-     * corresponding value in the multivariate optimizer.
-     *
-     * @param rel Relative threshold.
-     * @param abs Absolute threshold.
-     * @param checker Convergence checker.
-     * @throws NotStrictlyPositiveException if {@code abs <= 0}.
-     * @throws NumberIsTooSmallException if {@code rel < 2 * Math.ulp(1d)}.
-     */
+    
     public PowellOptimizer(double rel,
                            double abs,
                            ConvergenceChecker<PointValuePair> checker) {
         this(rel, abs, FastMath.sqrt(rel), FastMath.sqrt(abs), checker);
     }
 
-    /**
-     * This constructor allows to specify a user-defined convergence checker,
-     * in addition to the parameters that control the default convergence
-     * checking procedure and the line search tolerances.
-     *
-     * @param rel Relative threshold for this optimizer.
-     * @param abs Absolute threshold for this optimizer.
-     * @param lineRel Relative threshold for the internal line search optimizer.
-     * @param lineAbs Absolute threshold for the internal line search optimizer.
-     * @param checker Convergence checker.
-     * @throws NotStrictlyPositiveException if {@code abs <= 0}.
-     * @throws NumberIsTooSmallException if {@code rel < 2 * Math.ulp(1d)}.
-     */
+    
     public PowellOptimizer(double rel,
                            double abs,
                            double lineRel,
@@ -129,32 +72,13 @@ public class PowellOptimizer
                               1d);
     }
 
-    /**
-     * The parameters control the default convergence checking procedure.
-     * <br/>
-     * The internal line search tolerances are set to the square-root of their
-     * corresponding value in the multivariate optimizer.
-     *
-     * @param rel Relative threshold.
-     * @param abs Absolute threshold.
-     * @throws NotStrictlyPositiveException if {@code abs <= 0}.
-     * @throws NumberIsTooSmallException if {@code rel < 2 * Math.ulp(1d)}.
-     */
+    
     public PowellOptimizer(double rel,
                            double abs) {
         this(rel, abs, null);
     }
 
-    /**
-     * Builds an instance with the default convergence checking procedure.
-     *
-     * @param rel Relative threshold.
-     * @param abs Absolute threshold.
-     * @param lineRel Relative threshold for the internal line search optimizer.
-     * @param lineAbs Absolute threshold for the internal line search optimizer.
-     * @throws NotStrictlyPositiveException if {@code abs <= 0}.
-     * @throws NumberIsTooSmallException if {@code rel < 2 * Math.ulp(1d)}.
-     */
+    
     public PowellOptimizer(double rel,
                            double abs,
                            double lineRel,
@@ -162,7 +86,7 @@ public class PowellOptimizer
         this(rel, abs, lineRel, lineAbs, null);
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     protected PointValuePair doOptimize() {
         checkParameters();
@@ -258,16 +182,7 @@ public class PowellOptimizer
         }
     }
 
-    /**
-     * Compute a new point (in the original space) and a new direction
-     * vector, resulting from the line search.
-     *
-     * @param p Point used in the line search.
-     * @param d Direction used in the line search.
-     * @param optimum Optimum found by the line search.
-     * @return a 2-element array containing the new point (at index 0) and
-     * the new direction (at index 1).
-     */
+    
     private double[][] newPointAndDirection(double[] p,
                                             double[] d,
                                             double optimum) {
@@ -286,10 +201,7 @@ public class PowellOptimizer
         return result;
     }
 
-    /**
-     * @throws MathUnsupportedOperationException if bounds were passed to the
-     * {@link #optimize(OptimizationData[]) optimize} method.
-     */
+    
     private void checkParameters() {
         if (getLowerBound() != null ||
             getUpperBound() != null) {

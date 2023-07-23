@@ -25,107 +25,48 @@ import org.apache.lucene.util.hnsw.math.optim.PointValuePair;
 import org.apache.lucene.util.hnsw.math.util.FastMath;
 import org.apache.lucene.util.hnsw.math.util.Precision;
 
-/**
- * Solves a linear problem using the "Two-Phase Simplex" method.
- * <p>
- * The {@link SimplexSolver} supports the following {@link OptimizationData} data provided
- * as arguments to {@link #optimize(OptimizationData...)}:
- * <ul>
- *   <li>objective function: {@link LinearObjectiveFunction} - mandatory</li>
- *   <li>linear constraints {@link LinearConstraintSet} - mandatory</li>
- *   <li>type of optimization: {@link org.apache.lucene.util.hnsw.math.optim.nonlinear.scalar.GoalType GoalType}
- *    - optional, default: {@link org.apache.lucene.util.hnsw.math.optim.nonlinear.scalar.GoalType#MINIMIZE MINIMIZE}</li>
- *   <li>whether to allow negative values as solution: {@link NonNegativeConstraint} - optional, default: true</li>
- *   <li>pivot selection rule: {@link PivotSelectionRule} - optional, default {@link PivotSelectionRule#DANTZIG}</li>
- *   <li>callback for the best solution: {@link SolutionCallback} - optional</li>
- *   <li>maximum number of iterations: {@link org.apache.lucene.util.hnsw.math.optim.MaxIter} - optional, default: {@link Integer#MAX_VALUE}</li>
- * </ul>
- * <p>
- * <b>Note:</b> Depending on the problem definition, the default convergence criteria
- * may be too strict, resulting in {@link NoFeasibleSolutionException} or
- * {@link TooManyIterationsException}. In such a case it is advised to adjust these
- * criteria with more appropriate values, e.g. relaxing the epsilon value.
- * <p>
- * Default convergence criteria:
- * <ul>
- *   <li>Algorithm convergence: 1e-6</li>
- *   <li>Floating-point comparisons: 10 ulp</li>
- *   <li>Cut-Off value: 1e-10</li>
-  * </ul>
- * <p>
- * The cut-off value has been introduced to handle the case of very small pivot elements
- * in the Simplex tableau, as these may lead to numerical instabilities and degeneracy.
- * Potential pivot elements smaller than this value will be treated as if they were zero
- * and are thus not considered by the pivot selection mechanism. The default value is safe
- * for many problems, but may need to be adjusted in case of very small coefficients
- * used in either the {@link LinearConstraint} or {@link LinearObjectiveFunction}.
- *
- * @since 2.0
- */
+
 public class SimplexSolver extends LinearOptimizer {
-    /** Default amount of error to accept in floating point comparisons (as ulps). */
+    
     static final int DEFAULT_ULPS = 10;
 
-    /** Default cut-off value. */
+    
     static final double DEFAULT_CUT_OFF = 1e-10;
 
-    /** Default amount of error to accept for algorithm convergence. */
+    
     private static final double DEFAULT_EPSILON = 1.0e-6;
 
-    /** Amount of error to accept for algorithm convergence. */
+    
     private final double epsilon;
 
-    /** Amount of error to accept in floating point comparisons (as ulps). */
+    
     private final int maxUlps;
 
-    /**
-     * Cut-off value for entries in the tableau: values smaller than the cut-off
-     * are treated as zero to improve numerical stability.
-     */
+    
     private final double cutOff;
 
-    /** The pivot selection method to use. */
+    
     private PivotSelectionRule pivotSelection;
 
-    /**
-     * The solution callback to access the best solution found so far in case
-     * the optimizer fails to find an optimal solution within the iteration limits.
-     */
+    
     private SolutionCallback solutionCallback;
 
-    /**
-     * Builds a simplex solver with default settings.
-     */
+    
     public SimplexSolver() {
         this(DEFAULT_EPSILON, DEFAULT_ULPS, DEFAULT_CUT_OFF);
     }
 
-    /**
-     * Builds a simplex solver with a specified accepted amount of error.
-     *
-     * @param epsilon Amount of error to accept for algorithm convergence.
-     */
+    
     public SimplexSolver(final double epsilon) {
         this(epsilon, DEFAULT_ULPS, DEFAULT_CUT_OFF);
     }
 
-    /**
-     * Builds a simplex solver with a specified accepted amount of error.
-     *
-     * @param epsilon Amount of error to accept for algorithm convergence.
-     * @param maxUlps Amount of error to accept in floating point comparisons.
-     */
+    
     public SimplexSolver(final double epsilon, final int maxUlps) {
         this(epsilon, maxUlps, DEFAULT_CUT_OFF);
     }
 
-    /**
-     * Builds a simplex solver with a specified accepted amount of error.
-     *
-     * @param epsilon Amount of error to accept for algorithm convergence.
-     * @param maxUlps Amount of error to accept in floating point comparisons.
-     * @param cutOff Values smaller than the cutOff are treated as zero.
-     */
+    
     public SimplexSolver(final double epsilon, final int maxUlps, final double cutOff) {
         this.epsilon = epsilon;
         this.maxUlps = maxUlps;
@@ -133,20 +74,7 @@ public class SimplexSolver extends LinearOptimizer {
         this.pivotSelection = PivotSelectionRule.DANTZIG;
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @param optData Optimization data. In addition to those documented in
-     * {@link LinearOptimizer#optimize(OptimizationData...)
-     * LinearOptimizer}, this method will register the following data:
-     * <ul>
-     *  <li>{@link SolutionCallback}</li>
-     *  <li>{@link PivotSelectionRule}</li>
-     * </ul>
-     *
-     * @return {@inheritDoc}
-     * @throws TooManyIterationsException if the maximal number of iterations is exceeded.
-     */
+    
     @Override
     public PointValuePair optimize(OptimizationData... optData)
         throws TooManyIterationsException {
@@ -154,18 +82,7 @@ public class SimplexSolver extends LinearOptimizer {
         return super.optimize(optData);
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @param optData Optimization data.
-     * In addition to those documented in
-     * {@link LinearOptimizer#parseOptimizationData(OptimizationData[])
-     * LinearOptimizer}, this method will register the following data:
-     * <ul>
-     *  <li>{@link SolutionCallback}</li>
-     *  <li>{@link PivotSelectionRule}</li>
-     * </ul>
-     */
+    
     @Override
     protected void parseOptimizationData(OptimizationData... optData) {
         // Allow base class to register its own data.
@@ -186,12 +103,7 @@ public class SimplexSolver extends LinearOptimizer {
         }
     }
 
-    /**
-     * Returns the column with the most negative coefficient in the objective function row.
-     *
-     * @param tableau Simple tableau for the problem.
-     * @return the column with the most negative coefficient.
-     */
+    
     private Integer getPivotColumn(SimplexTableau tableau) {
         double minValue = 0;
         Integer minPos = null;
@@ -212,18 +124,7 @@ public class SimplexSolver extends LinearOptimizer {
         return minPos;
     }
 
-    /**
-     * Checks whether the given column is valid pivot column, i.e. will result
-     * in a valid pivot row.
-     * <p>
-     * When applying Bland's rule to select the pivot column, it may happen that
-     * there is no corresponding pivot row. This method will check if the selected
-     * pivot column will return a valid pivot row.
-     *
-     * @param tableau simplex tableau for the problem
-     * @param col the column to test
-     * @return {@code true} if the pivot column is valid, {@code false} otherwise
-     */
+    
     private boolean isValidPivotColumn(SimplexTableau tableau, int col) {
         for (int i = tableau.getNumObjectiveFunctions(); i < tableau.getHeight(); i++) {
             final double entry = tableau.getEntry(i, col);
@@ -236,13 +137,7 @@ public class SimplexSolver extends LinearOptimizer {
         return false;
     }
 
-    /**
-     * Returns the row with the minimum ratio as given by the minimum ratio test (MRT).
-     *
-     * @param tableau Simplex tableau for the problem.
-     * @param col Column to test the ratio of (see {@link #getPivotColumn(SimplexTableau)}).
-     * @return the row with the minimum ratio.
-     */
+    
     private Integer getPivotRow(SimplexTableau tableau, final int col) {
         // create a list of all the rows that tie for the lowest score in the minimum ratio test
         List<Integer> minRatioPositions = new ArrayList<Integer>();
@@ -306,13 +201,7 @@ public class SimplexSolver extends LinearOptimizer {
         return minRatioPositions.get(0);
     }
 
-    /**
-     * Runs one iteration of the Simplex method on the given model.
-     *
-     * @param tableau Simple tableau for the problem.
-     * @throws TooManyIterationsException if the allowed number of iterations has been exhausted.
-     * @throws UnboundedSolutionException if the model is found not to have a bounded solution.
-     */
+    
     protected void doIteration(final SimplexTableau tableau)
         throws TooManyIterationsException,
                UnboundedSolutionException {
@@ -328,14 +217,7 @@ public class SimplexSolver extends LinearOptimizer {
         tableau.performRowOperations(pivotCol, pivotRow);
     }
 
-    /**
-     * Solves Phase 1 of the Simplex method.
-     *
-     * @param tableau Simple tableau for the problem.
-     * @throws TooManyIterationsException if the allowed number of iterations has been exhausted.
-     * @throws UnboundedSolutionException if the model is found not to have a bounded solution.
-     * @throws NoFeasibleSolutionException if there is no feasible solution?
-     */
+    
     protected void solvePhase1(final SimplexTableau tableau)
         throws TooManyIterationsException,
                UnboundedSolutionException,
@@ -356,7 +238,7 @@ public class SimplexSolver extends LinearOptimizer {
         }
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     public PointValuePair doOptimize()
         throws TooManyIterationsException,

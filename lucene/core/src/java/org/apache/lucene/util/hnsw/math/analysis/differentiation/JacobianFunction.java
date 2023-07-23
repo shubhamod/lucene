@@ -18,28 +18,18 @@ package org.apache.lucene.util.hnsw.math.analysis.differentiation;
 
 import org.apache.lucene.util.hnsw.math.analysis.MultivariateMatrixFunction;
 
-/** Class representing the Jacobian of a multivariate vector function.
- * <p>
- * The rows iterate on the model functions while the columns iterate on the parameters; thus,
- * the numbers of rows is equal to the dimension of the underlying function vector
- * value and the number of columns is equal to the number of free parameters of
- * the underlying function.
- * </p>
- * @since 3.1
- */
+
 public class JacobianFunction implements MultivariateMatrixFunction {
 
-    /** Underlying vector-valued function. */
+    
     private final MultivariateDifferentiableVectorFunction f;
 
-    /** Simple constructor.
-     * @param f underlying vector-valued function
-     */
+    
     public JacobianFunction(final MultivariateDifferentiableVectorFunction f) {
         this.f = f;
     }
 
-    /** {@inheritDoc} */
+    
     public double[][] value(double[] point) {
 
         // set up parameters

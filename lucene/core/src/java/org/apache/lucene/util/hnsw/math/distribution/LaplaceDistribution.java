@@ -23,49 +23,23 @@ import org.apache.lucene.util.hnsw.math.random.RandomGenerator;
 import org.apache.lucene.util.hnsw.math.random.Well19937c;
 import org.apache.lucene.util.hnsw.math.util.FastMath;
 
-/**
- * This class implements the Laplace distribution.
- *
- * @see <a href="http://en.wikipedia.org/wiki/Laplace_distribution">Laplace distribution (Wikipedia)</a>
- *
- * @since 3.4
- */
+
 public class LaplaceDistribution extends AbstractRealDistribution {
 
-    /** Serializable version identifier. */
+    
     private static final long serialVersionUID = 20141003;
 
-    /** The location parameter. */
+    
     private final double mu;
-    /** The scale parameter. */
+    
     private final double beta;
 
-    /**
-     * Build a new instance.
-     * <p>
-     * <b>Note:</b> this constructor will implicitly create an instance of
-     * {@link Well19937c} as random generator to be used for sampling only (see
-     * {@link #sample()} and {@link #sample(int)}). In case no sampling is
-     * needed for the created distribution, it is advised to pass {@code null}
-     * as random generator via the appropriate constructors to avoid the
-     * additional initialisation overhead.
-     *
-     * @param mu location parameter
-     * @param beta scale parameter (must be positive)
-     * @throws NotStrictlyPositiveException if {@code beta <= 0}
-     */
+    
     public LaplaceDistribution(double mu, double beta) {
         this(new Well19937c(), mu, beta);
     }
 
-    /**
-     * Build a new instance.
-     *
-     * @param rng Random number generator
-     * @param mu location parameter
-     * @param beta scale parameter (must be positive)
-     * @throws NotStrictlyPositiveException if {@code beta <= 0}
-     */
+    
     public LaplaceDistribution(RandomGenerator rng, double mu, double beta) {
         super(rng);
 
@@ -77,30 +51,22 @@ public class LaplaceDistribution extends AbstractRealDistribution {
         this.beta = beta;
     }
 
-    /**
-     * Access the location parameter, {@code mu}.
-     *
-     * @return the location parameter.
-     */
+    
     public double getLocation() {
         return mu;
     }
 
-    /**
-     * Access the scale parameter, {@code beta}.
-     *
-     * @return the scale parameter.
-     */
+    
     public double getScale() {
         return beta;
     }
 
-    /** {@inheritDoc} */
+    
     public double density(double x) {
         return FastMath.exp(-FastMath.abs(x - mu) / beta) / (2.0 * beta);
     }
 
-    /** {@inheritDoc} */
+    
     public double cumulativeProbability(double x) {
         if (x <= mu) {
             return FastMath.exp((x - mu) / beta) / 2.0;
@@ -109,7 +75,7 @@ public class LaplaceDistribution extends AbstractRealDistribution {
         }
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     public double inverseCumulativeProbability(double p) throws OutOfRangeException {
         if (p < 0.0 || p > 1.0) {
@@ -123,37 +89,37 @@ public class LaplaceDistribution extends AbstractRealDistribution {
         return mu + beta * x;
     }
 
-    /** {@inheritDoc} */
+    
     public double getNumericalMean() {
         return mu;
     }
 
-    /** {@inheritDoc} */
+    
     public double getNumericalVariance() {
         return 2.0 * beta * beta;
     }
 
-    /** {@inheritDoc} */
+    
     public double getSupportLowerBound() {
         return Double.NEGATIVE_INFINITY;
     }
 
-    /** {@inheritDoc} */
+    
     public double getSupportUpperBound() {
         return Double.POSITIVE_INFINITY;
     }
 
-    /** {@inheritDoc} */
+    
     public boolean isSupportLowerBoundInclusive() {
         return false;
     }
 
-    /** {@inheritDoc} */
+    
     public boolean isSupportUpperBoundInclusive() {
         return false;
     }
 
-    /** {@inheritDoc} */
+    
     public boolean isSupportConnected() {
         return true;
     }

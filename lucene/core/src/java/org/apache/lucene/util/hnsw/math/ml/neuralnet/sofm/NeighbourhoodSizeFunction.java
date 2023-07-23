@@ -17,21 +17,8 @@
 
 package org.apache.lucene.util.hnsw.math.ml.neuralnet.sofm;
 
-/**
- * Provides the network neighbourhood's size as a function of the
- * number of calls already performed during the learning task.
- * The "neighbourhood" is the set of neurons that can be reached
- * by traversing at most the number of links returned by this
- * function.
- *
- * @since 3.3
- */
+
 public interface NeighbourhoodSizeFunction {
-    /**
-     * Computes the neighbourhood size at the current call.
-     *
-     * @param numCall Current step of the training task.
-     * @return the value of the function at {@code numCall}.
-     */
+    
     int value(long numCall);
 }

@@ -23,45 +23,17 @@ import org.apache.lucene.util.hnsw.math.ode.FieldEquationsMapper;
 import org.apache.lucene.util.hnsw.math.ode.FieldODEStateAndDerivative;
 import org.apache.lucene.util.hnsw.math.util.MathArrays;
 
-/**
- * This class implements the classical fourth order Runge-Kutta
- * integrator for Ordinary Differential Equations (it is the most
- * often used Runge-Kutta method).
- *
- * <p>This method is an explicit Runge-Kutta method, its Butcher-array
- * is the following one :
- * <pre>
- *    0  |  0    0    0    0
- *   1/2 | 1/2   0    0    0
- *   1/2 |  0   1/2   0    0
- *    1  |  0    0    1    0
- *       |--------------------
- *       | 1/6  1/3  1/3  1/6
- * </pre>
- * </p>
- *
- * @see EulerFieldIntegrator
- * @see GillFieldIntegrator
- * @see MidpointFieldIntegrator
- * @see ThreeEighthesFieldIntegrator
- * @see LutherFieldIntegrator
- * @param <T> the type of the field elements
- * @since 3.6
- */
+
 
 public class ClassicalRungeKuttaFieldIntegrator<T extends RealFieldElement<T>>
     extends RungeKuttaFieldIntegrator<T> {
 
-    /** Simple constructor.
-     * Build a fourth-order Runge-Kutta integrator with the given step.
-     * @param field field to which the time and state vector elements belong
-     * @param step integration step
-     */
+    
     public ClassicalRungeKuttaFieldIntegrator(final Field<T> field, final T step) {
         super(field, "classical Runge-Kutta", step);
     }
 
-    /** {@inheritDoc} */
+    
     public T[] getC() {
         final T[] c = MathArrays.buildArray(getField(), 3);
         c[0] = getField().getOne().multiply(0.5);
@@ -70,7 +42,7 @@ public class ClassicalRungeKuttaFieldIntegrator<T extends RealFieldElement<T>>
         return c;
     }
 
-    /** {@inheritDoc} */
+    
     public T[][] getA() {
         final T[][] a = MathArrays.buildArray(getField(), 3, -1);
         for (int i = 0; i < a.length; ++i) {
@@ -85,7 +57,7 @@ public class ClassicalRungeKuttaFieldIntegrator<T extends RealFieldElement<T>>
         return a;
     }
 
-    /** {@inheritDoc} */
+    
     public T[] getB() {
         final T[] b = MathArrays.buildArray(getField(), 4);
         b[0] = fraction(1, 6);
@@ -95,7 +67,7 @@ public class ClassicalRungeKuttaFieldIntegrator<T extends RealFieldElement<T>>
         return b;
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     protected ClassicalRungeKuttaFieldStepInterpolator<T>
         createInterpolator(final boolean forward, T[][] yDotK,

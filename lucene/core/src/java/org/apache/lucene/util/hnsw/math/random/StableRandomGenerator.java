@@ -21,39 +21,21 @@ import org.apache.lucene.util.hnsw.math.exception.OutOfRangeException;
 import org.apache.lucene.util.hnsw.math.exception.util.LocalizedFormats;
 import org.apache.lucene.util.hnsw.math.util.FastMath;
 
-/**
- * <p>This class provides a stable normalized random generator. It samples from a stable
- * distribution with location parameter 0 and scale 1.</p>
- *
- * <p>The implementation uses the Chambers-Mallows-Stuck method as described in
- * <i>Handbook of computational statistics: concepts and methods</i> by
- * James E. Gentle, Wolfgang H&auml;rdle, Yuichi Mori.</p>
- *
- * @since 3.0
- */
+
 public class StableRandomGenerator implements NormalizedRandomGenerator {
-    /** Underlying generator. */
+    
     private final RandomGenerator generator;
 
-    /** stability parameter */
+    
     private final double alpha;
 
-    /** skewness parameter */
+    
     private final double beta;
 
-    /** cache of expression value used in generation */
+    
     private final double zeta;
 
-    /**
-     * Create a new generator.
-     *
-     * @param generator underlying random generator to use
-     * @param alpha Stability parameter. Must be in range (0, 2]
-     * @param beta Skewness parameter. Must be in range [-1, 1]
-     * @throws NullArgumentException if generator is null
-     * @throws OutOfRangeException if {@code alpha <= 0} or {@code alpha > 2}
-     * or {@code beta < -1} or {@code beta > 1}
-     */
+    
     public StableRandomGenerator(final RandomGenerator generator,
                                  final double alpha, final double beta)
         throws NullArgumentException, OutOfRangeException {
@@ -81,11 +63,7 @@ public class StableRandomGenerator implements NormalizedRandomGenerator {
         }
     }
 
-    /**
-     * Generate a random scalar with zero location and unit scale.
-     *
-     * @return a random scalar with zero location and unit scale
-     */
+    
     public double nextNormalizedDouble() {
         // we need 2 uniform random numbers to calculate omega and phi
         double omega = -FastMath.log(generator.nextDouble());

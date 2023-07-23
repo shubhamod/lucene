@@ -21,28 +21,20 @@ import org.apache.lucene.util.hnsw.math.analysis.DifferentiableUnivariateFunctio
 import org.apache.lucene.util.hnsw.math.analysis.differentiation.DerivativeStructure;
 import org.apache.lucene.util.hnsw.math.analysis.differentiation.UnivariateDifferentiableFunction;
 
-/**
- * Minus function.
- *
- * @since 3.0
- */
+
 public class Minus implements UnivariateDifferentiableFunction, DifferentiableUnivariateFunction {
-    /** {@inheritDoc} */
+    
     public double value(double x) {
         return -x;
     }
 
-    /** {@inheritDoc}
-     * @deprecated as of 3.1, replaced by {@link #value(DerivativeStructure)}
-     */
+    
     @Deprecated
     public DifferentiableUnivariateFunction derivative() {
         return new Constant(-1);
     }
 
-    /** {@inheritDoc}
-     * @since 3.1
-     */
+    
     public DerivativeStructure value(final DerivativeStructure t) {
         return t.negate();
     }

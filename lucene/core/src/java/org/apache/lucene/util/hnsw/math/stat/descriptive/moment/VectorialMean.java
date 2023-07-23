@@ -21,21 +21,16 @@ import java.util.Arrays;
 
 import org.apache.lucene.util.hnsw.math.exception.DimensionMismatchException;
 
-/**
- * Returns the arithmetic mean of the available vectors.
- * @since 1.2
- */
+
 public class VectorialMean implements Serializable {
 
-    /** Serializable version identifier */
+    
     private static final long serialVersionUID = 8223009086481006892L;
 
-    /** Means for each component. */
+    
     private final Mean[] means;
 
-    /** Constructs a VectorialMean.
-     * @param dimension vectors dimension
-     */
+    
     public VectorialMean(int dimension) {
         means = new Mean[dimension];
         for (int i = 0; i < dimension; ++i) {
@@ -43,11 +38,7 @@ public class VectorialMean implements Serializable {
         }
     }
 
-    /**
-     * Add a new vector to the sample.
-     * @param v vector to add
-     * @throws DimensionMismatchException if the vector does not have the right dimension
-     */
+    
     public void increment(double[] v) throws DimensionMismatchException {
         if (v.length != means.length) {
             throw new DimensionMismatchException(v.length, means.length);
@@ -57,10 +48,7 @@ public class VectorialMean implements Serializable {
         }
     }
 
-    /**
-     * Get the mean vector.
-     * @return mean vector
-     */
+    
     public double[] getResult() {
         double[] result = new double[means.length];
         for (int i = 0; i < result.length; ++i) {
@@ -69,15 +57,12 @@ public class VectorialMean implements Serializable {
         return result;
     }
 
-    /**
-     * Get the number of vectors in the sample.
-     * @return number of vectors in the sample
-     */
+    
     public long getN() {
         return (means.length == 0) ? 0 : means[0].getN();
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     public int hashCode() {
         final int prime = 31;
@@ -86,7 +71,7 @@ public class VectorialMean implements Serializable {
         return result;
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     public boolean equals(Object obj) {
         if (this == obj) {

@@ -17,19 +17,9 @@
 
 package org.apache.lucene.util.hnsw.math.analysis;
 
-/**
- * An interface representing a bivariate real function.
- *
- * @since 2.1
- */
+
 public interface BivariateFunction {
-    /**
-     * Compute the value for the function.
-     *
-     * @param x Abscissa for which the function value should be computed.
-     * @param y Ordinate for which the function value should be computed.
-     * @return the value.
-     */
+    
     double value(double x, double y);
 
 }

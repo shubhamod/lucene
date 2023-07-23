@@ -15,8 +15,6 @@
  * limitations under the License.
  */
 
-/**
- * Neural networks.
- */
+
 
 package org.apache.lucene.util.hnsw.math.ml.neuralnet;

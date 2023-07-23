@@ -25,111 +25,68 @@ import org.apache.lucene.util.hnsw.math.util.MathArrays;
 import org.apache.lucene.util.hnsw.math.util.MathUtils;
 
 
-/**
- * This class implements the 8(5,3) Dormand-Prince integrator for Ordinary
- * Differential Equations.
- *
- * <p>This integrator is an embedded Runge-Kutta integrator
- * of order 8(5,3) used in local extrapolation mode (i.e. the solution
- * is computed using the high order formula) with stepsize control
- * (and automatic step initialization) and continuous output. This
- * method uses 12 functions evaluations per step for integration and 4
- * evaluations for interpolation. However, since the first
- * interpolation evaluation is the same as the first integration
- * evaluation of the next step, we have included it in the integrator
- * rather than in the interpolator and specified the method was an
- * <i>fsal</i>. Hence, despite we have 13 stages here, the cost is
- * really 12 evaluations per step even if no interpolation is done,
- * and the overcost of interpolation is only 3 evaluations.</p>
- *
- * <p>This method is based on an 8(6) method by Dormand and Prince
- * (i.e. order 8 for the integration and order 6 for error estimation)
- * modified by Hairer and Wanner to use a 5th order error estimator
- * with 3rd order correction. This modification was introduced because
- * the original method failed in some cases (wrong steps can be
- * accepted when step size is too large, for example in the
- * Brusselator problem) and also had <i>severe difficulties when
- * applied to problems with discontinuities</i>. This modification is
- * explained in the second edition of the first volume (Nonstiff
- * Problems) of the reference book by Hairer, Norsett and Wanner:
- * <i>Solving Ordinary Differential Equations</i> (Springer-Verlag,
- * ISBN 3-540-56670-8).</p>
- *
- * @param <T> the type of the field elements
- * @since 3.6
- */
+
 
 public class DormandPrince853FieldIntegrator<T extends RealFieldElement<T>>
     extends EmbeddedRungeKuttaFieldIntegrator<T> {
 
-    /** Integrator method name. */
+    
     private static final String METHOD_NAME = "Dormand-Prince 8 (5, 3)";
 
-    /** First error weights array, element 1. */
+    
     private final T e1_01;
 
     // elements 2 to 5 are zero, so they are neither stored nor used
 
-    /** First error weights array, element 6. */
+    
     private final T e1_06;
 
-    /** First error weights array, element 7. */
+    
     private final T e1_07;
 
-    /** First error weights array, element 8. */
+    
     private final T e1_08;
 
-    /** First error weights array, element 9. */
+    
     private final T e1_09;
 
-    /** First error weights array, element 10. */
+    
     private final T e1_10;
 
-    /** First error weights array, element 11. */
+    
     private final T e1_11;
 
-    /** First error weights array, element 12. */
+    
     private final T e1_12;
 
 
-    /** Second error weights array, element 1. */
+    
     private final T e2_01;
 
     // elements 2 to 5 are zero, so they are neither stored nor used
 
-    /** Second error weights array, element 6. */
+    
     private final T e2_06;
 
-    /** Second error weights array, element 7. */
+    
     private final T e2_07;
 
-    /** Second error weights array, element 8. */
+    
     private final T e2_08;
 
-    /** Second error weights array, element 9. */
+    
     private final T e2_09;
 
-    /** Second error weights array, element 10. */
+    
     private final T e2_10;
 
-    /** Second error weights array, element 11. */
+    
     private final T e2_11;
 
-    /** Second error weights array, element 12. */
+    
     private final T e2_12;
 
-    /** Simple constructor.
-     * Build an eighth order Dormand-Prince integrator with the given step bounds
-     * @param field field to which the time and state vector elements belong
-     * @param minStep minimal step (sign is irrelevant, regardless of
-     * integration direction, forward or backward), the last step can
-     * be smaller than this
-     * @param maxStep maximal step (sign is irrelevant, regardless of
-     * integration direction, forward or backward), the last step can
-     * be smaller than this
-     * @param scalAbsoluteTolerance allowed absolute error
-     * @param scalRelativeTolerance allowed relative error
-     */
+    
     public DormandPrince853FieldIntegrator(final Field<T> field,
                                            final double minStep, final double maxStep,
                                            final double scalAbsoluteTolerance,
@@ -154,18 +111,7 @@ public class DormandPrince853FieldIntegrator<T extends RealFieldElement<T>>
         e2_12 = fraction(            69869.0,          3084480.0);
     }
 
-    /** Simple constructor.
-     * Build an eighth order Dormand-Prince integrator with the given step bounds
-     * @param field field to which the time and state vector elements belong
-     * @param minStep minimal step (sign is irrelevant, regardless of
-     * integration direction, forward or backward), the last step can
-     * be smaller than this
-     * @param maxStep maximal step (sign is irrelevant, regardless of
-     * integration direction, forward or backward), the last step can
-     * be smaller than this
-     * @param vecAbsoluteTolerance allowed absolute error
-     * @param vecRelativeTolerance allowed relative error
-     */
+    
     public DormandPrince853FieldIntegrator(final Field<T> field,
                                            final double minStep, final double maxStep,
                                            final double[] vecAbsoluteTolerance,
@@ -190,7 +136,7 @@ public class DormandPrince853FieldIntegrator<T extends RealFieldElement<T>>
         e2_12 = fraction(            69869.0,          3084480.0);
     }
 
-    /** {@inheritDoc} */
+    
     public T[] getC() {
 
         final T sqrt6 = getField().getOne().multiply(6).sqrt();
@@ -216,7 +162,7 @@ public class DormandPrince853FieldIntegrator<T extends RealFieldElement<T>>
 
     }
 
-    /** {@inheritDoc} */
+    
     public T[][] getA() {
 
         final T sqrt6 = getField().getOne().multiply(6).sqrt();
@@ -368,7 +314,7 @@ public class DormandPrince853FieldIntegrator<T extends RealFieldElement<T>>
 
     }
 
-    /** {@inheritDoc} */
+    
     public T[] getB() {
         final T[] b = MathArrays.buildArray(getField(), 16);
         b[ 0] = fraction(104257, 1920240);
@@ -390,7 +336,7 @@ public class DormandPrince853FieldIntegrator<T extends RealFieldElement<T>>
         return b;
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     protected DormandPrince853FieldStepInterpolator<T>
         createInterpolator(final boolean forward, T[][] yDotK,
@@ -402,13 +348,13 @@ public class DormandPrince853FieldIntegrator<T extends RealFieldElement<T>>
                                                             mapper);
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     public int getOrder() {
         return 8;
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     protected T estimateError(final T[][] yDotK, final T[] y0, final T[] y1, final T h) {
         T error1 = h.getField().getZero();

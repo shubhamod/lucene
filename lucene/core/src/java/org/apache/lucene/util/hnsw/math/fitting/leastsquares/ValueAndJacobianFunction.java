@@ -19,26 +19,11 @@ package org.apache.lucene.util.hnsw.math.fitting.leastsquares;
 import org.apache.lucene.util.hnsw.math.linear.RealMatrix;
 import org.apache.lucene.util.hnsw.math.linear.RealVector;
 
-/**
- * A interface for functions that compute a vector of values and can compute their
- * derivatives (Jacobian).
- *
- * @since 3.4
- */
+
 public interface ValueAndJacobianFunction extends MultivariateJacobianFunction {
-    /**
-     * Compute the value.
-     *
-     * @param params Point.
-     * @return the value at the given point.
-     */
+    
     RealVector computeValue(final double[] params);
 
-    /**
-     * Compute the Jacobian.
-     *
-     * @param params Point.
-     * @return the Jacobian at the given point.
-     */
+    
     RealMatrix computeJacobian(final double[] params);
 }

@@ -20,44 +20,28 @@ package org.apache.lucene.util.hnsw.math.linear;
 import org.apache.lucene.util.hnsw.math.util.FastMath;
 
 
-/**
- * Class transforming any matrix to bi-diagonal shape.
- * <p>Any m &times; n matrix A can be written as the product of three matrices:
- * A = U &times; B &times; V<sup>T</sup> with U an m &times; m orthogonal matrix,
- * B an m &times; n bi-diagonal matrix (lower diagonal if m &lt; n, upper diagonal
- * otherwise), and V an n &times; n orthogonal matrix.</p>
- * <p>Transformation to bi-diagonal shape is often not a goal by itself, but it is
- * an intermediate step in more general decomposition algorithms like {@link
- * SingularValueDecomposition Singular Value Decomposition}. This class is therefore
- * intended for internal use by the library and is not public. As a consequence of
- * this explicitly limited scope, many methods directly returns references to
- * internal arrays, not copies.</p>
- * @since 2.0
- */
+
 class BiDiagonalTransformer {
 
-    /** Householder vectors. */
+    
     private final double householderVectors[][];
 
-    /** Main diagonal. */
+    
     private final double[] main;
 
-    /** Secondary diagonal. */
+    
     private final double[] secondary;
 
-    /** Cached value of U. */
+    
     private RealMatrix cachedU;
 
-    /** Cached value of B. */
+    
     private RealMatrix cachedB;
 
-    /** Cached value of V. */
+    
     private RealMatrix cachedV;
 
-    /**
-     * Build the transformation to bi-diagonal shape of a matrix.
-     * @param matrix the matrix to transform.
-     */
+    
     BiDiagonalTransformer(RealMatrix matrix) {
 
         final int m = matrix.getRowDimension();
@@ -79,11 +63,7 @@ class BiDiagonalTransformer {
 
     }
 
-    /**
-     * Returns the matrix U of the transform.
-     * <p>U is an orthogonal matrix, i.e. its transpose is also its inverse.</p>
-     * @return the U matrix
-     */
+    
     public RealMatrix getU() {
 
         if (cachedU == null) {
@@ -129,10 +109,7 @@ class BiDiagonalTransformer {
 
     }
 
-    /**
-     * Returns the bi-diagonal matrix B of the transform.
-     * @return the B matrix
-     */
+    
     public RealMatrix getB() {
 
         if (cachedB == null) {
@@ -160,11 +137,7 @@ class BiDiagonalTransformer {
 
     }
 
-    /**
-     * Returns the matrix V of the transform.
-     * <p>V is an orthogonal matrix, i.e. its transpose is also its inverse.</p>
-     * @return the V matrix
-     */
+    
     public RealMatrix getV() {
 
         if (cachedV == null) {
@@ -210,49 +183,27 @@ class BiDiagonalTransformer {
 
     }
 
-    /**
-     * Get the Householder vectors of the transform.
-     * <p>Note that since this class is only intended for internal use,
-     * it returns directly a reference to its internal arrays, not a copy.</p>
-     * @return the main diagonal elements of the B matrix
-     */
+    
     double[][] getHouseholderVectorsRef() {
         return householderVectors;
     }
 
-    /**
-     * Get the main diagonal elements of the matrix B of the transform.
-     * <p>Note that since this class is only intended for internal use,
-     * it returns directly a reference to its internal arrays, not a copy.</p>
-     * @return the main diagonal elements of the B matrix
-     */
+    
     double[] getMainDiagonalRef() {
         return main;
     }
 
-    /**
-     * Get the secondary diagonal elements of the matrix B of the transform.
-     * <p>Note that since this class is only intended for internal use,
-     * it returns directly a reference to its internal arrays, not a copy.</p>
-     * @return the secondary diagonal elements of the B matrix
-     */
+    
     double[] getSecondaryDiagonalRef() {
         return secondary;
     }
 
-    /**
-     * Check if the matrix is transformed to upper bi-diagonal.
-     * @return true if the matrix is transformed to upper bi-diagonal
-     */
+    
     boolean isUpperBiDiagonal() {
         return householderVectors.length >=  householderVectors[0].length;
     }
 
-    /**
-     * Transform original matrix to upper bi-diagonal form.
-     * <p>Transformation is done using alternate Householder transforms
-     * on columns and rows.</p>
-     */
+    
     private void transformToUpperBiDiagonal() {
 
         final int m = householderVectors.length;
@@ -312,11 +263,7 @@ class BiDiagonalTransformer {
         }
     }
 
-    /**
-     * Transform original matrix to lower bi-diagonal form.
-     * <p>Transformation is done using alternate Householder transforms
-     * on rows and columns.</p>
-     */
+    
     private void transformToLowerBiDiagonal() {
 
         final int m = householderVectors.length;

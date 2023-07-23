@@ -14,16 +14,5 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/**
- * <h2>All classes and sub-packages of this package are deprecated.</h2>
- * <h3>Please use their replacements, to be found under
- *  <ul>
- *   <li>{@link org.apache.lucene.util.hnsw.math.ml.clustering}</li>
- *  </ul>
- * </h3>
- *
- * <p>
- * Clustering algorithms.
- * </p>
- */
+
 package org.apache.lucene.util.hnsw.math.stat.clustering;

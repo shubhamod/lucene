@@ -19,45 +19,26 @@ package org.apache.lucene.util.hnsw.math.analysis.solvers;
 import org.apache.lucene.util.hnsw.math.util.FastMath;
 import org.apache.lucene.util.hnsw.math.exception.TooManyEvaluationsException;
 
-/**
- * Implements the <a href="http://mathworld.wolfram.com/Bisection.html">
- * bisection algorithm</a> for finding zeros of univariate real functions.
- * <p>
- * The function should be continuous but not necessarily smooth.</p>
- *
- */
+
 public class BisectionSolver extends AbstractUnivariateSolver {
-    /** Default absolute accuracy. */
+    
     private static final double DEFAULT_ABSOLUTE_ACCURACY = 1e-6;
 
-    /**
-     * Construct a solver with default accuracy (1e-6).
-     */
+    
     public BisectionSolver() {
         this(DEFAULT_ABSOLUTE_ACCURACY);
     }
-    /**
-     * Construct a solver.
-     *
-     * @param absoluteAccuracy Absolute accuracy.
-     */
+    
     public BisectionSolver(double absoluteAccuracy) {
         super(absoluteAccuracy);
     }
-    /**
-     * Construct a solver.
-     *
-     * @param relativeAccuracy Relative accuracy.
-     * @param absoluteAccuracy Absolute accuracy.
-     */
+    
     public BisectionSolver(double relativeAccuracy,
                            double absoluteAccuracy) {
         super(relativeAccuracy, absoluteAccuracy);
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    
     @Override
     protected double doSolve()
         throws TooManyEvaluationsException {

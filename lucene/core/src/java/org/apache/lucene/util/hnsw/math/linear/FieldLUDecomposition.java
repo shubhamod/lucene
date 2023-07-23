@@ -22,65 +22,34 @@ import org.apache.lucene.util.hnsw.math.FieldElement;
 import org.apache.lucene.util.hnsw.math.exception.DimensionMismatchException;
 import org.apache.lucene.util.hnsw.math.util.MathArrays;
 
-/**
- * Calculates the LUP-decomposition of a square matrix.
- * <p>The LUP-decomposition of a matrix A consists of three matrices
- * L, U and P that satisfy: PA = LU, L is lower triangular, and U is
- * upper triangular and P is a permutation matrix. All matrices are
- * m&times;m.</p>
- * <p>Since {@link FieldElement field elements} do not provide an ordering
- * operator, the permutation matrix is computed here only in order to avoid
- * a zero pivot element, no attempt is done to get the largest pivot
- * element.</p>
- * <p>This class is based on the class with similar name from the
- * <a href="http://math.nist.gov/javanumerics/jama/">JAMA</a> library.</p>
- * <ul>
- *   <li>a {@link #getP() getP} method has been added,</li>
- *   <li>the {@code det} method has been renamed as {@link #getDeterminant()
- *   getDeterminant},</li>
- *   <li>the {@code getDoublePivot} method has been removed (but the int based
- *   {@link #getPivot() getPivot} method has been kept),</li>
- *   <li>the {@code solve} and {@code isNonSingular} methods have been replaced
- *   by a {@link #getSolver() getSolver} method and the equivalent methods
- *   provided by the returned {@link DecompositionSolver}.</li>
- * </ul>
- *
- * @param <T> the type of the field elements
- * @see <a href="http://mathworld.wolfram.com/LUDecomposition.html">MathWorld</a>
- * @see <a href="http://en.wikipedia.org/wiki/LU_decomposition">Wikipedia</a>
- * @since 2.0 (changed to concrete class in 3.0)
- */
+
 public class FieldLUDecomposition<T extends FieldElement<T>> {
 
-    /** Field to which the elements belong. */
+    
     private final Field<T> field;
 
-    /** Entries of LU decomposition. */
+    
     private T[][] lu;
 
-    /** Pivot permutation associated with LU decomposition. */
+    
     private int[] pivot;
 
-    /** Parity of the permutation associated with the LU decomposition. */
+    
     private boolean even;
 
-    /** Singularity indicator. */
+    
     private boolean singular;
 
-    /** Cached value of L. */
+    
     private FieldMatrix<T> cachedL;
 
-    /** Cached value of U. */
+    
     private FieldMatrix<T> cachedU;
 
-    /** Cached value of P. */
+    
     private FieldMatrix<T> cachedP;
 
-    /**
-     * Calculates the LU-decomposition of the given matrix.
-     * @param matrix The matrix to decompose.
-     * @throws NonSquareMatrixException if matrix is not square
-     */
+    
     public FieldLUDecomposition(FieldMatrix<T> matrix) {
         if (!matrix.isSquare()) {
             throw new NonSquareMatrixException(matrix.getRowDimension(),
@@ -163,11 +132,7 @@ public class FieldLUDecomposition<T extends FieldElement<T>> {
 
     }
 
-    /**
-     * Returns the matrix L of the decomposition.
-     * <p>L is a lower-triangular matrix</p>
-     * @return the L matrix (or null if decomposed matrix is singular)
-     */
+    
     public FieldMatrix<T> getL() {
         if ((cachedL == null) && !singular) {
             final int m = pivot.length;
@@ -183,11 +148,7 @@ public class FieldLUDecomposition<T extends FieldElement<T>> {
         return cachedL;
     }
 
-    /**
-     * Returns the matrix U of the decomposition.
-     * <p>U is an upper-triangular matrix</p>
-     * @return the U matrix (or null if decomposed matrix is singular)
-     */
+    
     public FieldMatrix<T> getU() {
         if ((cachedU == null) && !singular) {
             final int m = pivot.length;
@@ -202,15 +163,7 @@ public class FieldLUDecomposition<T extends FieldElement<T>> {
         return cachedU;
     }
 
-    /**
-     * Returns the P rows permutation matrix.
-     * <p>P is a sparse matrix with exactly one element set to 1.0 in
-     * each row and each column, all other elements being set to 0.0.</p>
-     * <p>The positions of the 1 elements are given by the {@link #getPivot()
-     * pivot permutation vector}.</p>
-     * @return the P rows permutation matrix (or null if decomposed matrix is singular)
-     * @see #getPivot()
-     */
+    
     public FieldMatrix<T> getP() {
         if ((cachedP == null) && !singular) {
             final int m = pivot.length;
@@ -222,19 +175,12 @@ public class FieldLUDecomposition<T extends FieldElement<T>> {
         return cachedP;
     }
 
-    /**
-     * Returns the pivot permutation vector.
-     * @return the pivot permutation vector
-     * @see #getP()
-     */
+    
     public int[] getPivot() {
         return pivot.clone();
     }
 
-    /**
-     * Return the determinant of the matrix.
-     * @return determinant of the matrix
-     */
+    
     public T getDeterminant() {
         if (singular) {
             return field.getZero();
@@ -248,38 +194,27 @@ public class FieldLUDecomposition<T extends FieldElement<T>> {
         }
     }
 
-    /**
-     * Get a solver for finding the A &times; X = B solution in exact linear sense.
-     * @return a solver
-     */
+    
     public FieldDecompositionSolver<T> getSolver() {
         return new Solver<T>(field, lu, pivot, singular);
     }
 
-    /** Specialized solver.
-     * @param <T> the type of the field elements
-     */
+    
     private static class Solver<T extends FieldElement<T>> implements FieldDecompositionSolver<T> {
 
-        /** Field to which the elements belong. */
+        
         private final Field<T> field;
 
-        /** Entries of LU decomposition. */
+        
         private final T[][] lu;
 
-        /** Pivot permutation associated with LU decomposition. */
+        
         private final int[] pivot;
 
-        /** Singularity indicator. */
+        
         private final boolean singular;
 
-        /**
-         * Build a solver from decomposed matrix.
-         * @param field field to which the matrix elements belong
-         * @param lu entries of LU decomposition
-         * @param pivot pivot permutation associated with LU decomposition
-         * @param singular singularity indicator
-         */
+        
         private Solver(final Field<T> field, final T[][] lu,
                        final int[] pivot, final boolean singular) {
             this.field    = field;
@@ -288,12 +223,12 @@ public class FieldLUDecomposition<T extends FieldElement<T>> {
             this.singular = singular;
         }
 
-        /** {@inheritDoc} */
+        
         public boolean isNonSingular() {
             return !singular;
         }
 
-        /** {@inheritDoc} */
+        
         public FieldVector<T> solve(FieldVector<T> b) {
             try {
                 return solve((ArrayFieldVector<T>) b);
@@ -335,13 +270,7 @@ public class FieldLUDecomposition<T extends FieldElement<T>> {
             }
         }
 
-        /** Solve the linear equation A &times; X = B.
-         * <p>The A matrix is implicit here. It is </p>
-         * @param b right-hand side of the equation A &times; X = B
-         * @return a vector X such that A &times; X = B
-         * @throws DimensionMismatchException if the matrices dimensions do not match.
-         * @throws SingularMatrixException if the decomposed matrix is singular.
-         */
+        
         public ArrayFieldVector<T> solve(ArrayFieldVector<T> b) {
             final int m = pivot.length;
             final int length = b.getDimension();
@@ -378,7 +307,7 @@ public class FieldLUDecomposition<T extends FieldElement<T>> {
             return new ArrayFieldVector<T>(bp, false);
         }
 
-        /** {@inheritDoc} */
+        
         public FieldMatrix<T> solve(FieldMatrix<T> b) {
             final int m = pivot.length;
             if (b.getRowDimension() != m) {
@@ -432,7 +361,7 @@ public class FieldLUDecomposition<T extends FieldElement<T>> {
 
         }
 
-        /** {@inheritDoc} */
+        
         public FieldMatrix<T> getInverse() {
             final int m = pivot.length;
             final T one = field.getOne();

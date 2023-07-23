@@ -22,61 +22,28 @@ import org.apache.lucene.util.hnsw.math.analysis.UnivariateFunction;
 import org.apache.lucene.util.hnsw.math.exception.ConvergenceException;
 import org.apache.lucene.util.hnsw.math.exception.MathInternalError;
 
-/**
- * Base class for all bracketing <em>Secant</em>-based methods for root-finding
- * (approximating a zero of a univariate real function).
- *
- * <p>Implementation of the {@link RegulaFalsiSolver <em>Regula Falsi</em>} and
- * {@link IllinoisSolver <em>Illinois</em>} methods is based on the
- * following article: M. Dowell and P. Jarratt,
- * <em>A modified regula falsi method for computing the root of an
- * equation</em>, BIT Numerical Mathematics, volume 11, number 2,
- * pages 168-174, Springer, 1971.</p>
- *
- * <p>Implementation of the {@link PegasusSolver <em>Pegasus</em>} method is
- * based on the following article: M. Dowell and P. Jarratt,
- * <em>The "Pegasus" method for computing the root of an equation</em>,
- * BIT Numerical Mathematics, volume 12, number 4, pages 503-508, Springer,
- * 1972.</p>
- *
- * <p>The {@link SecantSolver <em>Secant</em>} method is <em>not</em> a
- * bracketing method, so it is not implemented here. It has a separate
- * implementation.</p>
- *
- * @since 3.0
- */
+
 public abstract class BaseSecantSolver
     extends AbstractUnivariateSolver
     implements BracketedUnivariateSolver<UnivariateFunction> {
 
-    /** Default absolute accuracy. */
+    
     protected static final double DEFAULT_ABSOLUTE_ACCURACY = 1e-6;
 
-    /** The kinds of solutions that the algorithm may accept. */
+    
     private AllowedSolution allowed;
 
-    /** The <em>Secant</em>-based root-finding method to use. */
+    
     private final Method method;
 
-    /**
-     * Construct a solver.
-     *
-     * @param absoluteAccuracy Absolute accuracy.
-     * @param method <em>Secant</em>-based root-finding method to use.
-     */
+    
     protected BaseSecantSolver(final double absoluteAccuracy, final Method method) {
         super(absoluteAccuracy);
         this.allowed = AllowedSolution.ANY_SIDE;
         this.method = method;
     }
 
-    /**
-     * Construct a solver.
-     *
-     * @param relativeAccuracy Relative accuracy.
-     * @param absoluteAccuracy Absolute accuracy.
-     * @param method <em>Secant</em>-based root-finding method to use.
-     */
+    
     protected BaseSecantSolver(final double relativeAccuracy,
                                final double absoluteAccuracy,
                                final Method method) {
@@ -85,14 +52,7 @@ public abstract class BaseSecantSolver
         this.method = method;
     }
 
-    /**
-     * Construct a solver.
-     *
-     * @param relativeAccuracy Maximum relative error.
-     * @param absoluteAccuracy Maximum absolute error.
-     * @param functionValueAccuracy Maximum function value error.
-     * @param method <em>Secant</em>-based root-finding method to use
-     */
+    
     protected BaseSecantSolver(final double relativeAccuracy,
                                final double absoluteAccuracy,
                                final double functionValueAccuracy,
@@ -102,14 +62,14 @@ public abstract class BaseSecantSolver
         this.method = method;
     }
 
-    /** {@inheritDoc} */
+    
     public double solve(final int maxEval, final UnivariateFunction f,
                         final double min, final double max,
                         final AllowedSolution allowedSolution) {
         return solve(maxEval, f, min, max, min + 0.5 * (max - min), allowedSolution);
     }
 
-    /** {@inheritDoc} */
+    
     public double solve(final int maxEval, final UnivariateFunction f,
                         final double min, final double max, final double startValue,
                         final AllowedSolution allowedSolution) {
@@ -117,19 +77,14 @@ public abstract class BaseSecantSolver
         return super.solve(maxEval, f, min, max, startValue);
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     public double solve(final int maxEval, final UnivariateFunction f,
                         final double min, final double max, final double startValue) {
         return solve(maxEval, f, min, max, startValue, AllowedSolution.ANY_SIDE);
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @throws ConvergenceException if the algorithm failed due to finite
-     * precision.
-     */
+    
     @Override
     protected final double doSolve()
         throws ConvergenceException {
@@ -259,19 +214,16 @@ public abstract class BaseSecantSolver
         }
     }
 
-    /** <em>Secant</em>-based root-finding methods. */
+    
     protected enum Method {
 
-        /**
-         * The {@link RegulaFalsiSolver <em>Regula Falsi</em>} or
-         * <em>False Position</em> method.
-         */
+        
         REGULA_FALSI,
 
-        /** The {@link IllinoisSolver <em>Illinois</em>} method. */
+        
         ILLINOIS,
 
-        /** The {@link PegasusSolver <em>Pegasus</em>} method. */
+        
         PEGASUS;
 
     }

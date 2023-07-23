@@ -31,54 +31,25 @@ import org.apache.lucene.util.hnsw.math.linear.SingularMatrixException;
 import org.apache.lucene.util.hnsw.math.optim.ConvergenceChecker;
 import org.apache.lucene.util.hnsw.math.optim.PointVectorValuePair;
 
-/**
- * Gauss-Newton least-squares solver.
- * <br/>
- * Constraints are not supported: the call to
- * {@link #optimize(OptimizationData[]) optimize} will throw
- * {@link MathUnsupportedOperationException} if bounds are passed to it.
- *
- * <p>
- * This class solve a least-square problem by solving the normal equations
- * of the linearized problem at each iteration. Either LU decomposition or
- * QR decomposition can be used to solve the normal equations. LU decomposition
- * is faster but QR decomposition is more robust for difficult problems.
- * </p>
- *
- * @since 2.0
- * @deprecated All classes and interfaces in this package are deprecated.
- * The optimizers that were provided here were moved to the
- * {@link org.apache.lucene.util.hnsw.math.fitting.leastsquares} package
- * (cf. MATH-1008).
- */
+
 @Deprecated
 public class GaussNewtonOptimizer extends AbstractLeastSquaresOptimizer {
-    /** Indicator for using LU decomposition. */
+    
     private final boolean useLU;
 
-    /**
-     * Simple constructor with default settings.
-     * The normal equations will be solved using LU decomposition.
-     *
-     * @param checker Convergence checker.
-     */
+    
     public GaussNewtonOptimizer(ConvergenceChecker<PointVectorValuePair> checker) {
         this(true, checker);
     }
 
-    /**
-     * @param useLU If {@code true}, the normal equations will be solved
-     * using LU decomposition, otherwise they will be solved using QR
-     * decomposition.
-     * @param checker Convergence checker.
-     */
+    
     public GaussNewtonOptimizer(final boolean useLU,
                                 ConvergenceChecker<PointVectorValuePair> checker) {
         super(checker);
         this.useLU = useLU;
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     public PointVectorValuePair doOptimize() {
         checkParameters();
@@ -170,10 +141,7 @@ public class GaussNewtonOptimizer extends AbstractLeastSquaresOptimizer {
         throw new MathInternalError();
     }
 
-    /**
-     * @throws MathUnsupportedOperationException if bounds were passed to the
-     * {@link #optimize(OptimizationData[]) optimize} method.
-     */
+    
     private void checkParameters() {
         if (getLowerBound() != null ||
             getUpperBound() != null) {

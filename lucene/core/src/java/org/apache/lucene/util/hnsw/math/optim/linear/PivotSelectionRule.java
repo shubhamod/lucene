@@ -18,21 +18,10 @@ package org.apache.lucene.util.hnsw.math.optim.linear;
 
 import org.apache.lucene.util.hnsw.math.optim.OptimizationData;
 
-/**
- * Pivot selection rule to the use for a Simplex solver.
- *
- * @since 3.3
- */
+
 public enum PivotSelectionRule implements OptimizationData {
-    /**
-     * The classical rule, the variable with the most negative coefficient
-     * in the objective function row will be chosen as entering variable.
-     */
+    
     DANTZIG,
-    /**
-     * The first variable with a negative coefficient in the objective function
-     * row will be chosen as entering variable. This rule guarantees to prevent
-     * cycles, but may take longer to find an optimal solution.
-     */
+    
     BLAND
 }

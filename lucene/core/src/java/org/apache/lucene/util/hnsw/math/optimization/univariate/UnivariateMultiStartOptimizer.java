@@ -29,47 +29,24 @@ import org.apache.lucene.util.hnsw.math.random.RandomGenerator;
 import org.apache.lucene.util.hnsw.math.optimization.GoalType;
 import org.apache.lucene.util.hnsw.math.optimization.ConvergenceChecker;
 
-/**
- * Special implementation of the {@link UnivariateOptimizer} interface
- * adding multi-start features to an existing optimizer.
- *
- * This class wraps a classical optimizer to use it several times in
- * turn with different starting points in order to avoid being trapped
- * into a local extremum when looking for a global one.
- *
- * @param <FUNC> Type of the objective function to be optimized.
- *
- * @deprecated As of 3.1 (to be removed in 4.0).
- * @since 3.0
- */
+
 @Deprecated
 public class UnivariateMultiStartOptimizer<FUNC extends UnivariateFunction>
     implements BaseUnivariateOptimizer<FUNC> {
-    /** Underlying classical optimizer. */
+    
     private final BaseUnivariateOptimizer<FUNC> optimizer;
-    /** Maximal number of evaluations allowed. */
+    
     private int maxEvaluations;
-    /** Number of evaluations already performed for all starts. */
+    
     private int totalEvaluations;
-    /** Number of starts to go. */
+    
     private int starts;
-    /** Random generator for multi-start. */
+    
     private RandomGenerator generator;
-    /** Found optima. */
+    
     private UnivariatePointValuePair[] optima;
 
-    /**
-     * Create a multi-start optimizer from a single-start optimizer.
-     *
-     * @param optimizer Single-start optimizer to wrap.
-     * @param starts Number of starts to perform. If {@code starts == 1},
-     * the {@code optimize} methods will return the same solution as
-     * {@code optimizer} would.
-     * @param generator Random generator to use for restarts.
-     * @throws NullArgumentException if {@code optimizer} or {@code generator}
-     * is {@code null}.
-     * @throws NotStrictlyPositiveException if {@code starts < 1}.
-     */
+    
     public UnivariateMultiStartOptimizer(final BaseUnivariateOptimizer<FUNC> optimizer,
                                              final int starts,
                                              final RandomGenerator generator) {
@@ -86,50 +63,22 @@ public class UnivariateMultiStartOptimizer<FUNC extends UnivariateFunction>
         this.generator = generator;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    
     public ConvergenceChecker<UnivariatePointValuePair> getConvergenceChecker() {
         return optimizer.getConvergenceChecker();
     }
 
-    /** {@inheritDoc} */
+    
     public int getMaxEvaluations() {
         return maxEvaluations;
     }
 
-    /** {@inheritDoc} */
+    
     public int getEvaluations() {
         return totalEvaluations;
     }
 
-    /**
-     * Get all the optima found during the last call to {@link
-     * #optimize(int,UnivariateFunction,GoalType,double,double) optimize}.
-     * The optimizer stores all the optima found during a set of
-     * restarts. The {@link #optimize(int,UnivariateFunction,GoalType,double,double) optimize}
-     * method returns the best point only. This method returns all the points
-     * found at the end of each starts, including the best one already
-     * returned by the {@link #optimize(int,UnivariateFunction,GoalType,double,double) optimize}
-     * method.
-     * <br/>
-     * The returned array as one element for each start as specified
-     * in the constructor. It is ordered with the results from the
-     * runs that did converge first, sorted from best to worst
-     * objective value (i.e in ascending order if minimizing and in
-     * descending order if maximizing), followed by {@code null} elements
-     * corresponding to the runs that did not converge. This means all
-     * elements will be {@code null} if the {@link
-     * #optimize(int,UnivariateFunction,GoalType,double,double) optimize}
-     * method did throw an exception.
-     * This also means that if the first element is not {@code null}, it is
-     * the best point found across all starts.
-     *
-     * @return an array containing the optima.
-     * @throws MathIllegalStateException if {@link
-     * #optimize(int,UnivariateFunction,GoalType,double,double) optimize}
-     * has not been called.
-     */
+    
     public UnivariatePointValuePair[] getOptima() {
         if (optima == null) {
             throw new MathIllegalStateException(LocalizedFormats.NO_OPTIMUM_COMPUTED_YET);
@@ -137,14 +86,14 @@ public class UnivariateMultiStartOptimizer<FUNC extends UnivariateFunction>
         return optima.clone();
     }
 
-    /** {@inheritDoc} */
+    
     public UnivariatePointValuePair optimize(int maxEval, final FUNC f,
                                                  final GoalType goal,
                                                  final double min, final double max) {
         return optimize(maxEval, f, goal, min, max, min + 0.5 * (max - min));
     }
 
-    /** {@inheritDoc} */
+    
     public UnivariatePointValuePair optimize(int maxEval, final FUNC f,
                                                  final GoalType goal,
                                                  final double min, final double max,
@@ -178,14 +127,10 @@ public class UnivariateMultiStartOptimizer<FUNC extends UnivariateFunction>
         return optima[0];
     }
 
-    /**
-     * Sort the optima from best to worst, followed by {@code null} elements.
-     *
-     * @param goal Goal type.
-     */
+    
     private void sortPairs(final GoalType goal) {
         Arrays.sort(optima, new Comparator<UnivariatePointValuePair>() {
-                /** {@inheritDoc} */
+                
                 public int compare(final UnivariatePointValuePair o1,
                                    final UnivariatePointValuePair o2) {
                     if (o1 == null) {

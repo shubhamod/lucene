@@ -24,77 +24,30 @@ import org.apache.lucene.util.hnsw.math.exception.NotPositiveException;
 import org.apache.lucene.util.hnsw.math.random.RandomGenerator;
 import org.apache.lucene.util.hnsw.math.util.Pair;
 
-/**
- * Multivariate normal mixture distribution.
- * This class is mainly syntactic sugar.
- *
- * @see MixtureMultivariateRealDistribution
- * @since 3.2
- */
+
 public class MixtureMultivariateNormalDistribution
     extends MixtureMultivariateRealDistribution<MultivariateNormalDistribution> {
 
-    /**
-     * Creates a multivariate normal mixture distribution.
-     * <p>
-     * <b>Note:</b> this constructor will implicitly create an instance of
-     * {@link org.apache.lucene.util.hnsw.math.random.Well19937c Well19937c} as random
-     * generator to be used for sampling only (see {@link #sample()} and
-     * {@link #sample(int)}). In case no sampling is needed for the created
-     * distribution, it is advised to pass {@code null} as random generator via
-     * the appropriate constructors to avoid the additional initialisation
-     * overhead.
-     *
-     * @param weights Weights of each component.
-     * @param means Mean vector for each component.
-     * @param covariances Covariance matrix for each component.
-     */
+    
     public MixtureMultivariateNormalDistribution(double[] weights,
                                                  double[][] means,
                                                  double[][][] covariances) {
         super(createComponents(weights, means, covariances));
     }
 
-    /**
-     * Creates a mixture model from a list of distributions and their
-     * associated weights.
-     * <p>
-     * <b>Note:</b> this constructor will implicitly create an instance of
-     * {@link org.apache.lucene.util.hnsw.math.random.Well19937c Well19937c} as random
-     * generator to be used for sampling only (see {@link #sample()} and
-     * {@link #sample(int)}). In case no sampling is needed for the created
-     * distribution, it is advised to pass {@code null} as random generator via
-     * the appropriate constructors to avoid the additional initialisation
-     * overhead.
-     *
-     * @param components List of (weight, distribution) pairs from which to sample.
-     */
+    
     public MixtureMultivariateNormalDistribution(List<Pair<Double, MultivariateNormalDistribution>> components) {
         super(components);
     }
 
-    /**
-     * Creates a mixture model from a list of distributions and their
-     * associated weights.
-     *
-     * @param rng Random number generator.
-     * @param components Distributions from which to sample.
-     * @throws NotPositiveException if any of the weights is negative.
-     * @throws DimensionMismatchException if not all components have the same
-     * number of variables.
-     */
+    
     public MixtureMultivariateNormalDistribution(RandomGenerator rng,
                                                  List<Pair<Double, MultivariateNormalDistribution>> components)
         throws NotPositiveException, DimensionMismatchException {
         super(rng, components);
     }
 
-    /**
-     * @param weights Weights of each component.
-     * @param means Mean vector for each component.
-     * @param covariances Covariance matrix for each component.
-     * @return the list of components.
-     */
+    
     private static List<Pair<Double, MultivariateNormalDistribution>> createComponents(double[] weights,
                                                                                        double[][] means,
                                                                                        double[][][] covariances) {

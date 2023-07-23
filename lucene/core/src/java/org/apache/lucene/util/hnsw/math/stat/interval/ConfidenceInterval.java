@@ -19,40 +19,19 @@ package org.apache.lucene.util.hnsw.math.stat.interval;
 import org.apache.lucene.util.hnsw.math.exception.MathIllegalArgumentException;
 import org.apache.lucene.util.hnsw.math.exception.util.LocalizedFormats;
 
-/**
- * Represents an interval estimate of a population parameter.
- *
- * @since 3.3
- */
+
 public class ConfidenceInterval {
 
-    /** Lower endpoint of the interval */
+    
     private double lowerBound;
 
-    /** Upper endpoint of the interval */
+    
     private double upperBound;
 
-    /**
-     * The asserted probability that the interval contains the population
-     * parameter
-     */
+    
     private double confidenceLevel;
 
-    /**
-     * Create a confidence interval with the given bounds and confidence level.
-     * <p>
-     * Preconditions:
-     * <ul>
-     * <li>{@code lower} must be strictly less than {@code upper}</li>
-     * <li>{@code confidenceLevel} must be strictly between 0 and 1 (exclusive)</li>
-     * </ul>
-     * </p>
-     *
-     * @param lowerBound lower endpoint of the interval
-     * @param upperBound upper endpoint of the interval
-     * @param confidenceLevel coverage probability
-     * @throws MathIllegalArgumentException if the preconditions are not met
-     */
+    
     public ConfidenceInterval(double lowerBound, double upperBound, double confidenceLevel) {
         checkParameters(lowerBound, upperBound, confidenceLevel);
         this.lowerBound = lowerBound;
@@ -60,44 +39,28 @@ public class ConfidenceInterval {
         this.confidenceLevel = confidenceLevel;
     }
 
-    /**
-     * @return the lower endpoint of the interval
-     */
+    
     public double getLowerBound() {
         return lowerBound;
     }
 
-    /**
-     * @return the upper endpoint of the interval
-     */
+    
     public double getUpperBound() {
         return upperBound;
     }
 
-    /**
-     * @return the asserted probability that the interval contains the
-     *         population parameter
-     */
+    
     public double getConfidenceLevel() {
         return confidenceLevel;
     }
 
-    /**
-     * @return String representation of the confidence interval
-     */
+    
     @Override
     public String toString() {
         return "[" + lowerBound + ";" + upperBound + "] (confidence level:" + confidenceLevel + ")";
     }
 
-    /**
-     * Verifies that (lower, upper) is a valid non-empty interval and confidence
-     * is strictly between 0 and 1.
-     *
-     * @param lower lower endpoint
-     * @param upper upper endpoint
-     * @param confidence confidence level
-     */
+    
     private void checkParameters(double lower, double upper, double confidence) {
         if (lower >= upper) {
             throw new MathIllegalArgumentException(LocalizedFormats.LOWER_BOUND_NOT_BELOW_UPPER_BOUND, lower, upper);

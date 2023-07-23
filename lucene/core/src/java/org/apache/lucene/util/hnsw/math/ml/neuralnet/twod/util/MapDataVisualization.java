@@ -19,20 +19,9 @@ package org.apache.lucene.util.hnsw.math.ml.neuralnet.twod.util;
 
 import org.apache.lucene.util.hnsw.math.ml.neuralnet.twod.NeuronSquareMesh2D;
 
-/**
- * Interface for algorithms that compute some metrics of the projection of
- * data on a 2D-map.
- * @since 3.6
- */
+
 public interface MapDataVisualization {
-    /**
-     * Creates an image of the {@code data} metrics when represented by the
-     * {@code map}.
-     *
-     * @param map Map.
-     * @param data Data.
-     * @return a 2D-array (in row major order) representing the metrics.
-     */
+    
     double[][] computeImage(NeuronSquareMesh2D map,
                             Iterable<double[]> data);
 }

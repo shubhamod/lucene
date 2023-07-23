@@ -25,70 +25,35 @@ import org.apache.lucene.util.hnsw.math.util.MathArrays;
 import org.apache.lucene.util.hnsw.math.util.MathUtils;
 
 
-/**
- * This class implements the 5(4) Dormand-Prince integrator for Ordinary
- * Differential Equations.
 
- * <p>This integrator is an embedded Runge-Kutta integrator
- * of order 5(4) used in local extrapolation mode (i.e. the solution
- * is computed using the high order formula) with stepsize control
- * (and automatic step initialization) and continuous output. This
- * method uses 7 functions evaluations per step. However, since this
- * is an <i>fsal</i>, the last evaluation of one step is the same as
- * the first evaluation of the next step and hence can be avoided. So
- * the cost is really 6 functions evaluations per step.</p>
- *
- * <p>This method has been published (whithout the continuous output
- * that was added by Shampine in 1986) in the following article :
- * <pre>
- *  A family of embedded Runge-Kutta formulae
- *  J. R. Dormand and P. J. Prince
- *  Journal of Computational and Applied Mathematics
- *  volume 6, no 1, 1980, pp. 19-26
- * </pre></p>
- *
- * @param <T> the type of the field elements
- * @since 3.6
- */
 
 public class DormandPrince54FieldIntegrator<T extends RealFieldElement<T>>
     extends EmbeddedRungeKuttaFieldIntegrator<T> {
 
-    /** Integrator method name. */
+    
     private static final String METHOD_NAME = "Dormand-Prince 5(4)";
 
-    /** Error array, element 1. */
+    
     private final T e1;
 
     // element 2 is zero, so it is neither stored nor used
 
-    /** Error array, element 3. */
+    
     private final T e3;
 
-    /** Error array, element 4. */
+    
     private final T e4;
 
-    /** Error array, element 5. */
+    
     private final T e5;
 
-    /** Error array, element 6. */
+    
     private final T e6;
 
-    /** Error array, element 7. */
+    
     private final T e7;
 
-    /** Simple constructor.
-     * Build a fifth order Dormand-Prince integrator with the given step bounds
-     * @param field field to which the time and state vector elements belong
-     * @param minStep minimal step (sign is irrelevant, regardless of
-     * integration direction, forward or backward), the last step can
-     * be smaller than this
-     * @param maxStep maximal step (sign is irrelevant, regardless of
-     * integration direction, forward or backward), the last step can
-     * be smaller than this
-     * @param scalAbsoluteTolerance allowed absolute error
-     * @param scalRelativeTolerance allowed relative error
-     */
+    
     public DormandPrince54FieldIntegrator(final Field<T> field,
                                           final double minStep, final double maxStep,
                                           final double scalAbsoluteTolerance,
@@ -103,18 +68,7 @@ public class DormandPrince54FieldIntegrator<T extends RealFieldElement<T>>
         e7 = fraction(    -1,     40);
     }
 
-    /** Simple constructor.
-     * Build a fifth order Dormand-Prince integrator with the given step bounds
-     * @param field field to which the time and state vector elements belong
-     * @param minStep minimal step (sign is irrelevant, regardless of
-     * integration direction, forward or backward), the last step can
-     * be smaller than this
-     * @param maxStep maximal step (sign is irrelevant, regardless of
-     * integration direction, forward or backward), the last step can
-     * be smaller than this
-     * @param vecAbsoluteTolerance allowed absolute error
-     * @param vecRelativeTolerance allowed relative error
-     */
+    
     public DormandPrince54FieldIntegrator(final Field<T> field,
                                           final double minStep, final double maxStep,
                                           final double[] vecAbsoluteTolerance,
@@ -129,7 +83,7 @@ public class DormandPrince54FieldIntegrator<T extends RealFieldElement<T>>
         e7 = fraction(    -1,     40);
     }
 
-    /** {@inheritDoc} */
+    
     public T[] getC() {
         final T[] c = MathArrays.buildArray(getField(), 6);
         c[0] = fraction(1,  5);
@@ -141,7 +95,7 @@ public class DormandPrince54FieldIntegrator<T extends RealFieldElement<T>>
         return c;
     }
 
-    /** {@inheritDoc} */
+    
     public T[][] getA() {
         final T[][] a = MathArrays.buildArray(getField(), 6, -1);
         for (int i = 0; i < a.length; ++i) {
@@ -171,7 +125,7 @@ public class DormandPrince54FieldIntegrator<T extends RealFieldElement<T>>
         return a;
     }
 
-    /** {@inheritDoc} */
+    
     public T[] getB() {
         final T[] b = MathArrays.buildArray(getField(), 7);
         b[0] = fraction(   35,   384);
@@ -184,7 +138,7 @@ public class DormandPrince54FieldIntegrator<T extends RealFieldElement<T>>
         return b;
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     protected DormandPrince54FieldStepInterpolator<T>
         createInterpolator(final boolean forward, T[][] yDotK,
@@ -196,13 +150,13 @@ public class DormandPrince54FieldIntegrator<T extends RealFieldElement<T>>
                                                            mapper);
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     public int getOrder() {
         return 5;
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     protected T estimateError(final T[][] yDotK, final T[] y0, final T[] y1, final T h) {
 

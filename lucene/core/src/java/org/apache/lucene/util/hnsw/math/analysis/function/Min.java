@@ -20,13 +20,9 @@ package org.apache.lucene.util.hnsw.math.analysis.function;
 import org.apache.lucene.util.hnsw.math.analysis.BivariateFunction;
 import org.apache.lucene.util.hnsw.math.util.FastMath;
 
-/**
- * Minimum function.
- *
- * @since 3.0
- */
+
 public class Min implements BivariateFunction {
-    /** {@inheritDoc} */
+    
     public double value(double x, double y) {
         return FastMath.min(x, y);
     }

@@ -22,18 +22,11 @@ import org.apache.lucene.util.hnsw.math.exception.NonMonotonicSequenceException;
 import org.apache.lucene.util.hnsw.math.exception.NumberIsTooSmallException;
 import org.apache.lucene.util.hnsw.math.util.MathArrays;
 
-/**
- * Generates a tricubic interpolating function.
- *
- * @since 2.2
- * @deprecated To be removed in 4.0 (see MATH-1166).
- */
+
 @Deprecated
 public class TricubicSplineInterpolator
     implements TrivariateGridInterpolator {
-    /**
-     * {@inheritDoc}
-     */
+    
     public TricubicSplineInterpolatingFunction interpolate(final double[] xval,
                                                            final double[] yval,
                                                            final double[] zval,
@@ -175,25 +168,12 @@ public class TricubicSplineInterpolator
                                                        d3FdXdYdZ);
     }
 
-    /**
-     * Compute the next index of an array, clipping if necessary.
-     * It is assumed (but not checked) that {@code i} is larger than or equal to 0.
-     *
-     * @param i Index
-     * @param max Upper limit of the array
-     * @return the next index
-     */
+    
     private int nextIndex(int i, int max) {
         final int index = i + 1;
         return index < max ? index : index - 1;
     }
-    /**
-     * Compute the previous index of an array, clipping if necessary.
-     * It is assumed (but not checked) that {@code i} is smaller than the size of the array.
-     *
-     * @param i Index
-     * @return the previous index
-     */
+    
     private int previousIndex(int i) {
         final int index = i - 1;
         return index >= 0 ? index : 0;

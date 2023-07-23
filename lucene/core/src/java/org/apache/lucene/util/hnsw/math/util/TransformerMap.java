@@ -24,119 +24,65 @@ import java.util.Set;
 
 import org.apache.lucene.util.hnsw.math.exception.MathIllegalArgumentException;
 
-/**
- * This TansformerMap automates the transformation of mixed object types.
- * It provides a means to set NumberTransformers that will be selected
- * based on the Class of the object handed to the Maps
- * <code>double transform(Object o)</code> method.
- */
+
 public class TransformerMap implements NumberTransformer, Serializable {
 
-    /** Serializable version identifier */
+    
     private static final long serialVersionUID = 4605318041528645258L;
 
-    /**
-     * A default Number Transformer for Numbers and numeric Strings.
-     */
+    
     private NumberTransformer defaultTransformer = null;
 
-    /**
-     * The internal Map.
-     */
+    
     private Map<Class<?>, NumberTransformer> map = null;
 
-    /**
-     * Build a map containing only the default transformer.
-     */
+    
     public TransformerMap() {
         map = new HashMap<Class<?>, NumberTransformer>();
         defaultTransformer = new DefaultTransformer();
     }
 
-    /**
-     * Tests if a Class is present in the TransformerMap.
-     * @param key Class to check
-     * @return true|false
-     */
+    
     public boolean containsClass(Class<?> key) {
         return map.containsKey(key);
     }
 
-    /**
-     * Tests if a NumberTransformer is present in the TransformerMap.
-     * @param value NumberTransformer to check
-     * @return true|false
-     */
+    
     public boolean containsTransformer(NumberTransformer value) {
         return map.containsValue(value);
     }
 
-    /**
-     * Returns the Transformer that is mapped to a class
-     * if mapping is not present, this returns null.
-     * @param key The Class of the object
-     * @return the mapped NumberTransformer or null.
-     */
+    
     public NumberTransformer getTransformer(Class<?> key) {
         return map.get(key);
     }
 
-    /**
-     * Sets a Class to Transformer Mapping in the Map. If
-     * the Class is already present, this overwrites that
-     * mapping.
-     * @param key The Class
-     * @param transformer The NumberTransformer
-     * @return the replaced transformer if one is present
-     */
+    
     public NumberTransformer putTransformer(Class<?> key, NumberTransformer transformer) {
         return map.put(key, transformer);
     }
 
-    /**
-     * Removes a Class to Transformer Mapping in the Map.
-     * @param key The Class
-     * @return the removed transformer if one is present or
-     * null if none was present.
-     */
+    
     public NumberTransformer removeTransformer(Class<?> key) {
         return map.remove(key);
     }
 
-    /**
-     * Clears all the Class to Transformer mappings.
-     */
+    
     public void clear() {
         map.clear();
     }
 
-    /**
-     * Returns the Set of Classes used as keys in the map.
-     * @return Set of Classes
-     */
+    
     public Set<Class<?>> classes() {
         return map.keySet();
     }
 
-    /**
-     * Returns the Set of NumberTransformers used as values
-     * in the map.
-     * @return Set of NumberTransformers
-     */
+    
     public Collection<NumberTransformer> transformers() {
         return map.values();
     }
 
-    /**
-     * Attempts to transform the Object against the map of
-     * NumberTransformers. Otherwise it returns Double.NaN.
-     *
-     * @param o the Object to be transformed.
-     * @return the double value of the Object.
-     * @throws MathIllegalArgumentException if the Object can not be
-     * transformed into a Double.
-     * @see org.apache.lucene.util.hnsw.math.util.NumberTransformer#transform(Object)
-     */
+    
     public double transform(Object o) throws MathIllegalArgumentException {
         double value = Double.NaN;
 
@@ -152,7 +98,7 @@ public class TransformerMap implements NumberTransformer, Serializable {
         return value;
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     public boolean equals(Object other) {
         if (this == other) {
@@ -176,7 +122,7 @@ public class TransformerMap implements NumberTransformer, Serializable {
         return false;
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     public int hashCode() {
         int hash = defaultTransformer.hashCode();

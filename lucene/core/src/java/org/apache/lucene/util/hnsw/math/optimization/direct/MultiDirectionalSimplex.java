@@ -22,68 +22,35 @@ import java.util.Comparator;
 import org.apache.lucene.util.hnsw.math.analysis.MultivariateFunction;
 import org.apache.lucene.util.hnsw.math.optimization.PointValuePair;
 
-/**
- * This class implements the multi-directional direct search method.
- *
- * @deprecated As of 3.1 (to be removed in 4.0).
- * @since 3.0
- */
+
 @Deprecated
 public class MultiDirectionalSimplex extends AbstractSimplex {
-    /** Default value for {@link #khi}: {@value}. */
+    
     private static final double DEFAULT_KHI = 2;
-    /** Default value for {@link #gamma}: {@value}. */
+    
     private static final double DEFAULT_GAMMA = 0.5;
-    /** Expansion coefficient. */
+    
     private final double khi;
-    /** Contraction coefficient. */
+    
     private final double gamma;
 
-    /**
-     * Build a multi-directional simplex with default coefficients.
-     * The default values are 2.0 for khi and 0.5 for gamma.
-     *
-     * @param n Dimension of the simplex.
-     */
+    
     public MultiDirectionalSimplex(final int n) {
         this(n, 1d);
     }
 
-    /**
-     * Build a multi-directional simplex with default coefficients.
-     * The default values are 2.0 for khi and 0.5 for gamma.
-     *
-     * @param n Dimension of the simplex.
-     * @param sideLength Length of the sides of the default (hypercube)
-     * simplex. See {@link AbstractSimplex#AbstractSimplex(int,double)}.
-     */
+    
     public MultiDirectionalSimplex(final int n, double sideLength) {
         this(n, sideLength, DEFAULT_KHI, DEFAULT_GAMMA);
     }
 
-    /**
-     * Build a multi-directional simplex with specified coefficients.
-     *
-     * @param n Dimension of the simplex. See
-     * {@link AbstractSimplex#AbstractSimplex(int,double)}.
-     * @param khi Expansion coefficient.
-     * @param gamma Contraction coefficient.
-     */
+    
     public MultiDirectionalSimplex(final int n,
                                    final double khi, final double gamma) {
         this(n, 1d, khi, gamma);
     }
 
-    /**
-     * Build a multi-directional simplex with specified coefficients.
-     *
-     * @param n Dimension of the simplex. See
-     * {@link AbstractSimplex#AbstractSimplex(int,double)}.
-     * @param sideLength Length of the sides of the default (hypercube)
-     * simplex. See {@link AbstractSimplex#AbstractSimplex(int,double)}.
-     * @param khi Expansion coefficient.
-     * @param gamma Contraction coefficient.
-     */
+    
     public MultiDirectionalSimplex(final int n, double sideLength,
                                    final double khi, final double gamma) {
         super(n, sideLength);
@@ -92,26 +59,12 @@ public class MultiDirectionalSimplex extends AbstractSimplex {
         this.gamma = gamma;
     }
 
-    /**
-     * Build a multi-directional simplex with default coefficients.
-     * The default values are 2.0 for khi and 0.5 for gamma.
-     *
-     * @param steps Steps along the canonical axes representing box edges.
-     * They may be negative but not zero. See
-     */
+    
     public MultiDirectionalSimplex(final double[] steps) {
         this(steps, DEFAULT_KHI, DEFAULT_GAMMA);
     }
 
-    /**
-     * Build a multi-directional simplex with specified coefficients.
-     *
-     * @param steps Steps along the canonical axes representing box edges.
-     * They may be negative but not zero. See
-     * {@link AbstractSimplex#AbstractSimplex(double[])}.
-     * @param khi Expansion coefficient.
-     * @param gamma Contraction coefficient.
-     */
+    
     public MultiDirectionalSimplex(final double[] steps,
                                    final double khi, final double gamma) {
         super(steps);
@@ -120,29 +73,12 @@ public class MultiDirectionalSimplex extends AbstractSimplex {
         this.gamma = gamma;
     }
 
-    /**
-     * Build a multi-directional simplex with default coefficients.
-     * The default values are 2.0 for khi and 0.5 for gamma.
-     *
-     * @param referenceSimplex Reference simplex. See
-     * {@link AbstractSimplex#AbstractSimplex(double[][])}.
-     */
+    
     public MultiDirectionalSimplex(final double[][] referenceSimplex) {
         this(referenceSimplex, DEFAULT_KHI, DEFAULT_GAMMA);
     }
 
-    /**
-     * Build a multi-directional simplex with specified coefficients.
-     *
-     * @param referenceSimplex Reference simplex. See
-     * {@link AbstractSimplex#AbstractSimplex(double[][])}.
-     * @param khi Expansion coefficient.
-     * @param gamma Contraction coefficient.
-     * @throws org.apache.lucene.util.hnsw.math.exception.NotStrictlyPositiveException
-     * if the reference simplex does not contain at least one point.
-     * @throws org.apache.lucene.util.hnsw.math.exception.DimensionMismatchException
-     * if there is a dimension mismatch in the reference simplex.
-     */
+    
     public MultiDirectionalSimplex(final double[][] referenceSimplex,
                                    final double khi, final double gamma) {
         super(referenceSimplex);
@@ -151,7 +87,7 @@ public class MultiDirectionalSimplex extends AbstractSimplex {
         this.gamma = gamma;
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     public void iterate(final MultivariateFunction evaluationFunction,
                         final Comparator<PointValuePair> comparator) {
@@ -180,18 +116,7 @@ public class MultiDirectionalSimplex extends AbstractSimplex {
 
     }
 
-    /**
-     * Compute and evaluate a new simplex.
-     *
-     * @param evaluationFunction Evaluation function.
-     * @param original Original simplex (to be preserved).
-     * @param coeff Linear coefficient.
-     * @param comparator Comparator to use to sort simplex vertices from best
-     * to poorest.
-     * @return the best point in the transformed simplex.
-     * @throws org.apache.lucene.util.hnsw.math.exception.TooManyEvaluationsException
-     * if the maximal number of evaluations is exceeded.
-     */
+    
     private PointValuePair evaluateNewSimplex(final MultivariateFunction evaluationFunction,
                                                   final PointValuePair[] original,
                                                   final double coeff,

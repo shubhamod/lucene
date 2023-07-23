@@ -20,28 +20,16 @@ import org.apache.lucene.util.hnsw.math.optim.OptimizationData;
 import org.apache.lucene.util.hnsw.math.exception.NumberIsTooLargeException;
 import org.apache.lucene.util.hnsw.math.exception.OutOfRangeException;
 
-/**
- * Search interval and (optional) start value.
- * <br/>
- * Immutable class.
- *
- * @since 3.1
- */
+
 public class SearchInterval implements OptimizationData {
-    /** Lower bound. */
+    
     private final double lower;
-    /** Upper bound. */
+    
     private final double upper;
-    /** Start value. */
+    
     private final double start;
 
-    /**
-     * @param lo Lower bound.
-     * @param hi Upper bound.
-     * @param init Start value.
-     * @throws NumberIsTooLargeException if {@code lo >= hi}.
-     * @throws OutOfRangeException if {@code init < lo} or {@code init > hi}.
-     */
+    
     public SearchInterval(double lo,
                           double hi,
                           double init) {
@@ -58,37 +46,21 @@ public class SearchInterval implements OptimizationData {
         start = init;
     }
 
-    /**
-     * @param lo Lower bound.
-     * @param hi Upper bound.
-     * @throws NumberIsTooLargeException if {@code lo >= hi}.
-     */
+    
     public SearchInterval(double lo,
                           double hi) {
         this(lo, hi, 0.5 * (lo + hi));
     }
 
-    /**
-     * Gets the lower bound.
-     *
-     * @return the lower bound.
-     */
+    
     public double getMin() {
         return lower;
     }
-    /**
-     * Gets the upper bound.
-     *
-     * @return the upper bound.
-     */
+    
     public double getMax() {
         return upper;
     }
-    /**
-     * Gets the start value.
-     *
-     * @return the start value.
-     */
+    
     public double getStartValue() {
         return start;
     }

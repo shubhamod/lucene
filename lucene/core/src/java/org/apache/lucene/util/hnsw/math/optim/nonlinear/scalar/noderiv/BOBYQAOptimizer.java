@@ -29,205 +29,93 @@ import org.apache.lucene.util.hnsw.math.optim.PointValuePair;
 import org.apache.lucene.util.hnsw.math.optim.nonlinear.scalar.MultivariateOptimizer;
 import org.apache.lucene.util.hnsw.math.util.FastMath;
 
-/**
- * Powell's BOBYQA algorithm. This implementation is translated and
- * adapted from the Fortran version available
- * <a href="http://plato.asu.edu/ftp/other_software/bobyqa.zip">here</a>.
- * See <a href="http://www.optimization-online.org/DB_HTML/2010/05/2616.html">
- * this paper</a> for an introduction.
- * <br/>
- * BOBYQA is particularly well suited for high dimensional problems
- * where derivatives are not available. In most cases it outperforms the
- * {@link PowellOptimizer} significantly. Stochastic algorithms like
- * {@link CMAESOptimizer} succeed more often than BOBYQA, but are more
- * expensive. BOBYQA could also be considered as a replacement of any
- * derivative-based optimizer when the derivatives are approximated by
- * finite differences.
- *
- * @since 3.0
- */
+
 public class BOBYQAOptimizer
     extends MultivariateOptimizer {
-    /** Minimum dimension of the problem: {@value} */
+    
     public static final int MINIMUM_PROBLEM_DIMENSION = 2;
-    /** Default value for {@link #initialTrustRegionRadius}: {@value} . */
+    
     public static final double DEFAULT_INITIAL_RADIUS = 10.0;
-    /** Default value for {@link #stoppingTrustRegionRadius}: {@value} . */
+    
     public static final double DEFAULT_STOPPING_RADIUS = 1E-8;
-    /** Constant 0. */
+    
     private static final double ZERO = 0d;
-    /** Constant 1. */
+    
     private static final double ONE = 1d;
-    /** Constant 2. */
+    
     private static final double TWO = 2d;
-    /** Constant 10. */
+    
     private static final double TEN = 10d;
-    /** Constant 16. */
+    
     private static final double SIXTEEN = 16d;
-    /** Constant 250. */
+    
     private static final double TWO_HUNDRED_FIFTY = 250d;
-    /** Constant -1. */
+    
     private static final double MINUS_ONE = -ONE;
-    /** Constant 1/2. */
+    
     private static final double HALF = ONE / 2;
-    /** Constant 1/4. */
+    
     private static final double ONE_OVER_FOUR = ONE / 4;
-    /** Constant 1/8. */
+    
     private static final double ONE_OVER_EIGHT = ONE / 8;
-    /** Constant 1/10. */
+    
     private static final double ONE_OVER_TEN = ONE / 10;
-    /** Constant 1/1000. */
+    
     private static final double ONE_OVER_A_THOUSAND = ONE / 1000;
 
-    /**
-     * numberOfInterpolationPoints XXX
-     */
+    
     private final int numberOfInterpolationPoints;
-    /**
-     * initialTrustRegionRadius XXX
-     */
+    
     private double initialTrustRegionRadius;
-    /**
-     * stoppingTrustRegionRadius XXX
-     */
+    
     private final double stoppingTrustRegionRadius;
-    /** Goal type (minimize or maximize). */
+    
     private boolean isMinimize;
-    /**
-     * Current best values for the variables to be optimized.
-     * The vector will be changed in-place to contain the values of the least
-     * calculated objective function values.
-     */
+    
     private ArrayRealVector currentBest;
-    /** Differences between the upper and lower bounds. */
+    
     private double[] boundDifference;
-    /**
-     * Index of the interpolation point at the trust region center.
-     */
+    
     private int trustRegionCenterInterpolationPointIndex;
-    /**
-     * Last <em>n</em> columns of matrix H (where <em>n</em> is the dimension
-     * of the problem).
-     * XXX "bmat" in the original code.
-     */
+    
     private Array2DRowRealMatrix bMatrix;
-    /**
-     * Factorization of the leading <em>npt</em> square submatrix of H, this
-     * factorization being Z Z<sup>T</sup>, which provides both the correct
-     * rank and positive semi-definiteness.
-     * XXX "zmat" in the original code.
-     */
+    
     private Array2DRowRealMatrix zMatrix;
-    /**
-     * Coordinates of the interpolation points relative to {@link #originShift}.
-     * XXX "xpt" in the original code.
-     */
+    
     private Array2DRowRealMatrix interpolationPoints;
-    /**
-     * Shift of origin that should reduce the contributions from rounding
-     * errors to values of the model and Lagrange functions.
-     * XXX "xbase" in the original code.
-     */
+    
     private ArrayRealVector originShift;
-    /**
-     * Values of the objective function at the interpolation points.
-     * XXX "fval" in the original code.
-     */
+    
     private ArrayRealVector fAtInterpolationPoints;
-    /**
-     * Displacement from {@link #originShift} of the trust region center.
-     * XXX "xopt" in the original code.
-     */
+    
     private ArrayRealVector trustRegionCenterOffset;
-    /**
-     * Gradient of the quadratic model at {@link #originShift} +
-     * {@link #trustRegionCenterOffset}.
-     * XXX "gopt" in the original code.
-     */
+    
     private ArrayRealVector gradientAtTrustRegionCenter;
-    /**
-     * Differences {@link #getLowerBound()} - {@link #originShift}.
-     * All the components of every {@link #trustRegionCenterOffset} are going
-     * to satisfy the bounds<br/>
-     * {@link #getLowerBound() lowerBound}<sub>i</sub> &le;
-     * {@link #trustRegionCenterOffset}<sub>i</sub>,<br/>
-     * with appropriate equalities when {@link #trustRegionCenterOffset} is
-     * on a constraint boundary.
-     * XXX "sl" in the original code.
-     */
+    
     private ArrayRealVector lowerDifference;
-    /**
-     * Differences {@link #getUpperBound()} - {@link #originShift}
-     * All the components of every {@link #trustRegionCenterOffset} are going
-     * to satisfy the bounds<br/>
-     *  {@link #trustRegionCenterOffset}<sub>i</sub> &le;
-     *  {@link #getUpperBound() upperBound}<sub>i</sub>,<br/>
-     * with appropriate equalities when {@link #trustRegionCenterOffset} is
-     * on a constraint boundary.
-     * XXX "su" in the original code.
-     */
+    
     private ArrayRealVector upperDifference;
-    /**
-     * Parameters of the implicit second derivatives of the quadratic model.
-     * XXX "pq" in the original code.
-     */
+    
     private ArrayRealVector modelSecondDerivativesParameters;
-    /**
-     * Point chosen by function {@link #trsbox(double,ArrayRealVector,
-     * ArrayRealVector, ArrayRealVector,ArrayRealVector,ArrayRealVector) trsbox}
-     * or {@link #altmov(int,double) altmov}.
-     * Usually {@link #originShift} + {@link #newPoint} is the vector of
-     * variables for the next evaluation of the objective function.
-     * It also satisfies the constraints indicated in {@link #lowerDifference}
-     * and {@link #upperDifference}.
-     * XXX "xnew" in the original code.
-     */
+    
     private ArrayRealVector newPoint;
-    /**
-     * Alternative to {@link #newPoint}, chosen by
-     * {@link #altmov(int,double) altmov}.
-     * It may replace {@link #newPoint} in order to increase the denominator
-     * in the {@link #update(double, double, int) updating procedure}.
-     * XXX "xalt" in the original code.
-     */
+    
     private ArrayRealVector alternativeNewPoint;
-    /**
-     * Trial step from {@link #trustRegionCenterOffset} which is usually
-     * {@link #newPoint} - {@link #trustRegionCenterOffset}.
-     * XXX "d__" in the original code.
-     */
+    
     private ArrayRealVector trialStepPoint;
-    /**
-     * Values of the Lagrange functions at a new point.
-     * XXX "vlag" in the original code.
-     */
+    
     private ArrayRealVector lagrangeValuesAtNewPoint;
-    /**
-     * Explicit second derivatives of the quadratic model.
-     * XXX "hq" in the original code.
-     */
+    
     private ArrayRealVector modelSecondDerivativesValues;
 
-    /**
-     * @param numberOfInterpolationPoints Number of interpolation conditions.
-     * For a problem of dimension {@code n}, its value must be in the interval
-     * {@code [n+2, (n+1)(n+2)/2]}.
-     * Choices that exceed {@code 2n+1} are not recommended.
-     */
+    
     public BOBYQAOptimizer(int numberOfInterpolationPoints) {
         this(numberOfInterpolationPoints,
              DEFAULT_INITIAL_RADIUS,
              DEFAULT_STOPPING_RADIUS);
     }
 
-    /**
-     * @param numberOfInterpolationPoints Number of interpolation conditions.
-     * For a problem of dimension {@code n}, its value must be in the interval
-     * {@code [n+2, (n+1)(n+2)/2]}.
-     * Choices that exceed {@code 2n+1} are not recommended.
-     * @param initialTrustRegionRadius Initial trust region radius.
-     * @param stoppingTrustRegionRadius Stopping trust region radius.
-     */
+    
     public BOBYQAOptimizer(int numberOfInterpolationPoints,
                            double initialTrustRegionRadius,
                            double stoppingTrustRegionRadius) {
@@ -237,7 +125,7 @@ public class BOBYQAOptimizer
         this.stoppingTrustRegionRadius = stoppingTrustRegionRadius;
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     protected PointValuePair doOptimize() {
         final double[] lowerBound = getLowerBound();
@@ -255,41 +143,7 @@ public class BOBYQAOptimizer
                                   isMinimize ? value : -value);
     }
 
-    /**
-     *     This subroutine seeks the least value of a function of many variables,
-     *     by applying a trust region method that forms quadratic models by
-     *     interpolation. There is usually some freedom in the interpolation
-     *     conditions, which is taken up by minimizing the Frobenius norm of
-     *     the change to the second derivative of the model, beginning with the
-     *     zero matrix. The values of the variables are constrained by upper and
-     *     lower bounds. The arguments of the subroutine are as follows.
-     *
-     *     N must be set to the number of variables and must be at least two.
-     *     NPT is the number of interpolation conditions. Its value must be in
-     *       the interval [N+2,(N+1)(N+2)/2]. Choices that exceed 2*N+1 are not
-     *       recommended.
-     *     Initial values of the variables must be set in X(1),X(2),...,X(N). They
-     *       will be changed to the values that give the least calculated F.
-     *     For I=1,2,...,N, XL(I) and XU(I) must provide the lower and upper
-     *       bounds, respectively, on X(I). The construction of quadratic models
-     *       requires XL(I) to be strictly less than XU(I) for each I. Further,
-     *       the contribution to a model from changes to the I-th variable is
-     *       damaged severely by rounding errors if XU(I)-XL(I) is too small.
-     *     RHOBEG and RHOEND must be set to the initial and final values of a trust
-     *       region radius, so both must be positive with RHOEND no greater than
-     *       RHOBEG. Typically, RHOBEG should be about one tenth of the greatest
-     *       expected change to a variable, while RHOEND should indicate the
-     *       accuracy that is required in the final values of the variables. An
-     *       error return occurs if any of the differences XU(I)-XL(I), I=1,...,N,
-     *       is less than 2*RHOBEG.
-     *     MAXFUN must be set to an upper bound on the number of calls of CALFUN.
-     *     The array W will be used for working space. Its length must be at least
-     *       (NPT+5)*(NPT+N)+3*N*(N+5)/2.
-     *
-     * @param lowerBound Lower bounds.
-     * @param upperBound Upper bounds.
-     * @return the value of the objective at the optimum.
-     */
+    
     private double bobyqa(double[] lowerBound,
                           double[] upperBound) {
         printMethod(); // XXX
@@ -342,43 +196,7 @@ public class BOBYQAOptimizer
 
     // ----------------------------------------------------------------------------------------
 
-    /**
-     *     The arguments N, NPT, X, XL, XU, RHOBEG, RHOEND, IPRINT and MAXFUN
-     *       are identical to the corresponding arguments in SUBROUTINE BOBYQA.
-     *     XBASE holds a shift of origin that should reduce the contributions
-     *       from rounding errors to values of the model and Lagrange functions.
-     *     XPT is a two-dimensional array that holds the coordinates of the
-     *       interpolation points relative to XBASE.
-     *     FVAL holds the values of F at the interpolation points.
-     *     XOPT is set to the displacement from XBASE of the trust region centre.
-     *     GOPT holds the gradient of the quadratic model at XBASE+XOPT.
-     *     HQ holds the explicit second derivatives of the quadratic model.
-     *     PQ contains the parameters of the implicit second derivatives of the
-     *       quadratic model.
-     *     BMAT holds the last N columns of H.
-     *     ZMAT holds the factorization of the leading NPT by NPT submatrix of H,
-     *       this factorization being ZMAT times ZMAT^T, which provides both the
-     *       correct rank and positive semi-definiteness.
-     *     NDIM is the first dimension of BMAT and has the value NPT+N.
-     *     SL and SU hold the differences XL-XBASE and XU-XBASE, respectively.
-     *       All the components of every XOPT are going to satisfy the bounds
-     *       SL(I) .LEQ. XOPT(I) .LEQ. SU(I), with appropriate equalities when
-     *       XOPT is on a constraint boundary.
-     *     XNEW is chosen by SUBROUTINE TRSBOX or ALTMOV. Usually XBASE+XNEW is the
-     *       vector of variables for the next call of CALFUN. XNEW also satisfies
-     *       the SL and SU constraints in the way that has just been mentioned.
-     *     XALT is an alternative to XNEW, chosen by ALTMOV, that may replace XNEW
-     *       in order to increase the denominator in the updating of UPDATE.
-     *     D is reserved for a trial step from XOPT, which is usually XNEW-XOPT.
-     *     VLAG contains the values of the Lagrange functions at a new point X.
-     *       They are part of a product that requires VLAG to be of length NDIM.
-     *     W is a one-dimensional array that is used for working space. Its length
-     *       must be at least 3*NDIM = 3*(NPT+N).
-     *
-     * @param lowerBound Lower bounds.
-     * @param upperBound Upper bounds.
-     * @return the value of the objective at the optimum.
-     */
+    
     private double bobyqb(double[] lowerBound,
                           double[] upperBound) {
         printMethod(); // XXX
@@ -1230,39 +1048,7 @@ public class BOBYQAOptimizer
 
     // ----------------------------------------------------------------------------------------
 
-    /**
-     *     The arguments N, NPT, XPT, XOPT, BMAT, ZMAT, NDIM, SL and SU all have
-     *       the same meanings as the corresponding arguments of BOBYQB.
-     *     KOPT is the index of the optimal interpolation point.
-     *     KNEW is the index of the interpolation point that is going to be moved.
-     *     ADELT is the current trust region bound.
-     *     XNEW will be set to a suitable new position for the interpolation point
-     *       XPT(KNEW,.). Specifically, it satisfies the SL, SU and trust region
-     *       bounds and it should provide a large denominator in the next call of
-     *       UPDATE. The step XNEW-XOPT from XOPT is restricted to moves along the
-     *       straight lines through XOPT and another interpolation point.
-     *     XALT also provides a large value of the modulus of the KNEW-th Lagrange
-     *       function subject to the constraints that have been mentioned, its main
-     *       difference from XNEW being that XALT-XOPT is a constrained version of
-     *       the Cauchy step within the trust region. An exception is that XALT is
-     *       not calculated if all components of GLAG (see below) are zero.
-     *     ALPHA will be set to the KNEW-th diagonal element of the H matrix.
-     *     CAUCHY will be set to the square of the KNEW-th Lagrange function at
-     *       the step XALT-XOPT from XOPT for the vector XALT that is returned,
-     *       except that CAUCHY is set to zero if XALT is not calculated.
-     *     GLAG is a working space vector of length N for the gradient of the
-     *       KNEW-th Lagrange function at XOPT.
-     *     HCOL is a working space vector of length NPT for the second derivative
-     *       coefficients of the KNEW-th Lagrange function.
-     *     W is a working space vector of length 2N that is going to hold the
-     *       constrained Cauchy step from XOPT of the Lagrange function, followed
-     *       by the downhill version of XALT when the uphill step is calculated.
-     *
-     *     Set the first NPT components of W to the leading elements of the
-     *     KNEW-th column of the H matrix.
-     * @param knew
-     * @param adelt
-     */
+    
     private double[] altmov(
             int knew,
             double adelt
@@ -1567,26 +1353,7 @@ public class BOBYQAOptimizer
 
     // ----------------------------------------------------------------------------------------
 
-    /**
-     *     SUBROUTINE PRELIM sets the elements of XBASE, XPT, FVAL, GOPT, HQ, PQ,
-     *     BMAT and ZMAT for the first iteration, and it maintains the values of
-     *     NF and KOPT. The vector X is also changed by PRELIM.
-     *
-     *     The arguments N, NPT, X, XL, XU, RHOBEG, IPRINT and MAXFUN are the
-     *       same as the corresponding arguments in SUBROUTINE BOBYQA.
-     *     The arguments XBASE, XPT, FVAL, HQ, PQ, BMAT, ZMAT, NDIM, SL and SU
-     *       are the same as the corresponding arguments in BOBYQB, the elements
-     *       of SL and SU being set in BOBYQA.
-     *     GOPT is usually the gradient of the quadratic model at XOPT+XBASE, but
-     *       it is set by PRELIM to the gradient of the quadratic model at XBASE.
-     *       If XOPT is nonzero, BOBYQB will change it to its usual value later.
-     *     NF is maintaned as the number of calls of CALFUN so far.
-     *     KOPT will be such that the least calculated value of F so far is at
-     *       the point XPT(KOPT,.)+XBASE in the space of the variables.
-     *
-     * @param lowerBound Lower bounds.
-     * @param upperBound Upper bounds.
-     */
+    
     private void prelim(double[] lowerBound,
                         double[] upperBound) {
         printMethod(); // XXX
@@ -1763,50 +1530,7 @@ public class BOBYQAOptimizer
 
     // ----------------------------------------------------------------------------------------
 
-    /**
-     *     A version of the truncated conjugate gradient is applied. If a line
-     *     search is restricted by a constraint, then the procedure is restarted,
-     *     the values of the variables that are at their bounds being fixed. If
-     *     the trust region boundary is reached, then further changes may be made
-     *     to D, each one being in the two dimensional space that is spanned
-     *     by the current D and the gradient of Q at XOPT+D, staying on the trust
-     *     region boundary. Termination occurs when the reduction in Q seems to
-     *     be close to the greatest reduction that can be achieved.
-     *     The arguments N, NPT, XPT, XOPT, GOPT, HQ, PQ, SL and SU have the same
-     *       meanings as the corresponding arguments of BOBYQB.
-     *     DELTA is the trust region radius for the present calculation, which
-     *       seeks a small value of the quadratic model within distance DELTA of
-     *       XOPT subject to the bounds on the variables.
-     *     XNEW will be set to a new vector of variables that is approximately
-     *       the one that minimizes the quadratic model within the trust region
-     *       subject to the SL and SU constraints on the variables. It satisfies
-     *       as equations the bounds that become active during the calculation.
-     *     D is the calculated trial step from XOPT, generated iteratively from an
-     *       initial value of zero. Thus XNEW is XOPT+D after the final iteration.
-     *     GNEW holds the gradient of the quadratic model at XOPT+D. It is updated
-     *       when D is updated.
-     *     xbdi.get( is a working space vector. For I=1,2,...,N, the element xbdi.get((I) is
-     *       set to -1.0, 0.0, or 1.0, the value being nonzero if and only if the
-     *       I-th variable has become fixed at a bound, the bound being SL(I) or
-     *       SU(I) in the case xbdi.get((I)=-1.0 or xbdi.get((I)=1.0, respectively. This
-     *       information is accumulated during the construction of XNEW.
-     *     The arrays S, HS and HRED are also used for working space. They hold the
-     *       current search direction, and the changes in the gradient of Q along S
-     *       and the reduced D, respectively, where the reduced D is the same as D,
-     *       except that the components of the fixed variables are zero.
-     *     DSQ will be set to the square of the length of XNEW-XOPT.
-     *     CRVMIN is set to zero if D reaches the trust region boundary. Otherwise
-     *       it is set to the least curvature of H that occurs in the conjugate
-     *       gradient searches that are not restricted by any constraints. The
-     *       value CRVMIN=-1.0D0 is set, however, if all of these searches are
-     *       constrained.
-     * @param delta
-     * @param gnew
-     * @param xbdi
-     * @param s
-     * @param hs
-     * @param hred
-     */
+    
     private double[] trsbox(
             double delta,
             ArrayRealVector gnew,
@@ -2284,19 +2008,7 @@ public class BOBYQAOptimizer
 
     // ----------------------------------------------------------------------------------------
 
-    /**
-     *     The arrays BMAT and ZMAT are updated, as required by the new position
-     *     of the interpolation point that has the index KNEW. The vector VLAG has
-     *     N+NPT components, set on entry to the first NPT and last N components
-     *     of the product Hw in equation (4.11) of the Powell (2006) paper on
-     *     NEWUOA. Further, BETA is set on entry to the value of the parameter
-     *     with that name, and DENOM is set to the denominator of the updating
-     *     formula. Elements of ZMAT may be treated as zero if their moduli are
-     *     at most ZTEST. The first NDIM elements of W are used for working space.
-     * @param beta
-     * @param denom
-     * @param knew
-     */
+    
     private void update(
             double beta,
             double denom,
@@ -2378,12 +2090,7 @@ public class BOBYQAOptimizer
         }
     } // update
 
-    /**
-     * Performs validity checks.
-     *
-     * @param lowerBound Lower bounds (constraints) of the objective variables.
-     * @param upperBound Upperer bounds (constraints) of the objective variables.
-     */
+    
     private void setup(double[] lowerBound,
                        double[] upperBound) {
         printMethod(); // XXX
@@ -2455,15 +2162,12 @@ public class BOBYQAOptimizer
         //        System.out.println(caller(2));
     }
 
-    /**
-     * Marker for code paths that are not explored with the current unit tests.
-     * If the path becomes explored, it should just be removed from the code.
-     */
+    
     private static class PathIsExploredException extends RuntimeException {
-        /** Serializable UID. */
+        
         private static final long serialVersionUID = 745350979634801853L;
 
-        /** Message string. */
+        
         private static final String PATH_IS_EXPLORED
             = "If this exception is thrown, just remove it from the code";
 

@@ -14,9 +14,5 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/**
- *
- *     Root finding algorithms, for univariate real functions.
- *
- */
+
 package org.apache.lucene.util.hnsw.math.analysis.solvers;

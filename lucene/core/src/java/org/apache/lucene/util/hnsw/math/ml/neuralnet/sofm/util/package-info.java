@@ -15,8 +15,6 @@
  * limitations under the License.
  */
 
-/**
- * Miscellaneous utilities.
- */
+
 
 package org.apache.lucene.util.hnsw.math.ml.neuralnet.sofm.util;

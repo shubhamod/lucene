@@ -14,9 +14,5 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/**
- *
- *     Univariate real functions interpolation algorithms.
- *
- */
+
 package org.apache.lucene.util.hnsw.math.analysis.interpolation;

@@ -17,16 +17,9 @@
 
 package org.apache.lucene.util.hnsw.math.ml.clustering;
 
-/**
- * Interface for n-dimensional points that can be clustered together.
- * @since 3.2
- */
+
 public interface Clusterable {
 
-    /**
-     * Gets the n-dimensional point.
-     *
-     * @return the point array
-     */
+    
     double[] getPoint();
 }

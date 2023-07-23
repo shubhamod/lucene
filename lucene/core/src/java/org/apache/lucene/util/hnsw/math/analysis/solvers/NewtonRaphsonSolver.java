@@ -22,45 +22,21 @@ import org.apache.lucene.util.hnsw.math.analysis.differentiation.UnivariateDiffe
 import org.apache.lucene.util.hnsw.math.util.FastMath;
 import org.apache.lucene.util.hnsw.math.exception.TooManyEvaluationsException;
 
-/**
- * Implements <a href="http://mathworld.wolfram.com/NewtonsMethod.html">
- * Newton's Method</a> for finding zeros of real univariate differentiable
- * functions.
- *
- * @since 3.1
- */
+
 public class NewtonRaphsonSolver extends AbstractUnivariateDifferentiableSolver {
-    /** Default absolute accuracy. */
+    
     private static final double DEFAULT_ABSOLUTE_ACCURACY = 1e-6;
 
-    /**
-     * Construct a solver.
-     */
+    
     public NewtonRaphsonSolver() {
         this(DEFAULT_ABSOLUTE_ACCURACY);
     }
-    /**
-     * Construct a solver.
-     *
-     * @param absoluteAccuracy Absolute accuracy.
-     */
+    
     public NewtonRaphsonSolver(double absoluteAccuracy) {
         super(absoluteAccuracy);
     }
 
-    /**
-     * Find a zero near the midpoint of {@code min} and {@code max}.
-     *
-     * @param f Function to solve.
-     * @param min Lower bound for the interval.
-     * @param max Upper bound for the interval.
-     * @param maxEval Maximum number of evaluations.
-     * @return the value where the function is zero.
-     * @throws TooManyEvaluationsException
-     * if the maximum evaluation count is exceeded.
-     * @throws org.apache.lucene.util.hnsw.math.exception.NumberIsTooLargeException
-     * if {@code min >= max}.
-     */
+    
     @Override
     public double solve(int maxEval, final UnivariateDifferentiableFunction f,
                         final double min, final double max)
@@ -68,9 +44,7 @@ public class NewtonRaphsonSolver extends AbstractUnivariateDifferentiableSolver 
         return super.solve(maxEval, f, UnivariateSolverUtils.midpoint(min, max));
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    
     @Override
     protected double doSolve()
         throws TooManyEvaluationsException {

@@ -16,21 +16,12 @@
  */
 package org.apache.lucene.util.hnsw.math.analysis;
 
-/**
- * Extension of {@link UnivariateVectorFunction} representing a differentiable univariate vectorial function.
- *
- * @since 2.0
- * @deprecated as of 3.1 replaced by {@link org.apache.lucene.util.hnsw.math.analysis.differentiation.UnivariateDifferentiableVectorFunction}
- */
+
 @Deprecated
 public interface DifferentiableUnivariateVectorFunction
     extends UnivariateVectorFunction {
 
-    /**
-     * Returns the derivative of the function
-     *
-     * @return  the derivative function
-     */
+    
     UnivariateVectorFunction derivative();
 
 }

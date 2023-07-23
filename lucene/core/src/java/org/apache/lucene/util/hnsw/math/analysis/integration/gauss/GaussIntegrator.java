@@ -22,30 +22,14 @@ import org.apache.lucene.util.hnsw.math.exception.NonMonotonicSequenceException;
 import org.apache.lucene.util.hnsw.math.util.MathArrays;
 import org.apache.lucene.util.hnsw.math.util.Pair;
 
-/**
- * Class that implements the Gaussian rule for
- * {@link #integrate(UnivariateFunction) integrating} a weighted
- * function.
- *
- * @since 3.1
- */
+
 public class GaussIntegrator {
-    /** Nodes. */
+    
     private final double[] points;
-    /** Nodes weights. */
+    
     private final double[] weights;
 
-    /**
-     * Creates an integrator from the given {@code points} and {@code weights}.
-     * The integration interval is defined by the first and last value of
-     * {@code points} which must be sorted in increasing order.
-     *
-     * @param points Integration points.
-     * @param weights Weights of the corresponding integration nodes.
-     * @throws NonMonotonicSequenceException if the {@code points} are not
-     * sorted in increasing order.
-     * @throws DimensionMismatchException if points and weights don't have the same length
-     */
+    
     public GaussIntegrator(double[] points,
                            double[] weights)
         throws NonMonotonicSequenceException, DimensionMismatchException {
@@ -60,31 +44,13 @@ public class GaussIntegrator {
         this.weights = weights.clone();
     }
 
-    /**
-     * Creates an integrator from the given pair of points (first element of
-     * the pair) and weights (second element of the pair.
-     *
-     * @param pointsAndWeights Integration points and corresponding weights.
-     * @throws NonMonotonicSequenceException if the {@code points} are not
-     * sorted in increasing order.
-     *
-     * @see #GaussIntegrator(double[], double[])
-     */
+    
     public GaussIntegrator(Pair<double[], double[]> pointsAndWeights)
         throws NonMonotonicSequenceException {
         this(pointsAndWeights.getFirst(), pointsAndWeights.getSecond());
     }
 
-    /**
-     * Returns an estimate of the integral of {@code f(x) * w(x)},
-     * where {@code w} is a weight function that depends on the actual
-     * flavor of the Gauss integration scheme.
-     * The algorithm uses the points and associated weights, as passed
-     * to the {@link #GaussIntegrator(double[],double[]) constructor}.
-     *
-     * @param f Function to integrate.
-     * @return the integral of the weighted function.
-     */
+    
     public double integrate(UnivariateFunction f) {
         double s = 0;
         double c = 0;
@@ -99,30 +65,17 @@ public class GaussIntegrator {
         return s;
     }
 
-    /**
-     * @return the order of the integration rule (the number of integration
-     * points).
-     */
+    
     public int getNumberOfPoints() {
         return points.length;
     }
 
-    /**
-     * Gets the integration point at the given index.
-     * The index must be in the valid range but no check is performed.
-     * @param index index of the integration point
-     * @return the integration point.
-     */
+    
     public double getPoint(int index) {
         return points[index];
     }
 
-    /**
-     * Gets the weight of the integration point at the given index.
-     * The index must be in the valid range but no check is performed.
-     * @param index index of the integration point
-     * @return the weight.
-     */
+    
     public double getWeight(int index) {
         return weights[index];
     }

@@ -19,14 +19,7 @@ package org.apache.lucene.util.hnsw.math.optimization;
 
 import org.apache.lucene.util.hnsw.math.analysis.DifferentiableMultivariateVectorFunction;
 
-/**
- * This interface represents an optimization algorithm for
- * {@link DifferentiableMultivariateVectorFunction vectorial differentiable
- * objective functions}.
- *
- * @deprecated As of 3.1 (to be removed in 4.0).
- * @since 3.0
- */
+
 @Deprecated
 public interface DifferentiableMultivariateVectorOptimizer
     extends BaseMultivariateVectorOptimizer<DifferentiableMultivariateVectorFunction> {}

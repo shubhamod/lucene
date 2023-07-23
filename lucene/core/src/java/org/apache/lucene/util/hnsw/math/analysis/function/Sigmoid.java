@@ -29,74 +29,39 @@ import org.apache.lucene.util.hnsw.math.exception.NullArgumentException;
 import org.apache.lucene.util.hnsw.math.exception.DimensionMismatchException;
 import org.apache.lucene.util.hnsw.math.util.FastMath;
 
-/**
- * <a href="http://en.wikipedia.org/wiki/Sigmoid_function">
- *  Sigmoid</a> function.
- * It is the inverse of the {@link Logit logit} function.
- * A more flexible version, the generalised logistic, is implemented
- * by the {@link Logistic} class.
- *
- * @since 3.0
- */
+
 public class Sigmoid implements UnivariateDifferentiableFunction, DifferentiableUnivariateFunction {
-    /** Lower asymptote. */
+    
     private final double lo;
-    /** Higher asymptote. */
+    
     private final double hi;
 
-    /**
-     * Usual sigmoid function, where the lower asymptote is 0 and the higher
-     * asymptote is 1.
-     */
+    
     public Sigmoid() {
         this(0, 1);
     }
 
-    /**
-     * Sigmoid function.
-     *
-     * @param lo Lower asymptote.
-     * @param hi Higher asymptote.
-     */
+    
     public Sigmoid(double lo,
                    double hi) {
         this.lo = lo;
         this.hi = hi;
     }
 
-    /** {@inheritDoc}
-     * @deprecated as of 3.1, replaced by {@link #value(DerivativeStructure)}
-     */
+    
     @Deprecated
     public UnivariateFunction derivative() {
         return FunctionUtils.toDifferentiableUnivariateFunction(this).derivative();
     }
 
-    /** {@inheritDoc} */
+    
     public double value(double x) {
         return value(x, lo, hi);
     }
 
-    /**
-     * Parametric function where the input array contains the parameters of
-     * the {@link Sigmoid#Sigmoid(double,double) sigmoid function}, ordered
-     * as follows:
-     * <ul>
-     *  <li>Lower asymptote</li>
-     *  <li>Higher asymptote</li>
-     * </ul>
-     */
+    
     public static class Parametric implements ParametricUnivariateFunction {
-        /**
-         * Computes the value of the sigmoid at {@code x}.
-         *
-         * @param x Value for which the function must be computed.
-         * @param param Values of lower asymptote and higher asymptote.
-         * @return the value of the function.
-         * @throws NullArgumentException if {@code param} is {@code null}.
-         * @throws DimensionMismatchException if the size of {@code param} is
-         * not 2.
-         */
+        
         public double value(double x, double ... param)
             throws NullArgumentException,
                    DimensionMismatchException {
@@ -104,19 +69,7 @@ public class Sigmoid implements UnivariateDifferentiableFunction, Differentiable
             return Sigmoid.value(x, param[0], param[1]);
         }
 
-        /**
-         * Computes the value of the gradient at {@code x}.
-         * The components of the gradient vector are the partial
-         * derivatives of the function with respect to each of the
-         * <em>parameters</em> (lower asymptote and higher asymptote).
-         *
-         * @param x Value at which the gradient must be computed.
-         * @param param Values for lower asymptote and higher asymptote.
-         * @return the gradient vector at {@code x}.
-         * @throws NullArgumentException if {@code param} is {@code null}.
-         * @throws DimensionMismatchException if the size of {@code param} is
-         * not 2.
-         */
+        
         public double[] gradient(double x, double ... param)
             throws NullArgumentException,
                    DimensionMismatchException {
@@ -127,16 +80,7 @@ public class Sigmoid implements UnivariateDifferentiableFunction, Differentiable
             return new double[] { 1 - invExp1, invExp1 };
         }
 
-        /**
-         * Validates parameters to ensure they are appropriate for the evaluation of
-         * the {@link #value(double,double[])} and {@link #gradient(double,double[])}
-         * methods.
-         *
-         * @param param Values for lower and higher asymptotes.
-         * @throws NullArgumentException if {@code param} is {@code null}.
-         * @throws DimensionMismatchException if the size of {@code param} is
-         * not 2.
-         */
+        
         private void validateParameters(double[] param)
             throws NullArgumentException,
                    DimensionMismatchException {
@@ -149,21 +93,14 @@ public class Sigmoid implements UnivariateDifferentiableFunction, Differentiable
         }
     }
 
-    /**
-     * @param x Value at which to compute the sigmoid.
-     * @param lo Lower asymptote.
-     * @param hi Higher asymptote.
-     * @return the value of the sigmoid function at {@code x}.
-     */
+    
     private static double value(double x,
                                 double lo,
                                 double hi) {
         return lo + (hi - lo) / (1 + FastMath.exp(-x));
     }
 
-    /** {@inheritDoc}
-     * @since 3.1
-     */
+    
     public DerivativeStructure value(final DerivativeStructure t)
         throws DimensionMismatchException {
 

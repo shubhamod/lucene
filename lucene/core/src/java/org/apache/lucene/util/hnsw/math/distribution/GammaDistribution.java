@@ -23,153 +23,51 @@ import org.apache.lucene.util.hnsw.math.random.Well19937c;
 import org.apache.lucene.util.hnsw.math.special.Gamma;
 import org.apache.lucene.util.hnsw.math.util.FastMath;
 
-/**
- * Implementation of the Gamma distribution.
- *
- * @see <a href="http://en.wikipedia.org/wiki/Gamma_distribution">Gamma distribution (Wikipedia)</a>
- * @see <a href="http://mathworld.wolfram.com/GammaDistribution.html">Gamma distribution (MathWorld)</a>
- */
+
 public class GammaDistribution extends AbstractRealDistribution {
-    /**
-     * Default inverse cumulative probability accuracy.
-     * @since 2.1
-     */
+    
     public static final double DEFAULT_INVERSE_ABSOLUTE_ACCURACY = 1e-9;
-    /** Serializable version identifier. */
+    
     private static final long serialVersionUID = 20120524L;
-    /** The shape parameter. */
+    
     private final double shape;
-    /** The scale parameter. */
+    
     private final double scale;
-    /**
-     * The constant value of {@code shape + g + 0.5}, where {@code g} is the
-     * Lanczos constant {@link Gamma#LANCZOS_G}.
-     */
+    
     private final double shiftedShape;
-    /**
-     * The constant value of
-     * {@code shape / scale * sqrt(e / (2 * pi * (shape + g + 0.5))) / L(shape)},
-     * where {@code L(shape)} is the Lanczos approximation returned by
-     * {@link Gamma#lanczos(double)}. This prefactor is used in
-     * {@link #density(double)}, when no overflow occurs with the natural
-     * calculation.
-     */
+    
     private final double densityPrefactor1;
-    /**
-     * The constant value of
-     * {@code log(shape / scale * sqrt(e / (2 * pi * (shape + g + 0.5))) / L(shape))},
-     * where {@code L(shape)} is the Lanczos approximation returned by
-     * {@link Gamma#lanczos(double)}. This prefactor is used in
-     * {@link #logDensity(double)}, when no overflow occurs with the natural
-     * calculation.
-     */
+    
     private final double logDensityPrefactor1;
-    /**
-     * The constant value of
-     * {@code shape * sqrt(e / (2 * pi * (shape + g + 0.5))) / L(shape)},
-     * where {@code L(shape)} is the Lanczos approximation returned by
-     * {@link Gamma#lanczos(double)}. This prefactor is used in
-     * {@link #density(double)}, when overflow occurs with the natural
-     * calculation.
-     */
+    
     private final double densityPrefactor2;
-    /**
-     * The constant value of
-     * {@code log(shape * sqrt(e / (2 * pi * (shape + g + 0.5))) / L(shape))},
-     * where {@code L(shape)} is the Lanczos approximation returned by
-     * {@link Gamma#lanczos(double)}. This prefactor is used in
-     * {@link #logDensity(double)}, when overflow occurs with the natural
-     * calculation.
-     */
+    
     private final double logDensityPrefactor2;
-    /**
-     * Lower bound on {@code y = x / scale} for the selection of the computation
-     * method in {@link #density(double)}. For {@code y <= minY}, the natural
-     * calculation overflows.
-     */
+    
     private final double minY;
-    /**
-     * Upper bound on {@code log(y)} ({@code y = x / scale}) for the selection
-     * of the computation method in {@link #density(double)}. For
-     * {@code log(y) >= maxLogY}, the natural calculation overflows.
-     */
+    
     private final double maxLogY;
-    /** Inverse cumulative probability accuracy. */
+    
     private final double solverAbsoluteAccuracy;
 
-    /**
-     * Creates a new gamma distribution with specified values of the shape and
-     * scale parameters.
-     * <p>
-     * <b>Note:</b> this constructor will implicitly create an instance of
-     * {@link Well19937c} as random generator to be used for sampling only (see
-     * {@link #sample()} and {@link #sample(int)}). In case no sampling is
-     * needed for the created distribution, it is advised to pass {@code null}
-     * as random generator via the appropriate constructors to avoid the
-     * additional initialisation overhead.
-     *
-     * @param shape the shape parameter
-     * @param scale the scale parameter
-     * @throws NotStrictlyPositiveException if {@code shape <= 0} or
-     * {@code scale <= 0}.
-     */
+    
     public GammaDistribution(double shape, double scale) throws NotStrictlyPositiveException {
         this(shape, scale, DEFAULT_INVERSE_ABSOLUTE_ACCURACY);
     }
 
-    /**
-     * Creates a new gamma distribution with specified values of the shape and
-     * scale parameters.
-     * <p>
-     * <b>Note:</b> this constructor will implicitly create an instance of
-     * {@link Well19937c} as random generator to be used for sampling only (see
-     * {@link #sample()} and {@link #sample(int)}). In case no sampling is
-     * needed for the created distribution, it is advised to pass {@code null}
-     * as random generator via the appropriate constructors to avoid the
-     * additional initialisation overhead.
-     *
-     * @param shape the shape parameter
-     * @param scale the scale parameter
-     * @param inverseCumAccuracy the maximum absolute error in inverse
-     * cumulative probability estimates (defaults to
-     * {@link #DEFAULT_INVERSE_ABSOLUTE_ACCURACY}).
-     * @throws NotStrictlyPositiveException if {@code shape <= 0} or
-     * {@code scale <= 0}.
-     * @since 2.1
-     */
+    
     public GammaDistribution(double shape, double scale, double inverseCumAccuracy)
         throws NotStrictlyPositiveException {
         this(new Well19937c(), shape, scale, inverseCumAccuracy);
     }
 
-    /**
-     * Creates a Gamma distribution.
-     *
-     * @param rng Random number generator.
-     * @param shape the shape parameter
-     * @param scale the scale parameter
-     * @throws NotStrictlyPositiveException if {@code shape <= 0} or
-     * {@code scale <= 0}.
-     * @since 3.3
-     */
+    
     public GammaDistribution(RandomGenerator rng, double shape, double scale)
         throws NotStrictlyPositiveException {
         this(rng, shape, scale, DEFAULT_INVERSE_ABSOLUTE_ACCURACY);
     }
 
-    /**
-     * Creates a Gamma distribution.
-     *
-     * @param rng Random number generator.
-     * @param shape the shape parameter
-     * @param scale the scale parameter
-     * @param inverseCumAccuracy the maximum absolute error in inverse
-     * cumulative probability estimates (defaults to
-     * {@link #DEFAULT_INVERSE_ABSOLUTE_ACCURACY}).
-     * @throws NotStrictlyPositiveException if {@code shape <= 0} or
-     * {@code scale <= 0}.
-     * @since 3.1
-     */
+    
     public GammaDistribution(RandomGenerator rng,
                              double shape,
                              double scale,
@@ -202,51 +100,29 @@ public class GammaDistribution extends AbstractRealDistribution {
         this.maxLogY = FastMath.log(Double.MAX_VALUE) / (shape - 1.0);
     }
 
-    /**
-     * Returns the shape parameter of {@code this} distribution.
-     *
-     * @return the shape parameter
-     * @deprecated as of version 3.1, {@link #getShape()} should be preferred.
-     * This method will be removed in version 4.0.
-     */
+    
     @Deprecated
     public double getAlpha() {
         return shape;
     }
 
-    /**
-     * Returns the shape parameter of {@code this} distribution.
-     *
-     * @return the shape parameter
-     * @since 3.1
-     */
+    
     public double getShape() {
         return shape;
     }
 
-    /**
-     * Returns the scale parameter of {@code this} distribution.
-     *
-     * @return the scale parameter
-     * @deprecated as of version 3.1, {@link #getScale()} should be preferred.
-     * This method will be removed in version 4.0.
-     */
+    
     @Deprecated
     public double getBeta() {
         return scale;
     }
 
-    /**
-     * Returns the scale parameter of {@code this} distribution.
-     *
-     * @return the scale parameter
-     * @since 3.1
-     */
+    
     public double getScale() {
         return scale;
     }
 
-    /** {@inheritDoc} */
+    
     public double density(double x) {
        /* The present method must return the value of
         *
@@ -332,20 +208,7 @@ public class GammaDistribution extends AbstractRealDistribution {
         return logDensityPrefactor1 - y + FastMath.log(y) * (shape - 1);
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * The implementation of this method is based on:
-     * <ul>
-     *  <li>
-     *   <a href="http://mathworld.wolfram.com/Chi-SquaredDistribution.html">
-     *    Chi-Squared Distribution</a>, equation (9).
-     *  </li>
-     *  <li>Casella, G., & Berger, R. (1990). <i>Statistical Inference</i>.
-     *    Belmont, CA: Duxbury Press.
-     *  </li>
-     * </ul>
-     */
+    
     public double cumulativeProbability(double x) {
         double ret;
 
@@ -358,93 +221,48 @@ public class GammaDistribution extends AbstractRealDistribution {
         return ret;
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     protected double getSolverAbsoluteAccuracy() {
         return solverAbsoluteAccuracy;
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * For shape parameter {@code alpha} and scale parameter {@code beta}, the
-     * mean is {@code alpha * beta}.
-     */
+    
     public double getNumericalMean() {
         return shape * scale;
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * For shape parameter {@code alpha} and scale parameter {@code beta}, the
-     * variance is {@code alpha * beta^2}.
-     *
-     * @return {@inheritDoc}
-     */
+    
     public double getNumericalVariance() {
         return shape * scale * scale;
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * The lower bound of the support is always 0 no matter the parameters.
-     *
-     * @return lower bound of the support (always 0)
-     */
+    
     public double getSupportLowerBound() {
         return 0;
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * The upper bound of the support is always positive infinity
-     * no matter the parameters.
-     *
-     * @return upper bound of the support (always Double.POSITIVE_INFINITY)
-     */
+    
     public double getSupportUpperBound() {
         return Double.POSITIVE_INFINITY;
     }
 
-    /** {@inheritDoc} */
+    
     public boolean isSupportLowerBoundInclusive() {
         return true;
     }
 
-    /** {@inheritDoc} */
+    
     public boolean isSupportUpperBoundInclusive() {
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * The support of this distribution is connected.
-     *
-     * @return {@code true}
-     */
+    
     public boolean isSupportConnected() {
         return true;
     }
 
-    /**
-     * <p>This implementation uses the following algorithms: </p>
-     *
-     * <p>For 0 < shape < 1: <br/>
-     * Ahrens, J. H. and Dieter, U., <i>Computer methods for
-     * sampling from gamma, beta, Poisson and binomial distributions.</i>
-     * Computing, 12, 223-246, 1974.</p>
-     *
-     * <p>For shape >= 1: <br/>
-     * Marsaglia and Tsang, <i>A Simple Method for Generating
-     * Gamma Variables.</i> ACM Transactions on Mathematical Software,
-     * Volume 26 Issue 3, September, 2000.</p>
-     *
-     * @return random value sampled from the Gamma(shape, scale) distribution
-     */
+    
     @Override
     public double sample()  {
         if (shape < 1) {

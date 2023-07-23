@@ -26,47 +26,23 @@ import org.apache.lucene.util.hnsw.math.ode.FieldODEStateAndDerivative;
 import org.apache.lucene.util.hnsw.math.ode.sampling.AbstractFieldStepInterpolator;
 import org.apache.lucene.util.hnsw.math.util.MathArrays;
 
-/**
- * This class implements an interpolator for Adams integrators using Nordsieck representation.
- *
- * <p>This interpolator computes dense output around the current point.
- * The interpolation equation is based on Taylor series formulas.
- *
- * @see AdamsBashforthFieldIntegrator
- * @see AdamsMoultonFieldIntegrator
- * @param <T> the type of the field elements
- * @since 3.6
- */
+
 
 class AdamsFieldStepInterpolator<T extends RealFieldElement<T>> extends AbstractFieldStepInterpolator<T> {
 
-    /** Step size used in the first scaled derivative and Nordsieck vector. */
+    
     private T scalingH;
 
-    /** Reference state.
-     * <p>Sometimes, the reference state is the same as globalPreviousState,
-     * sometimes it is the same as globalCurrentState, so we use a separate
-     * field to avoid any confusion.
-     * </p>
-     */
+    
     private final FieldODEStateAndDerivative<T> reference;
 
-    /** First scaled derivative. */
+    
     private final T[] scaled;
 
-    /** Nordsieck vector. */
+    
     private final Array2DRowFieldMatrix<T> nordsieck;
 
-    /** Simple constructor.
-     * @param stepSize step size used in the scaled and Nordsieck arrays
-     * @param reference reference state from which Taylor expansion are estimated
-     * @param scaled first scaled derivative
-     * @param nordsieck Nordsieck vector
-     * @param isForward integration direction indicator
-     * @param globalPreviousState start of the global step
-     * @param globalCurrentState end of the global step
-     * @param equationsMapper mapper for ODE equations primary and secondary components
-     */
+    
     AdamsFieldStepInterpolator(final T stepSize, final FieldODEStateAndDerivative<T> reference,
                                final T[] scaled, final Array2DRowFieldMatrix<T> nordsieck,
                                final boolean isForward,
@@ -78,18 +54,7 @@ class AdamsFieldStepInterpolator<T extends RealFieldElement<T>> extends Abstract
              globalPreviousState, globalCurrentState, equationsMapper);
     }
 
-    /** Simple constructor.
-     * @param stepSize step size used in the scaled and Nordsieck arrays
-     * @param reference reference state from which Taylor expansion are estimated
-     * @param scaled first scaled derivative
-     * @param nordsieck Nordsieck vector
-     * @param isForward integration direction indicator
-     * @param globalPreviousState start of the global step
-     * @param globalCurrentState end of the global step
-     * @param softPreviousState start of the restricted step
-     * @param softCurrentState end of the restricted step
-     * @param equationsMapper mapper for ODE equations primary and secondary components
-     */
+    
     private AdamsFieldStepInterpolator(final T stepSize, final FieldODEStateAndDerivative<T> reference,
                                        final T[] scaled, final Array2DRowFieldMatrix<T> nordsieck,
                                        final boolean isForward,
@@ -106,15 +71,7 @@ class AdamsFieldStepInterpolator<T extends RealFieldElement<T>> extends Abstract
         this.nordsieck = new Array2DRowFieldMatrix<T>(nordsieck.getData(), false);
     }
 
-    /** Create a new instance.
-     * @param newForward integration direction indicator
-     * @param newGlobalPreviousState start of the global step
-     * @param newGlobalCurrentState end of the global step
-     * @param newSoftPreviousState start of the restricted step
-     * @param newSoftCurrentState end of the restricted step
-     * @param newMapper equations mapper for the all equations
-     * @return a new instance
-     */
+    
     @Override
     protected AdamsFieldStepInterpolator<T> create(boolean newForward,
                                                    FieldODEStateAndDerivative<T> newGlobalPreviousState,
@@ -130,7 +87,7 @@ class AdamsFieldStepInterpolator<T extends RealFieldElement<T>> extends Abstract
 
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     protected FieldODEStateAndDerivative<T> computeInterpolatedStateAndDerivatives(final FieldEquationsMapper<T> equationsMapper,
                                                                                    final T time, final T theta,
@@ -138,15 +95,7 @@ class AdamsFieldStepInterpolator<T extends RealFieldElement<T>> extends Abstract
         return taylor(reference, time, scalingH, scaled, nordsieck);
     }
 
-    /** Estimate state by applying Taylor formula.
-     * @param reference reference state
-     * @param time time at which state must be estimated
-     * @param stepSize step size used in the scaled and Nordsieck arrays
-     * @param scaled first scaled derivative
-     * @param nordsieck Nordsieck vector
-     * @return estimated state
-     * @param <S> the type of the field elements
-     */
+    
     public static <S extends RealFieldElement<S>> FieldODEStateAndDerivative<S> taylor(final FieldODEStateAndDerivative<S> reference,
                                                                                        final S time, final S stepSize,
                                                                                        final S[] scaled,

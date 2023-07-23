@@ -27,47 +27,24 @@ import org.apache.lucene.util.hnsw.math.exception.NullArgumentException;
 import org.apache.lucene.util.hnsw.math.exception.util.LocalizedFormats;
 import org.apache.lucene.util.hnsw.math.random.RandomVectorGenerator;
 
-/**
- * Base class for all implementations of a multi-start optimizer.
- *
- * This interface is mainly intended to enforce the internal coherence of
- * Commons-Math. Users of the API are advised to base their code on
- * {@link MultivariateMultiStartOptimizer} or on
- * {@link DifferentiableMultivariateMultiStartOptimizer}.
- *
- * @param <FUNC> Type of the objective function to be optimized.
- *
- * @deprecated As of 3.1 (to be removed in 4.0).
- * @since 3.0
- */
+
 @Deprecated
 public class BaseMultivariateMultiStartOptimizer<FUNC extends MultivariateFunction>
     implements BaseMultivariateOptimizer<FUNC> {
-    /** Underlying classical optimizer. */
+    
     private final BaseMultivariateOptimizer<FUNC> optimizer;
-    /** Maximal number of evaluations allowed. */
+    
     private int maxEvaluations;
-    /** Number of evaluations already performed for all starts. */
+    
     private int totalEvaluations;
-    /** Number of starts to go. */
+    
     private int starts;
-    /** Random generator for multi-start. */
+    
     private RandomVectorGenerator generator;
-    /** Found optima. */
+    
     private PointValuePair[] optima;
 
-    /**
-     * Create a multi-start optimizer from a single-start optimizer.
-     *
-     * @param optimizer Single-start optimizer to wrap.
-     * @param starts Number of starts to perform. If {@code starts == 1},
-     * the {@link #optimize(int,MultivariateFunction,GoalType,double[])
-     * optimize} will return the same solution as {@code optimizer} would.
-     * @param generator Random vector generator to use for restarts.
-     * @throws NullArgumentException if {@code optimizer} or {@code generator}
-     * is {@code null}.
-     * @throws NotStrictlyPositiveException if {@code starts < 1}.
-     */
+    
     protected BaseMultivariateMultiStartOptimizer(final BaseMultivariateOptimizer<FUNC> optimizer,
                                                       final int starts,
                                                       final RandomVectorGenerator generator) {
@@ -84,32 +61,7 @@ public class BaseMultivariateMultiStartOptimizer<FUNC extends MultivariateFuncti
         this.generator = generator;
     }
 
-    /**
-     * Get all the optima found during the last call to {@link
-     * #optimize(int,MultivariateFunction,GoalType,double[]) optimize}.
-     * The optimizer stores all the optima found during a set of
-     * restarts. The {@link #optimize(int,MultivariateFunction,GoalType,double[])
-     * optimize} method returns the best point only. This method
-     * returns all the points found at the end of each starts,
-     * including the best one already returned by the {@link
-     * #optimize(int,MultivariateFunction,GoalType,double[]) optimize} method.
-     * <br/>
-     * The returned array as one element for each start as specified
-     * in the constructor. It is ordered with the results from the
-     * runs that did converge first, sorted from best to worst
-     * objective value (i.e in ascending order if minimizing and in
-     * descending order if maximizing), followed by and null elements
-     * corresponding to the runs that did not converge. This means all
-     * elements will be null if the {@link #optimize(int,MultivariateFunction,GoalType,double[])
-     * optimize} method did throw an exception.
-     * This also means that if the first element is not {@code null}, it
-     * is the best point found across all starts.
-     *
-     * @return an array containing the optima.
-     * @throws MathIllegalStateException if {@link
-     * #optimize(int,MultivariateFunction,GoalType,double[]) optimize}
-     * has not been called.
-     */
+    
     public PointValuePair[] getOptima() {
         if (optima == null) {
             throw new MathIllegalStateException(LocalizedFormats.NO_OPTIMUM_COMPUTED_YET);
@@ -117,24 +69,22 @@ public class BaseMultivariateMultiStartOptimizer<FUNC extends MultivariateFuncti
         return optima.clone();
     }
 
-    /** {@inheritDoc} */
+    
     public int getMaxEvaluations() {
         return maxEvaluations;
     }
 
-    /** {@inheritDoc} */
+    
     public int getEvaluations() {
         return totalEvaluations;
     }
 
-    /** {@inheritDoc} */
+    
     public ConvergenceChecker<PointValuePair> getConvergenceChecker() {
         return optimizer.getConvergenceChecker();
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    
     public PointValuePair optimize(int maxEval, final FUNC f,
                                        final GoalType goal,
                                        double[] startPoint) {
@@ -168,14 +118,10 @@ public class BaseMultivariateMultiStartOptimizer<FUNC extends MultivariateFuncti
         return optima[0];
     }
 
-    /**
-     * Sort the optima from best to worst, followed by {@code null} elements.
-     *
-     * @param goal Goal type.
-     */
+    
     private void sortPairs(final GoalType goal) {
         Arrays.sort(optima, new Comparator<PointValuePair>() {
-                /** {@inheritDoc} */
+                
                 public int compare(final PointValuePair o1,
                                    final PointValuePair o2) {
                     if (o1 == null) {

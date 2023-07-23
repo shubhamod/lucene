@@ -28,61 +28,25 @@ import org.apache.lucene.util.hnsw.math.exception.NotPositiveException;
 import org.apache.lucene.util.hnsw.math.exception.NullArgumentException;
 import org.apache.lucene.util.hnsw.math.util.MathUtils;
 
-/**
- * DBSCAN (density-based spatial clustering of applications with noise) algorithm.
- * <p>
- * The DBSCAN algorithm forms clusters based on the idea of density connectivity, i.e.
- * a point p is density connected to another point q, if there exists a chain of
- * points p<sub>i</sub>, with i = 1 .. n and p<sub>1</sub> = p and p<sub>n</sub> = q,
- * such that each pair &lt;p<sub>i</sub>, p<sub>i+1</sub>&gt; is directly density-reachable.
- * A point q is directly density-reachable from point p if it is in the &epsilon;-neighborhood
- * of this point.
- * <p>
- * Any point that is not density-reachable from a formed cluster is treated as noise, and
- * will thus not be present in the result.
- * <p>
- * The algorithm requires two parameters:
- * <ul>
- *   <li>eps: the distance that defines the &epsilon;-neighborhood of a point
- *   <li>minPoints: the minimum number of density-connected points required to form a cluster
- * </ul>
- * <p>
- * <b>Note:</b> as DBSCAN is not a centroid-based clustering algorithm, the resulting
- * {@link Cluster} objects will have no defined center, i.e. {@link Cluster#getCenter()} will
- * return {@code null}.
- *
- * @param <T> type of the points to cluster
- * @see <a href="http://en.wikipedia.org/wiki/DBSCAN">DBSCAN (wikipedia)</a>
- * @see <a href="http://www.dbs.ifi.lmu.de/Publikationen/Papers/KDD-96.final.frame.pdf">
- * A Density-Based Algorithm for Discovering Clusters in Large Spatial Databases with Noise</a>
- * @since 3.1
- * @deprecated As of 3.2 (to be removed in 4.0),
- * use {@link org.apache.lucene.util.hnsw.math.ml.clustering.DBSCANClusterer} instead
- */
+
 @Deprecated
 public class DBSCANClusterer<T extends Clusterable<T>> {
 
-    /** Maximum radius of the neighborhood to be considered. */
+    
     private final double              eps;
 
-    /** Minimum number of points needed for a cluster. */
+    
     private final int                 minPts;
 
-    /** Status of a point during the clustering process. */
+    
     private enum PointStatus {
-        /** The point has is considered to be noise. */
+        
         NOISE,
-        /** The point is already part of a cluster. */
+        
         PART_OF_CLUSTER
     }
 
-    /**
-     * Creates a new instance of a DBSCANClusterer.
-     *
-     * @param eps maximum radius of the neighborhood to be considered
-     * @param minPts minimum number of points needed for a cluster
-     * @throws NotPositiveException if {@code eps < 0.0} or {@code minPts < 0}
-     */
+    
     public DBSCANClusterer(final double eps, final int minPts)
         throws NotPositiveException {
         if (eps < 0.0d) {
@@ -95,35 +59,17 @@ public class DBSCANClusterer<T extends Clusterable<T>> {
         this.minPts = minPts;
     }
 
-    /**
-     * Returns the maximum radius of the neighborhood to be considered.
-     *
-     * @return maximum radius of the neighborhood
-     */
+    
     public double getEps() {
         return eps;
     }
 
-    /**
-     * Returns the minimum number of points needed for a cluster.
-     *
-     * @return minimum number of points needed for a cluster
-     */
+    
     public int getMinPts() {
         return minPts;
     }
 
-    /**
-     * Performs DBSCAN cluster analysis.
-     * <p>
-     * <b>Note:</b> as DBSCAN is not a centroid-based clustering algorithm, the resulting
-     * {@link Cluster} objects will have no defined center, i.e. {@link Cluster#getCenter()} will
-     * return {@code null}.
-     *
-     * @param points the points to cluster
-     * @return the list of clusters
-     * @throws NullArgumentException if the data points are null
-     */
+    
     public List<Cluster<T>> cluster(final Collection<T> points) throws NullArgumentException {
 
         // sanity checks
@@ -149,16 +95,7 @@ public class DBSCANClusterer<T extends Clusterable<T>> {
         return clusters;
     }
 
-    /**
-     * Expands the cluster to include density-reachable items.
-     *
-     * @param cluster Cluster to expand
-     * @param point Point to add to cluster
-     * @param neighbors List of neighbors
-     * @param points the data set
-     * @param visited the set of already visited points
-     * @return the expanded cluster
-     */
+    
     private Cluster<T> expandCluster(final Cluster<T> cluster,
                                      final T point,
                                      final List<T> neighbors,
@@ -190,13 +127,7 @@ public class DBSCANClusterer<T extends Clusterable<T>> {
         return cluster;
     }
 
-    /**
-     * Returns a list of density-reachable neighbors of a {@code point}.
-     *
-     * @param point the point to look for
-     * @param points possible neighbors
-     * @return the List of neighbors
-     */
+    
     private List<T> getNeighbors(final T point, final Collection<T> points) {
         final List<T> neighbors = new ArrayList<T>();
         for (final T neighbor : points) {
@@ -207,13 +138,7 @@ public class DBSCANClusterer<T extends Clusterable<T>> {
         return neighbors;
     }
 
-    /**
-     * Merges two lists together.
-     *
-     * @param one first list
-     * @param two second list
-     * @return merged lists
-     */
+    
     private List<T> merge(final List<T> one, final List<T> two) {
         final Set<T> oneSet = new HashSet<T>(one);
         for (T item : two) {

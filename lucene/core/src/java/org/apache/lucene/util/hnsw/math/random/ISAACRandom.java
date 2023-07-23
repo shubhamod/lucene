@@ -21,102 +21,70 @@ import java.io.Serializable;
 
 import org.apache.lucene.util.hnsw.math.util.FastMath;
 
-/**
- * <a href="http://burtleburtle.net/bob/rand/isaacafa.html">
- *  ISAAC: a fast cryptographic pseudo-random number generator</a>
- * <br/>
- * ISAAC (Indirection, Shift, Accumulate, Add, and Count) generates 32-bit
- * random numbers.
- * ISAAC has been designed to be cryptographically secure and is inspired
- * by RC4.
- * Cycles are guaranteed to be at least 2<sup>40</sup> values long, and they
- * are 2<sup>8295</sup> values long on average.
- * The results are uniformly distributed, unbiased, and unpredictable unless
- * you know the seed.
- * <br/>
- * This code is based (with minor changes and improvements) on the original
- * implementation of the algorithm by Bob Jenkins.
- * <br/>
- *
- * @since 3.0
- */
+
 public class ISAACRandom extends BitsStreamGenerator implements Serializable {
-    /** Serializable version identifier */
+    
     private static final long serialVersionUID = 7288197941165002400L;
-    /** Log of size of rsl[] and mem[] */
+    
     private static final int SIZE_L = 8;
-    /** Size of rsl[] and mem[] */
+    
     private static final int SIZE = 1 << SIZE_L;
-    /** Half-size of rsl[] and mem[] */
+    
     private static final int H_SIZE = SIZE >> 1;
-    /** For pseudo-random lookup */
+    
     private static final int MASK = SIZE - 1 << 2;
-    /** The golden ratio */
+    
     private static final int GLD_RATIO = 0x9e3779b9;
-    /** The results given to the user */
+    
     private final int[] rsl = new int[SIZE];
-    /** The internal state */
+    
     private final int[] mem = new int[SIZE];
-    /** Count through the results in rsl[] */
+    
     private int count;
-    /** Accumulator */
+    
     private int isaacA;
-    /** The last result */
+    
     private int isaacB;
-    /** Counter, guarantees cycle is at least 2^40 */
+    
     private int isaacC;
-    /** Service variable. */
+    
     private final int[] arr = new int[8];
-    /** Service variable. */
+    
     private int isaacX;
-    /** Service variable. */
+    
     private int isaacI;
-    /** Service variable. */
+    
     private int isaacJ;
 
 
-    /**
-     * Creates a new ISAAC random number generator.
-     * <br/>
-     * The instance is initialized using a combination of the
-     * current time and system hash code of the instance as the seed.
-     */
+    
     public ISAACRandom() {
         setSeed(System.currentTimeMillis() + System.identityHashCode(this));
     }
 
-    /**
-     * Creates a new ISAAC random number generator using a single long seed.
-     *
-     * @param seed Initial seed.
-     */
+    
     public ISAACRandom(long seed) {
         setSeed(seed);
     }
 
-    /**
-     * Creates a new ISAAC random number generator using an int array seed.
-     *
-     * @param seed Initial seed. If {@code null}, the seed will be related
-     * to the current time.
-     */
+    
     public ISAACRandom(int[] seed) {
         setSeed(seed);
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     public void setSeed(int seed) {
         setSeed(new int[]{seed});
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     public void setSeed(long seed) {
         setSeed(new int[]{(int) (seed >>> 32), (int) (seed & 0xffffffffL)});
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     public void setSeed(int[] seed) {
         if (seed == null) {
@@ -135,7 +103,7 @@ public class ISAACRandom extends BitsStreamGenerator implements Serializable {
         initState();
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     protected int next(int bits) {
         if (count < 0) {
@@ -145,7 +113,7 @@ public class ISAACRandom extends BitsStreamGenerator implements Serializable {
         return rsl[count--] >>> 32 - bits;
     }
 
-    /** Generate 256 results */
+    
     private void isaac() {
         isaacI = 0;
         isaacJ = H_SIZE;
@@ -159,7 +127,7 @@ public class ISAACRandom extends BitsStreamGenerator implements Serializable {
         }
     }
 
-    /** Intermediate internal loop. */
+    
     private void isaac2() {
         isaacX = mem[isaacI];
         isaacA ^= isaacA << 13;
@@ -179,14 +147,14 @@ public class ISAACRandom extends BitsStreamGenerator implements Serializable {
         isaac3();
     }
 
-    /** Lowest level internal loop. */
+    
     private void isaac3() {
         mem[isaacI] = mem[(isaacX & MASK) >> 2] + isaacA + isaacB;
         isaacB = mem[(mem[isaacI] >> SIZE_L & MASK) >> 2] + isaacX;
         rsl[isaacI++] = isaacB;
     }
 
-    /** Initialize, or reinitialize, this instance of rand. */
+    
     private void initState() {
         isaacA = 0;
         isaacB = 0;
@@ -228,7 +196,7 @@ public class ISAACRandom extends BitsStreamGenerator implements Serializable {
         clear();
     }
 
-    /** Shuffle array. */
+    
     private void shuffle() {
         arr[0] ^= arr[1] << 11;
         arr[3] += arr[0];
@@ -256,10 +224,7 @@ public class ISAACRandom extends BitsStreamGenerator implements Serializable {
         arr[0] += arr[1];
     }
 
-    /** Set the state by copying the internal arrays.
-     *
-     * @param start First index into {@link #mem} array.
-     */
+    
     private void setState(int start) {
         mem[start] = arr[0];
         mem[start + 1] = arr[1];

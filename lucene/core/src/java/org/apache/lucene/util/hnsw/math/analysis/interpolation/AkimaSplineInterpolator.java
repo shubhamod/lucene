@@ -27,42 +27,13 @@ import org.apache.lucene.util.hnsw.math.util.FastMath;
 import org.apache.lucene.util.hnsw.math.util.MathArrays;
 import org.apache.lucene.util.hnsw.math.util.Precision;
 
-/**
- * Computes a cubic spline interpolation for the data set using the Akima
- * algorithm, as originally formulated by Hiroshi Akima in his 1970 paper
- * "A New Method of Interpolation and Smooth Curve Fitting Based on Local Procedures."
- * J. ACM 17, 4 (October 1970), 589-602. DOI=10.1145/321607.321609
- * http://doi.acm.org/10.1145/321607.321609
- * <p>
- * This implementation is based on the Akima implementation in the CubicSpline
- * class in the Math.NET Numerics library. The method referenced is
- * CubicSpline.InterpolateAkimaSorted
- * </p>
- * <p>
- * The {@link #interpolate(double[], double[]) interpolate} method returns a
- * {@link PolynomialSplineFunction} consisting of n cubic polynomials, defined
- * over the subintervals determined by the x values, {@code x[0] < x[i] ... < x[n]}.
- * The Akima algorithm requires that {@code n >= 5}.
- * </p>
- */
+
 public class AkimaSplineInterpolator
     implements UnivariateInterpolator {
-    /** The minimum number of points that are needed to compute the function. */
+    
     private static final int MINIMUM_NUMBER_POINTS = 5;
 
-    /**
-     * Computes an interpolating function for the data set.
-     *
-     * @param xvals the arguments for the interpolation points
-     * @param yvals the values for the interpolation points
-     * @return a function which interpolates the data set
-     * @throws DimensionMismatchException if {@code xvals} and {@code yvals} have
-     *         different sizes.
-     * @throws NonMonotonicSequenceException if {@code xvals} is not sorted in
-     *         strict increasing order.
-     * @throws NumberIsTooSmallException if the size of {@code xvals} is smaller
-     *         than 5.
-     */
+    
     public PolynomialSplineFunction interpolate(double[] xvals,
                                                 double[] yvals)
         throws DimensionMismatchException,
@@ -127,19 +98,7 @@ public class AkimaSplineInterpolator
         return interpolateHermiteSorted(xvals, yvals, firstDerivatives);
     }
 
-    /**
-     * Three point differentiation helper, modeled off of the same method in the
-     * Math.NET CubicSpline class. This is used by both the Apache Math and the
-     * Math.NET Akima Cubic Spline algorithms
-     *
-     * @param xvals x values to calculate the numerical derivative with
-     * @param yvals y values to calculate the numerical derivative with
-     * @param indexOfDifferentiation index of the elemnt we are calculating the derivative around
-     * @param indexOfFirstSample index of the first element to sample for the three point method
-     * @param indexOfSecondsample index of the second element to sample for the three point method
-     * @param indexOfThirdSample index of the third element to sample for the three point method
-     * @return the derivative
-     */
+    
     private double differentiateThreePoint(double[] xvals, double[] yvals,
                                            int indexOfDifferentiation,
                                            int indexOfFirstSample,
@@ -159,16 +118,7 @@ public class AkimaSplineInterpolator
         return (2 * a * t) + b;
     }
 
-    /**
-     * Creates a Hermite cubic spline interpolation from the set of (x,y) value
-     * pairs and their derivatives. This is modeled off of the
-     * InterpolateHermiteSorted method in the Math.NET CubicSpline class.
-     *
-     * @param xvals x values for interpolation
-     * @param yvals y values for interpolation
-     * @param firstDerivatives first derivative values of the function
-     * @return polynomial that fits the function
-     */
+    
     private PolynomialSplineFunction interpolateHermiteSorted(double[] xvals,
                                                               double[] yvals,
                                                               double[] firstDerivatives) {

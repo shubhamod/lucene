@@ -22,53 +22,12 @@ import org.apache.lucene.util.hnsw.math.RealFieldElement;
 import org.apache.lucene.util.hnsw.math.ode.FieldEquationsMapper;
 import org.apache.lucene.util.hnsw.math.ode.FieldODEStateAndDerivative;
 
-/**
- * This class implements a step interpolator for the classical fourth
- * order Runge-Kutta integrator.
- *
- * <p>This interpolator allows to compute dense output inside the last
- * step computed. The interpolation equation is consistent with the
- * integration scheme :
- * <ul>
- *   <li>Using reference point at step start:<br>
- *   y(t<sub>n</sub> + &theta; h) = y (t<sub>n</sub>)
- *                    + &theta; (h/6) [  (6 - 9 &theta; + 4 &theta;<sup>2</sup>) y'<sub>1</sub>
- *                                     + (    6 &theta; - 4 &theta;<sup>2</sup>) (y'<sub>2</sub> + y'<sub>3</sub>)
- *                                     + (   -3 &theta; + 4 &theta;<sup>2</sup>) y'<sub>4</sub>
- *                                    ]
- *   </li>
- *   <li>Using reference point at step end:<br>
- *   y(t<sub>n</sub> + &theta; h) = y (t<sub>n</sub> + h)
- *                    + (1 - &theta;) (h/6) [ (-4 &theta;^2 + 5 &theta; - 1) y'<sub>1</sub>
- *                                          +(4 &theta;^2 - 2 &theta; - 2) (y'<sub>2</sub> + y'<sub>3</sub>)
- *                                          -(4 &theta;^2 +   &theta; + 1) y'<sub>4</sub>
- *                                        ]
- *   </li>
- * </ul>
- * </p>
- *
- * where &theta; belongs to [0 ; 1] and where y'<sub>1</sub> to y'<sub>4</sub> are the four
- * evaluations of the derivatives already computed during the
- * step.</p>
- *
- * @see ClassicalRungeKuttaFieldIntegrator
- * @param <T> the type of the field elements
- * @since 3.6
- */
+
 
 class ClassicalRungeKuttaFieldStepInterpolator<T extends RealFieldElement<T>>
     extends RungeKuttaFieldStepInterpolator<T> {
 
-    /** Simple constructor.
-     * @param field field to which the time and state vector elements belong
-     * @param forward integration direction indicator
-     * @param yDotK slopes at the intermediate points
-     * @param globalPreviousState start of the global step
-     * @param globalCurrentState end of the global step
-     * @param softPreviousState start of the restricted step
-     * @param softCurrentState end of the restricted step
-     * @param mapper equations mapper for the all equations
-     */
+    
     ClassicalRungeKuttaFieldStepInterpolator(final Field<T> field, final boolean forward,
                                              final T[][] yDotK,
                                              final FieldODEStateAndDerivative<T> globalPreviousState,
@@ -81,7 +40,7 @@ class ClassicalRungeKuttaFieldStepInterpolator<T extends RealFieldElement<T>>
               mapper);
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     protected ClassicalRungeKuttaFieldStepInterpolator<T> create(final Field<T> newField, final boolean newForward, final T[][] newYDotK,
                                                                  final FieldODEStateAndDerivative<T> newGlobalPreviousState,
@@ -95,7 +54,7 @@ class ClassicalRungeKuttaFieldStepInterpolator<T extends RealFieldElement<T>>
                                                                newMapper);
     }
 
-    /** {@inheritDoc} */
+    
     @SuppressWarnings("unchecked")
     @Override
     protected FieldODEStateAndDerivative<T> computeInterpolatedStateAndDerivatives(final FieldEquationsMapper<T> mapper,

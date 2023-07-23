@@ -24,24 +24,9 @@ import org.apache.lucene.util.hnsw.math.exception.NumberIsTooSmallException;
 import org.apache.lucene.util.hnsw.math.exception.NonMonotonicSequenceException;
 import org.apache.lucene.util.hnsw.math.exception.util.LocalizedFormats;
 
-/**
- * Implements a linear function for interpolation of real univariate functions.
- *
- */
+
 public class LinearInterpolator implements UnivariateInterpolator {
-    /**
-     * Computes a linear interpolating function for the data set.
-     *
-     * @param x the arguments for the interpolation points
-     * @param y the values for the interpolation points
-     * @return a function which interpolates the data set
-     * @throws DimensionMismatchException if {@code x} and {@code y}
-     * have different sizes.
-     * @throws NonMonotonicSequenceException if {@code x} is not sorted in
-     * strict increasing order.
-     * @throws NumberIsTooSmallException if the size of {@code x} is smaller
-     * than 2.
-     */
+    
     public PolynomialSplineFunction interpolate(double x[], double y[])
         throws DimensionMismatchException,
                NumberIsTooSmallException,

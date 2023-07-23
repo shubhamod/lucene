@@ -22,16 +22,10 @@ import org.apache.lucene.util.hnsw.math.exception.NonMonotonicSequenceException;
 import org.apache.lucene.util.hnsw.math.exception.NumberIsTooSmallException;
 import org.apache.lucene.util.hnsw.math.util.MathArrays;
 
-/**
- * Generates a tricubic interpolating function.
- *
- * @since 3.4
- */
+
 public class TricubicInterpolator
     implements TrivariateGridInterpolator {
-    /**
-     * {@inheritDoc}
-     */
+    
     public TricubicInterpolatingFunction interpolate(final double[] xval,
                                                      final double[] yval,
                                                      final double[] zval,
@@ -124,7 +118,7 @@ public class TricubicInterpolator
                                                  dFdX, dFdY, dFdZ,
                                                  d2FdXdY, d2FdXdZ, d2FdYdZ,
                                                  d3FdXdYdZ) {
-            /** {@inheritDoc} */
+            
             @Override
             public boolean isValidPoint(double x, double y, double z) {
                 if (x < xval[1] ||

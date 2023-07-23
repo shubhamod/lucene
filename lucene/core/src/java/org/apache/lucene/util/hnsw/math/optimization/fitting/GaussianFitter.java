@@ -30,59 +30,18 @@ import org.apache.lucene.util.hnsw.math.exception.util.LocalizedFormats;
 import org.apache.lucene.util.hnsw.math.optimization.DifferentiableMultivariateVectorOptimizer;
 import org.apache.lucene.util.hnsw.math.util.FastMath;
 
-/**
- * Fits points to a {@link
- * org.apache.lucene.util.hnsw.math.analysis.function.Gaussian.Parametric Gaussian} function.
- * <p>
- * Usage example:
- * <pre>
- *   GaussianFitter fitter = new GaussianFitter(
- *     new LevenbergMarquardtOptimizer());
- *   fitter.addObservedPoint(4.0254623,  531026.0);
- *   fitter.addObservedPoint(4.03128248, 984167.0);
- *   fitter.addObservedPoint(4.03839603, 1887233.0);
- *   fitter.addObservedPoint(4.04421621, 2687152.0);
- *   fitter.addObservedPoint(4.05132976, 3461228.0);
- *   fitter.addObservedPoint(4.05326982, 3580526.0);
- *   fitter.addObservedPoint(4.05779662, 3439750.0);
- *   fitter.addObservedPoint(4.0636168,  2877648.0);
- *   fitter.addObservedPoint(4.06943698, 2175960.0);
- *   fitter.addObservedPoint(4.07525716, 1447024.0);
- *   fitter.addObservedPoint(4.08237071, 717104.0);
- *   fitter.addObservedPoint(4.08366408, 620014.0);
- *   double[] parameters = fitter.fit();
- * </pre>
- *
- * @since 2.2
- * @deprecated As of 3.1 (to be removed in 4.0).
- */
+
 @Deprecated
 public class GaussianFitter extends CurveFitter<Gaussian.Parametric> {
-    /**
-     * Constructs an instance using the specified optimizer.
-     *
-     * @param optimizer Optimizer to use for the fitting.
-     */
+    
     public GaussianFitter(DifferentiableMultivariateVectorOptimizer optimizer) {
         super(optimizer);
     }
 
-    /**
-     * Fits a Gaussian function to the observed points.
-     *
-     * @param initialGuess First guess values in the following order:
-     * <ul>
-     *  <li>Norm</li>
-     *  <li>Mean</li>
-     *  <li>Sigma</li>
-     * </ul>
-     * @return the parameters of the Gaussian function that best fits the
-     * observed points (in the same order as above).
-     * @since 3.0
-     */
+    
     public double[] fit(double[] initialGuess) {
         final Gaussian.Parametric f = new Gaussian.Parametric() {
-                /** {@inheritDoc} */
+                
                 @Override
                 public double value(double x, double ... p) {
                     double v = Double.POSITIVE_INFINITY;
@@ -94,7 +53,7 @@ public class GaussianFitter extends CurveFitter<Gaussian.Parametric> {
                     return v;
                 }
 
-                /** {@inheritDoc} */
+                
                 @Override
                 public double[] gradient(double x, double ... p) {
                     double[] v = { Double.POSITIVE_INFINITY,
@@ -112,40 +71,22 @@ public class GaussianFitter extends CurveFitter<Gaussian.Parametric> {
         return fit(f, initialGuess);
     }
 
-    /**
-     * Fits a Gaussian function to the observed points.
-     *
-     * @return the parameters of the Gaussian function that best fits the
-     * observed points (in the same order as above).
-     */
+    
     public double[] fit() {
         final double[] guess = (new ParameterGuesser(getObservations())).guess();
         return fit(guess);
     }
 
-    /**
-     * Guesses the parameters {@code norm}, {@code mean}, and {@code sigma}
-     * of a {@link org.apache.lucene.util.hnsw.math.analysis.function.Gaussian.Parametric}
-     * based on the specified observed points.
-     */
+    
     public static class ParameterGuesser {
-        /** Normalization factor. */
+        
         private final double norm;
-        /** Mean. */
+        
         private final double mean;
-        /** Standard deviation. */
+        
         private final double sigma;
 
-        /**
-         * Constructs instance with the specified observed points.
-         *
-         * @param observations Observed points from which to guess the
-         * parameters of the Gaussian.
-         * @throws NullArgumentException if {@code observations} is
-         * {@code null}.
-         * @throws NumberIsTooSmallException if there are less than 3
-         * observations.
-         */
+        
         public ParameterGuesser(WeightedObservedPoint[] observations) {
             if (observations == null) {
                 throw new NullArgumentException(LocalizedFormats.INPUT_ARRAY);
@@ -162,31 +103,17 @@ public class GaussianFitter extends CurveFitter<Gaussian.Parametric> {
             sigma = params[2];
         }
 
-        /**
-         * Gets an estimation of the parameters.
-         *
-         * @return the guessed parameters, in the following order:
-         * <ul>
-         *  <li>Normalization factor</li>
-         *  <li>Mean</li>
-         *  <li>Standard deviation</li>
-         * </ul>
-         */
+        
         public double[] guess() {
             return new double[] { norm, mean, sigma };
         }
 
-        /**
-         * Sort the observations.
-         *
-         * @param unsorted Input observations.
-         * @return the input observations, sorted.
-         */
+        
         private WeightedObservedPoint[] sortObservations(WeightedObservedPoint[] unsorted) {
             final WeightedObservedPoint[] observations = unsorted.clone();
             final Comparator<WeightedObservedPoint> cmp
                 = new Comparator<WeightedObservedPoint>() {
-                /** {@inheritDoc} */
+                
                 public int compare(WeightedObservedPoint p1,
                                    WeightedObservedPoint p2) {
                     if (p1 == null && p2 == null) {
@@ -227,13 +154,7 @@ public class GaussianFitter extends CurveFitter<Gaussian.Parametric> {
             return observations;
         }
 
-        /**
-         * Guesses the parameters based on the specified observed points.
-         *
-         * @param points Observed points, sorted.
-         * @return the guessed parameters (normalization factor, mean and
-         * sigma).
-         */
+        
         private double[] basicGuess(WeightedObservedPoint[] points) {
             final int maxYIdx = findMaxY(points);
             final double n = points[maxYIdx].getY();
@@ -254,12 +175,7 @@ public class GaussianFitter extends CurveFitter<Gaussian.Parametric> {
             return new double[] { n, m, s };
         }
 
-        /**
-         * Finds index of point in specified points with the largest Y.
-         *
-         * @param points Points to search.
-         * @return the index in specified points array.
-         */
+        
         private int findMaxY(WeightedObservedPoint[] points) {
             int maxYIdx = 0;
             for (int i = 1; i < points.length; i++) {
@@ -270,20 +186,7 @@ public class GaussianFitter extends CurveFitter<Gaussian.Parametric> {
             return maxYIdx;
         }
 
-        /**
-         * Interpolates using the specified points to determine X at the
-         * specified Y.
-         *
-         * @param points Points to use for interpolation.
-         * @param startIdx Index within points from which to start the search for
-         * interpolation bounds points.
-         * @param idxStep Index step for searching interpolation bounds points.
-         * @param y Y value for which X should be determined.
-         * @return the value of X for the specified Y.
-         * @throws ZeroException if {@code idxStep} is 0.
-         * @throws OutOfRangeException if specified {@code y} is not within the
-         * range of the specified {@code points}.
-         */
+        
         private double interpolateXAtY(WeightedObservedPoint[] points,
                                        int startIdx,
                                        int idxStep,
@@ -306,21 +209,7 @@ public class GaussianFitter extends CurveFitter<Gaussian.Parametric> {
                                 (p2.getY() - p1.getY()));
         }
 
-        /**
-         * Gets the two bounding interpolation points from the specified points
-         * suitable for determining X at the specified Y.
-         *
-         * @param points Points to use for interpolation.
-         * @param startIdx Index within points from which to start search for
-         * interpolation bounds points.
-         * @param idxStep Index step for search for interpolation bounds points.
-         * @param y Y value for which X should be determined.
-         * @return the array containing two points suitable for determining X at
-         * the specified Y.
-         * @throws ZeroException if {@code idxStep} is 0.
-         * @throws OutOfRangeException if specified {@code y} is not within the
-         * range of the specified {@code points}.
-         */
+        
         private WeightedObservedPoint[] getInterpolationPointsForY(WeightedObservedPoint[] points,
                                                                    int startIdx,
                                                                    int idxStep,
@@ -351,16 +240,7 @@ public class GaussianFitter extends CurveFitter<Gaussian.Parametric> {
                                           Double.POSITIVE_INFINITY);
         }
 
-        /**
-         * Determines whether a value is between two other values.
-         *
-         * @param value Value to test whether it is between {@code boundary1}
-         * and {@code boundary2}.
-         * @param boundary1 One end of the range.
-         * @param boundary2 Other end of the range.
-         * @return {@code true} if {@code value} is between {@code boundary1} and
-         * {@code boundary2} (inclusive), {@code false} otherwise.
-         */
+        
         private boolean isBetween(double value,
                                   double boundary1,
                                   double boundary2) {

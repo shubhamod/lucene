@@ -19,17 +19,7 @@ package org.apache.lucene.util.hnsw.math.optimization;
 
 import org.apache.lucene.util.hnsw.math.analysis.MultivariateFunction;
 
-/**
- * This interface represents an optimization algorithm for {@link MultivariateFunction
- * scalar objective functions}.
- * <p>Optimization algorithms find the input point set that either {@link GoalType
- * maximize or minimize} an objective function.</p>
- *
- * @see MultivariateDifferentiableOptimizer
- * @see MultivariateDifferentiableVectorOptimizer
- * @deprecated As of 3.1 (to be removed in 4.0).
- * @since 2.0
- */
+
 @Deprecated
 public interface MultivariateOptimizer
     extends BaseMultivariateOptimizer<MultivariateFunction> {}

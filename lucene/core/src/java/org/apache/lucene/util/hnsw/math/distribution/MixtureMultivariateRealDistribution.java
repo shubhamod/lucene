@@ -27,48 +27,20 @@ import org.apache.lucene.util.hnsw.math.random.RandomGenerator;
 import org.apache.lucene.util.hnsw.math.random.Well19937c;
 import org.apache.lucene.util.hnsw.math.util.Pair;
 
-/**
- * Class for representing <a href="http://en.wikipedia.org/wiki/Mixture_model">
- * mixture model</a> distributions.
- *
- * @param <T> Type of the mixture components.
- *
- * @since 3.1
- */
+
 public class MixtureMultivariateRealDistribution<T extends MultivariateRealDistribution>
     extends AbstractMultivariateRealDistribution {
-    /** Normalized weight of each mixture component. */
+    
     private final double[] weight;
-    /** Mixture components. */
+    
     private final List<T> distribution;
 
-    /**
-     * Creates a mixture model from a list of distributions and their
-     * associated weights.
-     * <p>
-     * <b>Note:</b> this constructor will implicitly create an instance of
-     * {@link Well19937c} as random generator to be used for sampling only (see
-     * {@link #sample()} and {@link #sample(int)}). In case no sampling is
-     * needed for the created distribution, it is advised to pass {@code null}
-     * as random generator via the appropriate constructors to avoid the
-     * additional initialisation overhead.
-     *
-     * @param components List of (weight, distribution) pairs from which to sample.
-     */
+    
     public MixtureMultivariateRealDistribution(List<Pair<Double, T>> components) {
         this(new Well19937c(), components);
     }
 
-    /**
-     * Creates a mixture model from a list of distributions and their
-     * associated weights.
-     *
-     * @param rng Random number generator.
-     * @param components Distributions from which to sample.
-     * @throws NotPositiveException if any of the weights is negative.
-     * @throws DimensionMismatchException if not all components have the same
-     * number of variables.
-     */
+    
     public MixtureMultivariateRealDistribution(RandomGenerator rng,
                                                List<Pair<Double, T>> components) {
         super(rng, components.get(0).getSecond().getDimension());
@@ -102,7 +74,7 @@ public class MixtureMultivariateRealDistribution<T extends MultivariateRealDistr
         }
     }
 
-    /** {@inheritDoc} */
+    
     public double density(final double[] values) {
         double p = 0;
         for (int i = 0; i < weight.length; i++) {
@@ -111,7 +83,7 @@ public class MixtureMultivariateRealDistribution<T extends MultivariateRealDistr
         return p;
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     public double[] sample() {
         // Sampled values.
@@ -140,7 +112,7 @@ public class MixtureMultivariateRealDistribution<T extends MultivariateRealDistr
         return vals;
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     public void reseedRandomGenerator(long seed) {
         // Seed needs to be propagated to underlying components
@@ -154,11 +126,7 @@ public class MixtureMultivariateRealDistribution<T extends MultivariateRealDistr
         }
     }
 
-    /**
-     * Gets the distributions that make up the mixture model.
-     *
-     * @return the component distributions and associated weights.
-     */
+    
     public List<Pair<Double, T>> getComponents() {
         final List<Pair<Double, T>> list = new ArrayList<Pair<Double, T>>(weight.length);
 

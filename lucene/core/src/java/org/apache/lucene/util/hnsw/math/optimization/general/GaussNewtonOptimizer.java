@@ -32,74 +32,37 @@ import org.apache.lucene.util.hnsw.math.optimization.ConvergenceChecker;
 import org.apache.lucene.util.hnsw.math.optimization.SimpleVectorValueChecker;
 import org.apache.lucene.util.hnsw.math.optimization.PointVectorValuePair;
 
-/**
- * Gauss-Newton least-squares solver.
- * <p>
- * This class solve a least-square problem by solving the normal equations
- * of the linearized problem at each iteration. Either LU decomposition or
- * QR decomposition can be used to solve the normal equations. LU decomposition
- * is faster but QR decomposition is more robust for difficult problems.
- * </p>
- *
- * @deprecated As of 3.1 (to be removed in 4.0).
- * @since 2.0
- *
- */
+
 @Deprecated
 public class GaussNewtonOptimizer extends AbstractLeastSquaresOptimizer {
-    /** Indicator for using LU decomposition. */
+    
     private final boolean useLU;
 
-    /**
-     * Simple constructor with default settings.
-     * The normal equations will be solved using LU decomposition and the
-     * convergence check is set to a {@link SimpleVectorValueChecker}
-     * with default tolerances.
-     * @deprecated See {@link SimpleVectorValueChecker#SimpleVectorValueChecker()}
-     */
+    
     @Deprecated
     public GaussNewtonOptimizer() {
         this(true);
     }
 
-    /**
-     * Simple constructor with default settings.
-     * The normal equations will be solved using LU decomposition.
-     *
-     * @param checker Convergence checker.
-     */
+    
     public GaussNewtonOptimizer(ConvergenceChecker<PointVectorValuePair> checker) {
         this(true, checker);
     }
 
-    /**
-     * Simple constructor with default settings.
-     * The convergence check is set to a {@link SimpleVectorValueChecker}
-     * with default tolerances.
-     *
-     * @param useLU If {@code true}, the normal equations will be solved
-     * using LU decomposition, otherwise they will be solved using QR
-     * decomposition.
-     * @deprecated See {@link SimpleVectorValueChecker#SimpleVectorValueChecker()}
-     */
+    
     @Deprecated
     public GaussNewtonOptimizer(final boolean useLU) {
         this(useLU, new SimpleVectorValueChecker());
     }
 
-    /**
-     * @param useLU If {@code true}, the normal equations will be solved
-     * using LU decomposition, otherwise they will be solved using QR
-     * decomposition.
-     * @param checker Convergence checker.
-     */
+    
     public GaussNewtonOptimizer(final boolean useLU,
                                 ConvergenceChecker<PointVectorValuePair> checker) {
         super(checker);
         this.useLU = useLU;
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     public PointVectorValuePair doOptimize() {
         final ConvergenceChecker<PointVectorValuePair> checker

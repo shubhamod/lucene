@@ -24,76 +24,40 @@ import org.apache.lucene.util.hnsw.math.fitting.leastsquares.LeastSquaresBuilder
 import org.apache.lucene.util.hnsw.math.fitting.leastsquares.LeastSquaresProblem;
 import org.apache.lucene.util.hnsw.math.linear.DiagonalMatrix;
 
-/**
- * Fits points to a {@link
- * PolynomialFunction.Parametric polynomial}
- * function.
- * <br/>
- * The size of the {@link #withStartPoint(double[]) initial guess} array defines the
- * degree of the polynomial to be fitted.
- * They must be sorted in increasing order of the polynomial's degree.
- * The optimal values of the coefficients will be returned in the same order.
- *
- * @since 3.3
- */
+
 public class PolynomialCurveFitter extends AbstractCurveFitter {
-    /** Parametric function to be fitted. */
+    
     private static final PolynomialFunction.Parametric FUNCTION = new PolynomialFunction.Parametric();
-    /** Initial guess. */
+    
     private final double[] initialGuess;
-    /** Maximum number of iterations of the optimization algorithm. */
+    
     private final int maxIter;
 
-    /**
-     * Contructor used by the factory methods.
-     *
-     * @param initialGuess Initial guess.
-     * @param maxIter Maximum number of iterations of the optimization algorithm.
-     * @throws MathInternalError if {@code initialGuess} is {@code null}.
-     */
+    
     private PolynomialCurveFitter(double[] initialGuess,
                                   int maxIter) {
         this.initialGuess = initialGuess;
         this.maxIter = maxIter;
     }
 
-    /**
-     * Creates a default curve fitter.
-     * Zero will be used as initial guess for the coefficients, and the maximum
-     * number of iterations of the optimization algorithm is set to
-     * {@link Integer#MAX_VALUE}.
-     *
-     * @param degree Degree of the polynomial to be fitted.
-     * @return a curve fitter.
-     *
-     * @see #withStartPoint(double[])
-     * @see #withMaxIterations(int)
-     */
+    
     public static PolynomialCurveFitter create(int degree) {
         return new PolynomialCurveFitter(new double[degree + 1], Integer.MAX_VALUE);
     }
 
-    /**
-     * Configure the start point (initial guess).
-     * @param newStart new start point (initial guess)
-     * @return a new instance.
-     */
+    
     public PolynomialCurveFitter withStartPoint(double[] newStart) {
         return new PolynomialCurveFitter(newStart.clone(),
                                          maxIter);
     }
 
-    /**
-     * Configure the maximum number of iterations.
-     * @param newMaxIter maximum number of iterations
-     * @return a new instance.
-     */
+    
     public PolynomialCurveFitter withMaxIterations(int newMaxIter) {
         return new PolynomialCurveFitter(initialGuess,
                                          newMaxIter);
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     protected LeastSquaresProblem getProblem(Collection<WeightedObservedPoint> observations) {
         // Prepare least-squares problem.

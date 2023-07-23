@@ -17,68 +17,45 @@
 package org.apache.lucene.util.hnsw.math.random;
 
 
-/** This class implements the WELL44497b pseudo-random number generator
- * from Fran&ccedil;ois Panneton, Pierre L'Ecuyer and Makoto Matsumoto.
 
- * <p>This generator is described in a paper by Fran&ccedil;ois Panneton,
- * Pierre L'Ecuyer and Makoto Matsumoto <a
- * href="http://www.iro.umontreal.ca/~lecuyer/myftp/papers/wellrng.pdf">Improved
- * Long-Period Generators Based on Linear Recurrences Modulo 2</a> ACM
- * Transactions on Mathematical Software, 32, 1 (2006). The errata for the paper
- * are in <a href="http://www.iro.umontreal.ca/~lecuyer/myftp/papers/wellrng-errata.txt">wellrng-errata.txt</a>.</p>
-
- * @see <a href="http://www.iro.umontreal.ca/~panneton/WELLRNG.html">WELL Random number generator</a>
- * @since 2.2
-
- */
 public class Well44497b extends AbstractWell {
 
-    /** Serializable version identifier. */
+    
     private static final long serialVersionUID = 4032007538246675492L;
 
-    /** Number of bits in the pool. */
+    
     private static final int K = 44497;
 
-    /** First parameter of the algorithm. */
+    
     private static final int M1 = 23;
 
-    /** Second parameter of the algorithm. */
+    
     private static final int M2 = 481;
 
-    /** Third parameter of the algorithm. */
+    
     private static final int M3 = 229;
 
-    /** Creates a new random number generator.
-     * <p>The instance is initialized using the current time as the
-     * seed.</p>
-     */
+    
     public Well44497b() {
         super(K, M1, M2, M3);
     }
 
-    /** Creates a new random number generator using a single int seed.
-     * @param seed the initial seed (32 bits integer)
-     */
+    
     public Well44497b(int seed) {
         super(K, M1, M2, M3, seed);
     }
 
-    /** Creates a new random number generator using an int array seed.
-     * @param seed the initial seed (32 bits integers array), if null
-     * the seed of the generator will be related to the current time
-     */
+    
     public Well44497b(int[] seed) {
         super(K, M1, M2, M3, seed);
     }
 
-    /** Creates a new random number generator using a single long seed.
-     * @param seed the initial seed (64 bits integer)
-     */
+    
     public Well44497b(long seed) {
         super(K, M1, M2, M3, seed);
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     protected int next(final int bits) {
 

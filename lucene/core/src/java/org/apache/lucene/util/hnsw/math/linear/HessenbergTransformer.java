@@ -20,42 +20,20 @@ package org.apache.lucene.util.hnsw.math.linear;
 import org.apache.lucene.util.hnsw.math.util.FastMath;
 import org.apache.lucene.util.hnsw.math.util.Precision;
 
-/**
- * Class transforming a general real matrix to Hessenberg form.
- * <p>A m &times; m matrix A can be written as the product of three matrices: A = P
- * &times; H &times; P<sup>T</sup> with P an orthogonal matrix and H a Hessenberg
- * matrix. Both P and H are m &times; m matrices.</p>
- * <p>Transformation to Hessenberg form is often not a goal by itself, but it is an
- * intermediate step in more general decomposition algorithms like
- * {@link EigenDecomposition eigen decomposition}. This class is therefore
- * intended for internal use by the library and is not public. As a consequence
- * of this explicitly limited scope, many methods directly returns references to
- * internal arrays, not copies.</p>
- * <p>This class is based on the method orthes in class EigenvalueDecomposition
- * from the <a href="http://math.nist.gov/javanumerics/jama/">JAMA</a> library.</p>
- *
- * @see <a href="http://mathworld.wolfram.com/HessenbergDecomposition.html">MathWorld</a>
- * @see <a href="http://en.wikipedia.org/wiki/Householder_transformation">Householder Transformations</a>
- * @since 3.1
- */
+
 class HessenbergTransformer {
-    /** Householder vectors. */
+    
     private final double householderVectors[][];
-    /** Temporary storage vector. */
+    
     private final double ort[];
-    /** Cached value of P. */
+    
     private RealMatrix cachedP;
-    /** Cached value of Pt. */
+    
     private RealMatrix cachedPt;
-    /** Cached value of H. */
+    
     private RealMatrix cachedH;
 
-    /**
-     * Build the transformation to Hessenberg form of a general matrix.
-     *
-     * @param matrix matrix to transform
-     * @throws NonSquareMatrixException if the matrix is not square
-     */
+    
     HessenbergTransformer(final RealMatrix matrix) {
         if (!matrix.isSquare()) {
             throw new NonSquareMatrixException(matrix.getRowDimension(),
@@ -73,12 +51,7 @@ class HessenbergTransformer {
         transform();
     }
 
-    /**
-     * Returns the matrix P of the transform.
-     * <p>P is an orthogonal matrix, i.e. its inverse is also its transpose.</p>
-     *
-     * @return the P matrix
-     */
+    
     public RealMatrix getP() {
         if (cachedP == null) {
             final int n = householderVectors.length;
@@ -119,12 +92,7 @@ class HessenbergTransformer {
         return cachedP;
     }
 
-    /**
-     * Returns the transpose of the matrix P of the transform.
-     * <p>P is an orthogonal matrix, i.e. its inverse is also its transpose.</p>
-     *
-     * @return the transpose of the P matrix
-     */
+    
     public RealMatrix getPT() {
         if (cachedPt == null) {
             cachedPt = getP().transpose();
@@ -134,11 +102,7 @@ class HessenbergTransformer {
         return cachedPt;
     }
 
-    /**
-     * Returns the Hessenberg matrix H of the transform.
-     *
-     * @return the H matrix
-     */
+    
     public RealMatrix getH() {
         if (cachedH == null) {
             final int m = householderVectors.length;
@@ -161,21 +125,12 @@ class HessenbergTransformer {
         return cachedH;
     }
 
-    /**
-     * Get the Householder vectors of the transform.
-     * <p>Note that since this class is only intended for internal use, it returns
-     * directly a reference to its internal arrays, not a copy.</p>
-     *
-     * @return the main diagonal elements of the B matrix
-     */
+    
     double[][] getHouseholderVectorsRef() {
         return householderVectors;
     }
 
-    /**
-     * Transform original matrix to Hessenberg form.
-     * <p>Transformation is done using Householder transforms.</p>
-     */
+    
     private void transform() {
         final int n = householderVectors.length;
         final int high = n - 1;

@@ -15,7 +15,5 @@
  * limitations under the License.
  */
 
-/**
- * One-dimensional optimization algorithms.
- */
+
 package org.apache.lucene.util.hnsw.math.optim.univariate;

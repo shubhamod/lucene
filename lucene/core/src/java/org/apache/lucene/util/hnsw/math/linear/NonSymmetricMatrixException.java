@@ -19,28 +19,18 @@ package org.apache.lucene.util.hnsw.math.linear;
 import org.apache.lucene.util.hnsw.math.exception.MathIllegalArgumentException;
 import org.apache.lucene.util.hnsw.math.exception.util.LocalizedFormats;
 
-/**
- * Exception to be thrown when a symmetric matrix is expected.
- *
- * @since 3.0
- */
+
 public class NonSymmetricMatrixException extends MathIllegalArgumentException {
-    /** Serializable version Id. */
+    
     private static final long serialVersionUID = -7518495577824189882L;
-    /** Row. */
+    
     private final int row;
-    /** Column. */
+    
     private final int column;
-    /** Threshold. */
+    
     private final double threshold;
 
-    /**
-     * Construct an exception.
-     *
-     * @param row Row index.
-     * @param column Column index.
-     * @param threshold Relative symmetry threshold.
-     */
+    
     public NonSymmetricMatrixException(int row,
                                        int column,
                                        double threshold) {
@@ -50,21 +40,15 @@ public class NonSymmetricMatrixException extends MathIllegalArgumentException {
         this.threshold = threshold;
     }
 
-    /**
-     * @return the row index of the entry.
-     */
+    
     public int getRow() {
         return row;
     }
-    /**
-     * @return the column index of the entry.
-     */
+    
     public int getColumn() {
         return column;
     }
-    /**
-     * @return the relative symmetry threshold.
-     */
+    
     public double getThreshold() {
         return threshold;
     }

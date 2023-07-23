@@ -16,25 +16,15 @@
  */
 package org.apache.lucene.util.hnsw.math.stat.inference;
 
-/**
- * Represents an alternative hypothesis for a hypothesis test.
- *
- * @since 3.3
- */
+
 public enum AlternativeHypothesis {
 
-    /**
-     * Represents a two-sided test. H0: p=p0, H1: p &ne; p0
-     */
+    
     TWO_SIDED,
 
-    /**
-     * Represents a right-sided test. H0: p &le; p0, H1: p &gt; p0.
-     */
+    
     GREATER_THAN,
 
-    /**
-     * Represents a left-sided test. H0: p &ge; p0, H1: p &lt; p0.
-     */
+    
     LESS_THAN
 }

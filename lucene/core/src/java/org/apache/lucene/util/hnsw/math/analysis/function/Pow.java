@@ -20,13 +20,9 @@ package org.apache.lucene.util.hnsw.math.analysis.function;
 import org.apache.lucene.util.hnsw.math.analysis.BivariateFunction;
 import org.apache.lucene.util.hnsw.math.util.FastMath;
 
-/**
- * Power function.
- *
- * @since 3.0
- */
+
 public class Pow implements BivariateFunction {
-    /** {@inheritDoc} */
+    
     public double value(double x, double y) {
         return FastMath.pow(x, y);
     }

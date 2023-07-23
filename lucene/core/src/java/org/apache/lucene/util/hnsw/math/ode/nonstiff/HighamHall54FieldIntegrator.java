@@ -25,41 +25,18 @@ import org.apache.lucene.util.hnsw.math.util.MathArrays;
 import org.apache.lucene.util.hnsw.math.util.MathUtils;
 
 
-/**
- * This class implements the 5(4) Higham and Hall integrator for
- * Ordinary Differential Equations.
- *
- * <p>This integrator is an embedded Runge-Kutta integrator
- * of order 5(4) used in local extrapolation mode (i.e. the solution
- * is computed using the high order formula) with stepsize control
- * (and automatic step initialization) and continuous output. This
- * method uses 7 functions evaluations per step.</p>
- *
- * @param <T> the type of the field elements
- * @since 3.6
- */
+
 
 public class HighamHall54FieldIntegrator<T extends RealFieldElement<T>>
     extends EmbeddedRungeKuttaFieldIntegrator<T> {
 
-    /** Integrator method name. */
+    
     private static final String METHOD_NAME = "Higham-Hall 5(4)";
 
-    /** Error weights Butcher array. */
+    
     private final T[] e ;
 
-    /** Simple constructor.
-     * Build a fifth order Higham and Hall integrator with the given step bounds
-     * @param field field to which the time and state vector elements belong
-     * @param minStep minimal step (sign is irrelevant, regardless of
-     * integration direction, forward or backward), the last step can
-     * be smaller than this
-     * @param maxStep maximal step (sign is irrelevant, regardless of
-     * integration direction, forward or backward), the last step can
-     * be smaller than this
-     * @param scalAbsoluteTolerance allowed absolute error
-     * @param scalRelativeTolerance allowed relative error
-     */
+    
     public HighamHall54FieldIntegrator(final Field<T> field,
                                        final double minStep, final double maxStep,
                                        final double scalAbsoluteTolerance,
@@ -76,18 +53,7 @@ public class HighamHall54FieldIntegrator<T extends RealFieldElement<T>>
         e[6] = fraction(-1,  10);
     }
 
-    /** Simple constructor.
-     * Build a fifth order Higham and Hall integrator with the given step bounds
-     * @param field field to which the time and state vector elements belong
-     * @param minStep minimal step (sign is irrelevant, regardless of
-     * integration direction, forward or backward), the last step can
-     * be smaller than this
-     * @param maxStep maximal step (sign is irrelevant, regardless of
-     * integration direction, forward or backward), the last step can
-     * be smaller than this
-     * @param vecAbsoluteTolerance allowed absolute error
-     * @param vecRelativeTolerance allowed relative error
-     */
+    
     public HighamHall54FieldIntegrator(final Field<T> field,
                                        final double minStep, final double maxStep,
                                        final double[] vecAbsoluteTolerance,
@@ -104,7 +70,7 @@ public class HighamHall54FieldIntegrator<T extends RealFieldElement<T>>
         e[6] = fraction(-1,  10);
     }
 
-    /** {@inheritDoc} */
+    
     public T[] getC() {
         final T[] c = MathArrays.buildArray(getField(), 6);
         c[0] = fraction(2, 9);
@@ -116,7 +82,7 @@ public class HighamHall54FieldIntegrator<T extends RealFieldElement<T>>
         return c;
     }
 
-    /** {@inheritDoc} */
+    
     public T[][] getA() {
         final T[][] a = MathArrays.buildArray(getField(), 6, -1);
         for (int i = 0; i < a.length; ++i) {
@@ -146,7 +112,7 @@ public class HighamHall54FieldIntegrator<T extends RealFieldElement<T>>
         return a;
     }
 
-    /** {@inheritDoc} */
+    
     public T[] getB() {
         final T[] b = MathArrays.buildArray(getField(), 7);
         b[0] = fraction(  1, 12);
@@ -159,7 +125,7 @@ public class HighamHall54FieldIntegrator<T extends RealFieldElement<T>>
         return b;
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     protected HighamHall54FieldStepInterpolator<T>
         createInterpolator(final boolean forward, T[][] yDotK,
@@ -171,13 +137,13 @@ public class HighamHall54FieldIntegrator<T extends RealFieldElement<T>>
                                                         mapper);
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     public int getOrder() {
         return 5;
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     protected T estimateError(final T[][] yDotK, final T[] y0, final T[] y1, final T h) {
 

@@ -23,37 +23,13 @@ import org.apache.lucene.util.hnsw.math.exception.NumberIsTooSmallException;
 import org.apache.lucene.util.hnsw.math.exception.TooManyEvaluationsException;
 import org.apache.lucene.util.hnsw.math.util.FastMath;
 
-/**
- * Implements the <a href="http://mathworld.wolfram.com/RombergIntegration.html">
- * Romberg Algorithm</a> for integration of real univariate functions. For
- * reference, see <b>Introduction to Numerical Analysis</b>, ISBN 038795452X,
- * chapter 3.
- * <p>
- * Romberg integration employs k successive refinements of the trapezoid
- * rule to remove error terms less than order O(N^(-2k)). Simpson's rule
- * is a special case of k = 2.</p>
- *
- * @since 1.2
- */
+
 public class RombergIntegrator extends BaseAbstractUnivariateIntegrator {
 
-    /** Maximal number of iterations for Romberg. */
+    
     public static final int ROMBERG_MAX_ITERATIONS_COUNT = 32;
 
-    /**
-     * Build a Romberg integrator with given accuracies and iterations counts.
-     * @param relativeAccuracy relative accuracy of the result
-     * @param absoluteAccuracy absolute accuracy of the result
-     * @param minimalIterationCount minimum number of iterations
-     * @param maximalIterationCount maximum number of iterations
-     * (must be less than or equal to {@link #ROMBERG_MAX_ITERATIONS_COUNT})
-     * @exception NotStrictlyPositiveException if minimal number of iterations
-     * is not strictly positive
-     * @exception NumberIsTooSmallException if maximal number of iterations
-     * is lesser than or equal to the minimal number of iterations
-     * @exception NumberIsTooLargeException if maximal number of iterations
-     * is greater than {@link #ROMBERG_MAX_ITERATIONS_COUNT}
-     */
+    
     public RombergIntegrator(final double relativeAccuracy,
                              final double absoluteAccuracy,
                              final int minimalIterationCount,
@@ -66,18 +42,7 @@ public class RombergIntegrator extends BaseAbstractUnivariateIntegrator {
         }
     }
 
-    /**
-     * Build a Romberg integrator with given iteration counts.
-     * @param minimalIterationCount minimum number of iterations
-     * @param maximalIterationCount maximum number of iterations
-     * (must be less than or equal to {@link #ROMBERG_MAX_ITERATIONS_COUNT})
-     * @exception NotStrictlyPositiveException if minimal number of iterations
-     * is not strictly positive
-     * @exception NumberIsTooSmallException if maximal number of iterations
-     * is lesser than or equal to the minimal number of iterations
-     * @exception NumberIsTooLargeException if maximal number of iterations
-     * is greater than {@link #ROMBERG_MAX_ITERATIONS_COUNT}
-     */
+    
     public RombergIntegrator(final int minimalIterationCount,
                              final int maximalIterationCount)
         throws NotStrictlyPositiveException, NumberIsTooSmallException, NumberIsTooLargeException {
@@ -88,15 +53,12 @@ public class RombergIntegrator extends BaseAbstractUnivariateIntegrator {
         }
     }
 
-    /**
-     * Construct a Romberg integrator with default settings
-     * (max iteration count set to {@link #ROMBERG_MAX_ITERATIONS_COUNT})
-     */
+    
     public RombergIntegrator() {
         super(DEFAULT_MIN_ITERATIONS_COUNT, ROMBERG_MAX_ITERATIONS_COUNT);
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     protected double doIntegrate()
         throws TooManyEvaluationsException, MaxCountExceededException {

@@ -22,17 +22,11 @@ import org.apache.lucene.util.hnsw.math.exception.NonMonotonicSequenceException;
 import org.apache.lucene.util.hnsw.math.exception.NullArgumentException;
 import org.apache.lucene.util.hnsw.math.util.MathArrays;
 
-/**
- * Generates a piecewise-bicubic interpolating function.
- *
- * @since 2.2
- */
+
 public class PiecewiseBicubicSplineInterpolator
     implements BivariateGridInterpolator {
 
-    /**
-     * {@inheritDoc}
-     */
+    
     public PiecewiseBicubicSplineInterpolatingFunction interpolate( final double[] xval,
                                                                     final double[] yval,
                                                                     final double[][] fval)

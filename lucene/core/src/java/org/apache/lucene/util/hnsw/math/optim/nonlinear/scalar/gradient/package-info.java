@@ -15,7 +15,5 @@
  * limitations under the License.
  */
 
-/**
- * This package provides optimization algorithms that require derivatives.
- */
+
 package org.apache.lucene.util.hnsw.math.optim.nonlinear.scalar.gradient;

@@ -27,44 +27,17 @@ import org.apache.lucene.util.hnsw.math.exception.TooManyEvaluationsException;
 import org.apache.lucene.util.hnsw.math.exception.util.LocalizedFormats;
 import org.apache.lucene.util.hnsw.math.util.FastMath;
 
-/**
- * This algorithm divides the integration interval into equally-sized
- * sub-interval and on each of them performs a
- * <a href="http://mathworld.wolfram.com/Legendre-GaussQuadrature.html">
- * Legendre-Gauss</a> quadrature.
- * Because of its <em>non-adaptive</em> nature, this algorithm can
- * converge to a wrong value for the integral (for example, if the
- * function is significantly different from zero toward the ends of the
- * integration interval).
- * In particular, a change of variables aimed at estimating integrals
- * over infinite intervals as proposed
- * <a href="http://en.wikipedia.org/w/index.php?title=Numerical_integration#Integrals_over_infinite_intervals">
- *  here</a> should be avoided when using this class.
- *
- * @since 3.1
- */
+
 
 public class IterativeLegendreGaussIntegrator
     extends BaseAbstractUnivariateIntegrator {
-    /** Factory that computes the points and weights. */
+    
     private static final GaussIntegratorFactory FACTORY
         = new GaussIntegratorFactory();
-    /** Number of integration points (per interval). */
+    
     private final int numberOfPoints;
 
-    /**
-     * Builds an integrator with given accuracies and iterations counts.
-     *
-     * @param n Number of integration points.
-     * @param relativeAccuracy Relative accuracy of the result.
-     * @param absoluteAccuracy Absolute accuracy of the result.
-     * @param minimalIterationCount Minimum number of iterations.
-     * @param maximalIterationCount Maximum number of iterations.
-     * @throws NotStrictlyPositiveException if minimal number of iterations
-     * or number of points are not strictly positive.
-     * @throws NumberIsTooSmallException if maximal number of iterations
-     * is smaller than or equal to the minimal number of iterations.
-     */
+    
     public IterativeLegendreGaussIntegrator(final int n,
                                             final double relativeAccuracy,
                                             final double absoluteAccuracy,
@@ -78,14 +51,7 @@ public class IterativeLegendreGaussIntegrator
        numberOfPoints = n;
     }
 
-    /**
-     * Builds an integrator with given accuracies.
-     *
-     * @param n Number of integration points.
-     * @param relativeAccuracy Relative accuracy of the result.
-     * @param absoluteAccuracy Absolute accuracy of the result.
-     * @throws NotStrictlyPositiveException if {@code n < 1}.
-     */
+    
     public IterativeLegendreGaussIntegrator(final int n,
                                             final double relativeAccuracy,
                                             final double absoluteAccuracy)
@@ -94,18 +60,7 @@ public class IterativeLegendreGaussIntegrator
              DEFAULT_MIN_ITERATIONS_COUNT, DEFAULT_MAX_ITERATIONS_COUNT);
     }
 
-    /**
-     * Builds an integrator with given iteration counts.
-     *
-     * @param n Number of integration points.
-     * @param minimalIterationCount Minimum number of iterations.
-     * @param maximalIterationCount Maximum number of iterations.
-     * @throws NotStrictlyPositiveException if minimal number of iterations
-     * is not strictly positive.
-     * @throws NumberIsTooSmallException if maximal number of iterations
-     * is smaller than or equal to the minimal number of iterations.
-     * @throws NotStrictlyPositiveException if {@code n < 1}.
-     */
+    
     public IterativeLegendreGaussIntegrator(final int n,
                                             final int minimalIterationCount,
                                             final int maximalIterationCount)
@@ -114,7 +69,7 @@ public class IterativeLegendreGaussIntegrator
              minimalIterationCount, maximalIterationCount);
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     protected double doIntegrate()
         throws MathIllegalArgumentException, TooManyEvaluationsException, MaxCountExceededException {
@@ -146,19 +101,12 @@ public class IterativeLegendreGaussIntegrator
         }
     }
 
-    /**
-     * Compute the n-th stage integral.
-     *
-     * @param n Number of steps.
-     * @return the value of n-th stage integral.
-     * @throws TooManyEvaluationsException if the maximum number of evaluations
-     * is exceeded.
-     */
+    
     private double stage(final int n)
         throws TooManyEvaluationsException {
         // Function to be integrated is stored in the base class.
         final UnivariateFunction f = new UnivariateFunction() {
-                /** {@inheritDoc} */
+                
                 public double value(double x)
                     throws MathIllegalArgumentException, TooManyEvaluationsException {
                     return computeObjectiveValue(x);

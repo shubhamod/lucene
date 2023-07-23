@@ -20,21 +20,7 @@ import java.util.Locale;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 
-/**
- * Enumeration for localized messages formats used in exceptions messages.
- * <p>
- * The constants in this enumeration represent the available
- * formats as localized strings. These formats are intended to be
- * localized using simple properties files, using the constant
- * name as the key and the property value as the message format.
- * The source English format is provided in the constants themselves
- * to serve both as a reminder for developers to understand the parameters
- * needed by each format, as a basis for translators to create
- * localized properties files, and as a default format if some
- * translation is missing.
- * </p>
- * @since 2.2
- */
+
 public enum LocalizedFormats implements Localizable {
 
     // CHECKSTYLE: stop MultipleVariableDeclarations
@@ -374,23 +360,20 @@ public enum LocalizedFormats implements Localizable {
     // CHECKSTYLE: resume MultipleVariableDeclarations
 
 
-    /** Source English format. */
+    
     private final String sourceFormat;
 
-    /** Simple constructor.
-     * @param sourceFormat source English format to use when no
-     * localized version is available
-     */
+    
     LocalizedFormats(final String sourceFormat) {
         this.sourceFormat = sourceFormat;
     }
 
-    /** {@inheritDoc} */
+    
     public String getSourceString() {
         return sourceFormat;
     }
 
-    /** {@inheritDoc} */
+    
     public String getLocalizedString(final Locale locale) {
         try {
             final String path = LocalizedFormats.class.getName().replaceAll("\\.", "/");

@@ -21,34 +21,20 @@ import java.util.List;
 import org.apache.lucene.util.hnsw.math.exception.util.LocalizedFormats;
 
 
-/**
- * Chromosome represented by a vector of 0s and 1s.
- *
- * @since 2.0
- */
+
 public abstract class BinaryChromosome extends AbstractListChromosome<Integer> {
 
-    /**
-     * Constructor.
-     * @param representation list of {0,1} values representing the chromosome
-     * @throws InvalidRepresentationException iff the <code>representation</code> can not represent a valid chromosome
-     */
+    
     public BinaryChromosome(List<Integer> representation) throws InvalidRepresentationException {
         super(representation);
     }
 
-    /**
-     * Constructor.
-     * @param representation array of {0,1} values representing the chromosome
-     * @throws InvalidRepresentationException iff the <code>representation</code> can not represent a valid chromosome
-     */
+    
     public BinaryChromosome(Integer[] representation) throws InvalidRepresentationException {
         super(representation);
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    
     @Override
     protected void checkValidity(List<Integer> chromosomeRepresentation) throws InvalidRepresentationException {
         for (int i : chromosomeRepresentation) {
@@ -59,11 +45,7 @@ public abstract class BinaryChromosome extends AbstractListChromosome<Integer> {
         }
     }
 
-    /**
-     * Returns a representation of a random binary array of length <code>length</code>.
-     * @param length length of the array
-     * @return a random binary array of length <code>length</code>
-     */
+    
     public static List<Integer> randomBinaryRepresentation(int length) {
         // random binary list
         List<Integer> rList= new ArrayList<Integer> (length);
@@ -73,7 +55,7 @@ public abstract class BinaryChromosome extends AbstractListChromosome<Integer> {
         return rList;
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     protected boolean isSame(Chromosome another) {
         // type check

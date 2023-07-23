@@ -24,81 +24,17 @@ import org.apache.lucene.util.hnsw.math.exception.NullArgumentException;
 import org.apache.lucene.util.hnsw.math.exception.OutOfRangeException;
 import org.apache.lucene.util.hnsw.math.exception.util.LocalizedFormats;
 
-/**
- * Implements binomial test statistics.
- * <p>
- * Exact test for the statistical significance of deviations from a
- * theoretically expected distribution of observations into two categories.
- *
- * @see <a href="http://en.wikipedia.org/wiki/Binomial_test">Binomial test (Wikipedia)</a>
- * @since 3.3
- */
+
 public class BinomialTest {
 
-    /**
-     * Returns whether the null hypothesis can be rejected with the given confidence level.
-     * <p>
-     * <strong>Preconditions</strong>:
-     * <ul>
-     * <li>Number of trials must be &ge; 0.</li>
-     * <li>Number of successes must be &ge; 0.</li>
-     * <li>Number of successes must be &le; number of trials.</li>
-     * <li>Probability must be &ge; 0 and &le; 1.</li>
-     * </ul>
-     *
-     * @param numberOfTrials number of trials performed
-     * @param numberOfSuccesses number of successes observed
-     * @param probability assumed probability of a single trial under the null hypothesis
-     * @param alternativeHypothesis type of hypothesis being evaluated (one- or two-sided)
-     * @param alpha significance level of the test
-     * @return true if the null hypothesis can be rejected with confidence {@code 1 - alpha}
-     * @throws NotPositiveException if {@code numberOfTrials} or {@code numberOfSuccesses} is negative
-     * @throws OutOfRangeException if {@code probability} is not between 0 and 1
-     * @throws MathIllegalArgumentException if {@code numberOfTrials} &lt; {@code numberOfSuccesses} or
-     * if {@code alternateHypothesis} is null.
-     * @see AlternativeHypothesis
-     */
+    
     public boolean binomialTest(int numberOfTrials, int numberOfSuccesses, double probability,
                                 AlternativeHypothesis alternativeHypothesis, double alpha) {
         double pValue = binomialTest(numberOfTrials, numberOfSuccesses, probability, alternativeHypothesis);
         return pValue < alpha;
     }
 
-    /**
-     * Returns the <i>observed significance level</i>, or
-     * <a href="http://www.cas.lancs.ac.uk/glossary_v1.1/hyptest.html#pvalue">p-value</a>,
-     * associated with a <a href="http://en.wikipedia.org/wiki/Binomial_test"> Binomial test</a>.
-     * <p>
-     * The number returned is the smallest significance level at which one can reject the null hypothesis.
-     * The form of the hypothesis depends on {@code alternativeHypothesis}.</p>
-     * <p>
-     * The p-Value represents the likelihood of getting a result at least as extreme as the sample,
-     * given the provided {@code probability} of success on a single trial. For single-sided tests,
-     * this value can be directly derived from the Binomial distribution. For the two-sided test,
-     * the implementation works as follows: we start by looking at the most extreme cases
-     * (0 success and n success where n is the number of trials from the sample) and determine their likelihood.
-     * The lower value is added to the p-Value (if both values are equal, both are added). Then we continue with
-     * the next extreme value, until we added the value for the actual observed sample.</p>
-     * <p>
-     * <strong>Preconditions</strong>:
-     * <ul>
-     * <li>Number of trials must be &ge; 0.</li>
-     * <li>Number of successes must be &ge; 0.</li>
-     * <li>Number of successes must be &le; number of trials.</li>
-     * <li>Probability must be &ge; 0 and &le; 1.</li>
-     * </ul></p>
-     *
-     * @param numberOfTrials number of trials performed
-     * @param numberOfSuccesses number of successes observed
-     * @param probability assumed probability of a single trial under the null hypothesis
-     * @param alternativeHypothesis type of hypothesis being evaluated (one- or two-sided)
-     * @return p-value
-     * @throws NotPositiveException if {@code numberOfTrials} or {@code numberOfSuccesses} is negative
-     * @throws OutOfRangeException if {@code probability} is not between 0 and 1
-     * @throws MathIllegalArgumentException if {@code numberOfTrials} &lt; {@code numberOfSuccesses} or
-     * if {@code alternateHypothesis} is null.
-     * @see AlternativeHypothesis
-     */
+    
     public double binomialTest(int numberOfTrials, int numberOfSuccesses, double probability,
                                AlternativeHypothesis alternativeHypothesis) {
         if (numberOfTrials < 0) {

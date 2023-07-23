@@ -31,82 +31,36 @@ import org.apache.lucene.util.hnsw.math.util.FastMath;
 import org.apache.lucene.util.hnsw.math.util.MathArrays;
 import org.apache.lucene.util.hnsw.math.util.MathUtils;
 
-/**
- * This abstract class holds the common part of all adaptive
- * stepsize integrators for Ordinary Differential Equations.
- *
- * <p>These algorithms perform integration with stepsize control, which
- * means the user does not specify the integration step but rather a
- * tolerance on error. The error threshold is computed as
- * <pre>
- * threshold_i = absTol_i + relTol_i * max (abs (ym), abs (ym+1))
- * </pre>
- * where absTol_i is the absolute tolerance for component i of the
- * state vector and relTol_i is the relative tolerance for the same
- * component. The user can also use only two scalar values absTol and
- * relTol which will be used for all components.
- * </p>
- * <p>
- * Note that <em>only</em> the {@link FieldODEState#getState() main part}
- * of the state vector is used for stepsize control. The {@link
- * FieldODEState#getSecondaryState(int) secondary parts} of the state
- * vector are explicitly ignored for stepsize control.
- * </p>
- *
- * <p>If the estimated error for ym+1 is such that
- * <pre>
- * sqrt((sum (errEst_i / threshold_i)^2 ) / n) < 1
- * </pre>
- *
- * (where n is the main set dimension) then the step is accepted,
- * otherwise the step is rejected and a new attempt is made with a new
- * stepsize.</p>
- *
- * @param <T> the type of the field elements
- * @since 3.6
- *
- */
+
 
 public abstract class AdaptiveStepsizeFieldIntegrator<T extends RealFieldElement<T>>
     extends AbstractFieldIntegrator<T> {
 
-    /** Allowed absolute scalar error. */
+    
     protected double scalAbsoluteTolerance;
 
-    /** Allowed relative scalar error. */
+    
     protected double scalRelativeTolerance;
 
-    /** Allowed absolute vectorial error. */
+    
     protected double[] vecAbsoluteTolerance;
 
-    /** Allowed relative vectorial error. */
+    
     protected double[] vecRelativeTolerance;
 
-    /** Main set dimension. */
+    
     protected int mainSetDimension;
 
-    /** User supplied initial step. */
+    
     private T initialStep;
 
-    /** Minimal step. */
+    
     private T minStep;
 
-    /** Maximal step. */
+    
     private T maxStep;
 
-    /** Build an integrator with the given stepsize bounds.
-     * The default step handler does nothing.
-     * @param field field to which the time and state vector elements belong
-     * @param name name of the method
-     * @param minStep minimal step (sign is irrelevant, regardless of
-     * integration direction, forward or backward), the last step can
-     * be smaller than this
-     * @param maxStep maximal step (sign is irrelevant, regardless of
-     * integration direction, forward or backward), the last step can
-     * be smaller than this
-     * @param scalAbsoluteTolerance allowed absolute error
-     * @param scalRelativeTolerance allowed relative error
-     */
+    
     public AdaptiveStepsizeFieldIntegrator(final Field<T> field, final String name,
                                            final double minStep, final double maxStep,
                                            final double scalAbsoluteTolerance,
@@ -118,19 +72,7 @@ public abstract class AdaptiveStepsizeFieldIntegrator<T extends RealFieldElement
 
     }
 
-    /** Build an integrator with the given stepsize bounds.
-     * The default step handler does nothing.
-     * @param field field to which the time and state vector elements belong
-     * @param name name of the method
-     * @param minStep minimal step (sign is irrelevant, regardless of
-     * integration direction, forward or backward), the last step can
-     * be smaller than this
-     * @param maxStep maximal step (sign is irrelevant, regardless of
-     * integration direction, forward or backward), the last step can
-     * be smaller than this
-     * @param vecAbsoluteTolerance allowed absolute error
-     * @param vecRelativeTolerance allowed relative error
-     */
+    
     public AdaptiveStepsizeFieldIntegrator(final Field<T> field, final String name,
                                            final double minStep, final double maxStep,
                                            final double[] vecAbsoluteTolerance,
@@ -142,20 +84,7 @@ public abstract class AdaptiveStepsizeFieldIntegrator<T extends RealFieldElement
 
     }
 
-    /** Set the adaptive step size control parameters.
-     * <p>
-     * A side effect of this method is to also reset the initial
-     * step so it will be automatically computed by the integrator
-     * if {@link #setInitialStepSize(RealFieldElement) setInitialStepSize}
-     * is not called by the user.
-     * </p>
-     * @param minimalStep minimal step (must be positive even for backward
-     * integration), the last step can be smaller than this
-     * @param maximalStep maximal step (must be positive even for backward
-     * integration)
-     * @param absoluteTolerance allowed absolute error
-     * @param relativeTolerance allowed relative error
-     */
+    
     public void setStepSizeControl(final double minimalStep, final double maximalStep,
                                    final double absoluteTolerance,
                                    final double relativeTolerance) {
@@ -171,20 +100,7 @@ public abstract class AdaptiveStepsizeFieldIntegrator<T extends RealFieldElement
 
     }
 
-    /** Set the adaptive step size control parameters.
-     * <p>
-     * A side effect of this method is to also reset the initial
-     * step so it will be automatically computed by the integrator
-     * if {@link #setInitialStepSize(RealFieldElement) setInitialStepSize}
-     * is not called by the user.
-     * </p>
-     * @param minimalStep minimal step (must be positive even for backward
-     * integration), the last step can be smaller than this
-     * @param maximalStep maximal step (must be positive even for backward
-     * integration)
-     * @param absoluteTolerance allowed absolute error
-     * @param relativeTolerance allowed relative error
-     */
+    
     public void setStepSizeControl(final double minimalStep, final double maximalStep,
                                    final double[] absoluteTolerance,
                                    final double[] relativeTolerance) {
@@ -200,17 +116,7 @@ public abstract class AdaptiveStepsizeFieldIntegrator<T extends RealFieldElement
 
     }
 
-    /** Set the initial step size.
-     * <p>This method allows the user to specify an initial positive
-     * step size instead of letting the integrator guess it by
-     * itself. If this method is not called before integration is
-     * started, the initial step size will be estimated by the
-     * integrator.</p>
-     * @param initialStepSize initial step size to use (must be positive even
-     * for backward integration ; providing a negative value or a value
-     * outside of the min/max step interval will lead the integrator to
-     * ignore the value and compute the initial step size by itself)
-     */
+    
     public void setInitialStepSize(final T initialStepSize) {
         if (initialStepSize.subtract(minStep).getReal() < 0 ||
             initialStepSize.subtract(maxStep).getReal() > 0) {
@@ -220,7 +126,7 @@ public abstract class AdaptiveStepsizeFieldIntegrator<T extends RealFieldElement
         }
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     protected void sanityChecks(final FieldODEState<T> eqn, final T t)
         throws DimensionMismatchException, NumberIsTooSmallException {
@@ -239,16 +145,7 @@ public abstract class AdaptiveStepsizeFieldIntegrator<T extends RealFieldElement
 
     }
 
-    /** Initialize the integration step.
-     * @param forward forward integration indicator
-     * @param order order of the method
-     * @param scale scaling vector for the state vector (can be shorter than state vector)
-     * @param state0 state at integration start time
-     * @param mapper mapper for all the equations
-     * @return first integration step
-     * @exception MaxCountExceededException if the number of functions evaluations is exceeded
-     * @exception DimensionMismatchException if arrays dimensions do not match equations settings
-     */
+    
     public T initializeStep(final boolean forward, final int order, final T[] scale,
                             final FieldODEStateAndDerivative<T> state0,
                             final FieldEquationsMapper<T> mapper)
@@ -311,15 +208,7 @@ public abstract class AdaptiveStepsizeFieldIntegrator<T extends RealFieldElement
 
     }
 
-    /** Filter the integration step.
-     * @param h signed step
-     * @param forward forward integration indicator
-     * @param acceptSmall if true, steps smaller than the minimal value
-     * are silently increased up to this value, if false such small
-     * steps generate an exception
-     * @return a bounded integration step (h if no bound is reach, or a bounded value)
-     * @exception NumberIsTooSmallException if the step is too small and acceptSmall is false
-     */
+    
     protected T filterStep(final T h, final boolean forward, final boolean acceptSmall)
         throws NumberIsTooSmallException {
 
@@ -343,22 +232,18 @@ public abstract class AdaptiveStepsizeFieldIntegrator<T extends RealFieldElement
 
     }
 
-    /** Reset internal state to dummy values. */
+    
     protected void resetInternalState() {
         setStepStart(null);
         setStepSize(minStep.multiply(maxStep).sqrt());
     }
 
-    /** Get the minimal step.
-     * @return minimal step
-     */
+    
     public T getMinStep() {
         return minStep;
     }
 
-    /** Get the maximal step.
-     * @return maximal step
-     */
+    
     public T getMaxStep() {
         return maxStep;
     }

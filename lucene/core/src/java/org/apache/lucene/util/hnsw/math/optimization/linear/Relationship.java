@@ -17,43 +17,34 @@
 
 package org.apache.lucene.util.hnsw.math.optimization.linear;
 
-/**
- * Types of relationships between two cells in a Solver {@link LinearConstraint}.
- * @deprecated As of 3.1 (to be removed in 4.0).
- * @since 2.0
- */
+
 @Deprecated
 public enum Relationship {
 
-    /** Equality relationship. */
+    
     EQ("="),
 
-    /** Lesser than or equal relationship. */
+    
     LEQ("<="),
 
-    /** Greater than or equal relationship. */
+    
     GEQ(">=");
 
-    /** Display string for the relationship. */
+    
     private final String stringValue;
 
-    /** Simple constructor.
-     * @param stringValue display string for the relationship
-     */
+    
     Relationship(String stringValue) {
         this.stringValue = stringValue;
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     public String toString() {
         return stringValue;
     }
 
-    /**
-     * Get the relationship obtained when multiplying all coefficients by -1.
-     * @return relationship obtained when multiplying all coefficients by -1
-     */
+    
     public Relationship oppositeRelationship() {
         switch (this) {
         case LEQ :

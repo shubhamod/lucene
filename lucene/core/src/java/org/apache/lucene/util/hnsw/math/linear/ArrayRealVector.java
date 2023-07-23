@@ -31,74 +31,38 @@ import org.apache.lucene.util.hnsw.math.exception.util.LocalizedFormats;
 import org.apache.lucene.util.hnsw.math.util.MathUtils;
 import org.apache.lucene.util.hnsw.math.util.FastMath;
 
-/**
- * This class implements the {@link RealVector} interface with a double array.
- * @since 2.0
- */
+
 public class ArrayRealVector extends RealVector implements Serializable {
-    /** Serializable version identifier. */
+    
     private static final long serialVersionUID = -1097961340710804027L;
-    /** Default format. */
+    
     private static final RealVectorFormat DEFAULT_FORMAT = RealVectorFormat.getInstance();
 
-    /** Entries of the vector. */
+    
     private double data[];
 
-    /**
-     * Build a 0-length vector.
-     * Zero-length vectors may be used to initialized construction of vectors
-     * by data gathering. We start with zero-length and use either the {@link
-     * #ArrayRealVector(ArrayRealVector, ArrayRealVector)} constructor
-     * or one of the {@code append} method ({@link #append(double)},
-     * {@link #append(ArrayRealVector)}) to gather data into this vector.
-     */
+    
     public ArrayRealVector() {
         data = new double[0];
     }
 
-    /**
-     * Construct a vector of zeroes.
-     *
-     * @param size Size of the vector.
-     */
+    
     public ArrayRealVector(int size) {
         data = new double[size];
     }
 
-    /**
-     * Construct a vector with preset values.
-     *
-     * @param size Size of the vector
-     * @param preset All entries will be set with this value.
-     */
+    
     public ArrayRealVector(int size, double preset) {
         data = new double[size];
         Arrays.fill(data, preset);
     }
 
-    /**
-     * Construct a vector from an array, copying the input array.
-     *
-     * @param d Array.
-     */
+    
     public ArrayRealVector(double[] d) {
         data = d.clone();
     }
 
-    /**
-     * Create a new ArrayRealVector using the input array as the underlying
-     * data array.
-     * If an array is built specially in order to be embedded in a
-     * ArrayRealVector and not used directly, the {@code copyArray} may be
-     * set to {@code false}. This will prevent the copying and improve
-     * performance as no new array will be built and no data will be copied.
-     *
-     * @param d Data for the new vector.
-     * @param copyArray if {@code true}, the input array will be copied,
-     * otherwise it will be referenced.
-     * @throws NullArgumentException if {@code d} is {@code null}.
-     * @see #ArrayRealVector(double[])
-     */
+    
     public ArrayRealVector(double[] d, boolean copyArray)
         throws NullArgumentException {
         if (d == null) {
@@ -107,16 +71,7 @@ public class ArrayRealVector extends RealVector implements Serializable {
         data = copyArray ? d.clone() :  d;
     }
 
-    /**
-     * Construct a vector from part of a array.
-     *
-     * @param d Array.
-     * @param pos Position of first entry.
-     * @param size Number of entries to copy.
-     * @throws NullArgumentException if {@code d} is {@code null}.
-     * @throws NumberIsTooLargeException if the size of {@code d} is less
-     * than {@code pos + size}.
-     */
+    
     public ArrayRealVector(double[] d, int pos, int size)
         throws NullArgumentException, NumberIsTooLargeException {
         if (d == null) {
@@ -129,11 +84,7 @@ public class ArrayRealVector extends RealVector implements Serializable {
         System.arraycopy(d, pos, data, 0, size);
     }
 
-    /**
-     * Construct a vector from an array.
-     *
-     * @param d Array of {@code Double}s.
-     */
+    
     public ArrayRealVector(Double[] d) {
         data = new double[d.length];
         for (int i = 0; i < d.length; i++) {
@@ -141,16 +92,7 @@ public class ArrayRealVector extends RealVector implements Serializable {
         }
     }
 
-    /**
-     * Construct a vector from part of an array.
-     *
-     * @param d Array.
-     * @param pos Position of first entry.
-     * @param size Number of entries to copy.
-     * @throws NullArgumentException if {@code d} is {@code null}.
-     * @throws NumberIsTooLargeException if the size of {@code d} is less
-     * than {@code pos + size}.
-     */
+    
     public ArrayRealVector(Double[] d, int pos, int size)
         throws NullArgumentException, NumberIsTooLargeException {
         if (d == null) {
@@ -165,12 +107,7 @@ public class ArrayRealVector extends RealVector implements Serializable {
         }
     }
 
-    /**
-     * Construct a vector from another vector, using a deep copy.
-     *
-     * @param v vector to copy.
-     * @throws NullArgumentException if {@code v} is {@code null}.
-     */
+    
     public ArrayRealVector(RealVector v) throws NullArgumentException {
         if (v == null) {
             throw new NullArgumentException();
@@ -181,43 +118,24 @@ public class ArrayRealVector extends RealVector implements Serializable {
         }
     }
 
-    /**
-     * Construct a vector from another vector, using a deep copy.
-     *
-     * @param v Vector to copy.
-     * @throws NullArgumentException if {@code v} is {@code null}.
-     */
+    
     public ArrayRealVector(ArrayRealVector v) throws NullArgumentException {
         this(v, true);
     }
 
-    /**
-     * Construct a vector from another vector.
-     *
-     * @param v Vector to copy.
-     * @param deep If {@code true} perform a deep copy, otherwise perform a
-     * shallow copy.
-     */
+    
     public ArrayRealVector(ArrayRealVector v, boolean deep) {
         data = deep ? v.data.clone() : v.data;
     }
 
-    /**
-     * Construct a vector by appending one vector to another vector.
-     * @param v1 First vector (will be put in front of the new vector).
-     * @param v2 Second vector (will be put at back of the new vector).
-     */
+    
     public ArrayRealVector(ArrayRealVector v1, ArrayRealVector v2) {
         data = new double[v1.data.length + v2.data.length];
         System.arraycopy(v1.data, 0, data, 0, v1.data.length);
         System.arraycopy(v2.data, 0, data, v1.data.length, v2.data.length);
     }
 
-    /**
-     * Construct a vector by appending one vector to another vector.
-     * @param v1 First vector (will be put in front of the new vector).
-     * @param v2 Second vector (will be put at back of the new vector).
-     */
+    
     public ArrayRealVector(ArrayRealVector v1, RealVector v2) {
         final int l1 = v1.data.length;
         final int l2 = v2.getDimension();
@@ -228,11 +146,7 @@ public class ArrayRealVector extends RealVector implements Serializable {
         }
     }
 
-    /**
-     * Construct a vector by appending one vector to another vector.
-     * @param v1 First vector (will be put in front of the new vector).
-     * @param v2 Second vector (will be put at back of the new vector).
-     */
+    
     public ArrayRealVector(RealVector v1, ArrayRealVector v2) {
         final int l1 = v1.getDimension();
         final int l2 = v2.data.length;
@@ -243,11 +157,7 @@ public class ArrayRealVector extends RealVector implements Serializable {
         System.arraycopy(v2.data, 0, data, l1, l2);
     }
 
-    /**
-     * Construct a vector by appending one vector to another vector.
-     * @param v1 First vector (will be put in front of the new vector).
-     * @param v2 Second vector (will be put at back of the new vector).
-     */
+    
     public ArrayRealVector(ArrayRealVector v1, double[] v2) {
         final int l1 = v1.getDimension();
         final int l2 = v2.length;
@@ -256,11 +166,7 @@ public class ArrayRealVector extends RealVector implements Serializable {
         System.arraycopy(v2, 0, data, l1, l2);
     }
 
-    /**
-     * Construct a vector by appending one vector to another vector.
-     * @param v1 First vector (will be put in front of the new vector).
-     * @param v2 Second vector (will be put at back of the new vector).
-     */
+    
     public ArrayRealVector(double[] v1, ArrayRealVector v2) {
         final int l1 = v1.length;
         final int l2 = v2.getDimension();
@@ -269,11 +175,7 @@ public class ArrayRealVector extends RealVector implements Serializable {
         System.arraycopy(v2.data, 0, data, l1, l2);
     }
 
-    /**
-     * Construct a vector by appending one vector to another vector.
-     * @param v1 first vector (will be put in front of the new vector)
-     * @param v2 second vector (will be put at back of the new vector)
-     */
+    
     public ArrayRealVector(double[] v1, double[] v2) {
         final int l1 = v1.length;
         final int l2 = v2.length;
@@ -282,13 +184,13 @@ public class ArrayRealVector extends RealVector implements Serializable {
         System.arraycopy(v2, 0, data, l1, l2);
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     public ArrayRealVector copy() {
         return new ArrayRealVector(this, true);
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     public ArrayRealVector add(RealVector v)
         throws DimensionMismatchException {
@@ -314,7 +216,7 @@ public class ArrayRealVector extends RealVector implements Serializable {
         }
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     public ArrayRealVector subtract(RealVector v)
         throws DimensionMismatchException {
@@ -340,13 +242,13 @@ public class ArrayRealVector extends RealVector implements Serializable {
         }
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     public ArrayRealVector map(UnivariateFunction function) {
         return copy().mapToSelf(function);
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     public ArrayRealVector mapToSelf(UnivariateFunction function) {
         for (int i = 0; i < data.length; i++) {
@@ -355,7 +257,7 @@ public class ArrayRealVector extends RealVector implements Serializable {
         return this;
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     public RealVector mapAddToSelf(double d) {
         for (int i = 0; i < data.length; i++) {
@@ -364,7 +266,7 @@ public class ArrayRealVector extends RealVector implements Serializable {
         return this;
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     public RealVector mapSubtractToSelf(double d) {
         for (int i = 0; i < data.length; i++) {
@@ -373,7 +275,7 @@ public class ArrayRealVector extends RealVector implements Serializable {
         return this;
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     public RealVector mapMultiplyToSelf(double d) {
         for (int i = 0; i < data.length; i++) {
@@ -382,7 +284,7 @@ public class ArrayRealVector extends RealVector implements Serializable {
         return this;
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     public RealVector mapDivideToSelf(double d) {
         for (int i = 0; i < data.length; i++) {
@@ -391,7 +293,7 @@ public class ArrayRealVector extends RealVector implements Serializable {
         return this;
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     public ArrayRealVector ebeMultiply(RealVector v)
         throws DimensionMismatchException {
@@ -415,7 +317,7 @@ public class ArrayRealVector extends RealVector implements Serializable {
         }
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     public ArrayRealVector ebeDivide(RealVector v)
         throws DimensionMismatchException {
@@ -439,17 +341,12 @@ public class ArrayRealVector extends RealVector implements Serializable {
         }
     }
 
-    /**
-     * Get a reference to the underlying data array.
-     * This method does not make a fresh copy of the underlying data.
-     *
-     * @return the array of entries.
-     */
+    
     public double[] getDataRef() {
         return data;
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     public double dotProduct(RealVector v) throws DimensionMismatchException {
         if (v instanceof ArrayRealVector) {
@@ -464,7 +361,7 @@ public class ArrayRealVector extends RealVector implements Serializable {
         return super.dotProduct(v);
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     public double getNorm() {
         double sum = 0;
@@ -474,7 +371,7 @@ public class ArrayRealVector extends RealVector implements Serializable {
         return FastMath.sqrt(sum);
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     public double getL1Norm() {
         double sum = 0;
@@ -484,7 +381,7 @@ public class ArrayRealVector extends RealVector implements Serializable {
         return sum;
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     public double getLInfNorm() {
         double max = 0;
@@ -494,7 +391,7 @@ public class ArrayRealVector extends RealVector implements Serializable {
         return max;
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     public double getDistance(RealVector v) throws DimensionMismatchException {
         if (v instanceof ArrayRealVector) {
@@ -517,7 +414,7 @@ public class ArrayRealVector extends RealVector implements Serializable {
         }
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     public double getL1Distance(RealVector v)
         throws DimensionMismatchException {
@@ -541,7 +438,7 @@ public class ArrayRealVector extends RealVector implements Serializable {
         }
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     public double getLInfDistance(RealVector v)
         throws DimensionMismatchException {
@@ -565,7 +462,7 @@ public class ArrayRealVector extends RealVector implements Serializable {
         }
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     public RealMatrix outerProduct(RealVector v) {
         if (v instanceof ArrayRealVector) {
@@ -592,7 +489,7 @@ public class ArrayRealVector extends RealVector implements Serializable {
         }
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     public double getEntry(int index) throws OutOfRangeException {
         try {
@@ -603,13 +500,13 @@ public class ArrayRealVector extends RealVector implements Serializable {
         }
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     public int getDimension() {
         return data.length;
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     public RealVector append(RealVector v) {
         try {
@@ -619,17 +516,12 @@ public class ArrayRealVector extends RealVector implements Serializable {
         }
     }
 
-    /**
-     * Construct a vector by appending a vector to this vector.
-     *
-     * @param v Vector to append to this one.
-     * @return a new vector.
-     */
+    
     public ArrayRealVector append(ArrayRealVector v) {
         return new ArrayRealVector(this, v);
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     public RealVector append(double in) {
         final double[] out = new double[data.length + 1];
@@ -638,7 +530,7 @@ public class ArrayRealVector extends RealVector implements Serializable {
         return new ArrayRealVector(out, false);
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     public RealVector getSubVector(int index, int n)
         throws OutOfRangeException, NotPositiveException {
@@ -655,7 +547,7 @@ public class ArrayRealVector extends RealVector implements Serializable {
         return out;
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     public void setEntry(int index, double value) throws OutOfRangeException {
         try {
@@ -665,7 +557,7 @@ public class ArrayRealVector extends RealVector implements Serializable {
         }
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     public void addToEntry(int index, double increment)
         throws OutOfRangeException {
@@ -677,7 +569,7 @@ public class ArrayRealVector extends RealVector implements Serializable {
         }
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     public void setSubVector(int index, RealVector v)
         throws OutOfRangeException {
@@ -695,14 +587,7 @@ public class ArrayRealVector extends RealVector implements Serializable {
         }
     }
 
-    /**
-     * Set a set of consecutive elements.
-     *
-     * @param index Index of first element to be set.
-     * @param v Vector containing the values to set.
-     * @throws OutOfRangeException if the index is inconsistent with the vector
-     * size.
-     */
+    
     public void setSubVector(int index, double[] v)
         throws OutOfRangeException {
         try {
@@ -713,44 +598,32 @@ public class ArrayRealVector extends RealVector implements Serializable {
         }
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     public void set(double value) {
         Arrays.fill(data, value);
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     public double[] toArray(){
         return data.clone();
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     public String toString(){
         return DEFAULT_FORMAT.format(this);
     }
 
-    /**
-     * Check if instance and specified vectors have the same dimension.
-     *
-     * @param v Vector to compare instance with.
-     * @throws DimensionMismatchException if the vectors do not
-     * have the same dimension.
-     */
+    
     @Override
     protected void checkVectorDimensions(RealVector v)
         throws DimensionMismatchException {
         checkVectorDimensions(v.getDimension());
     }
 
-    /**
-     * Check if instance dimension is equal to some expected value.
-     *
-     * @param n Expected dimension.
-     * @throws DimensionMismatchException if the dimension is
-     * inconsistent with vector size.
-     */
+    
     @Override
     protected void checkVectorDimensions(int n)
         throws DimensionMismatchException {
@@ -759,12 +632,7 @@ public class ArrayRealVector extends RealVector implements Serializable {
         }
     }
 
-    /**
-     * Check if any coordinate of this vector is {@code NaN}.
-     *
-     * @return {@code true} if any coordinate of this vector is {@code NaN},
-     * {@code false} otherwise.
-     */
+    
     @Override
     public boolean isNaN() {
         for (double v : data) {
@@ -775,13 +643,7 @@ public class ArrayRealVector extends RealVector implements Serializable {
         return false;
     }
 
-    /**
-     * Check whether any coordinate of this vector is infinite and none
-     * are {@code NaN}.
-     *
-     * @return {@code true} if any coordinate of this vector is infinite and
-     * none are {@code NaN}, {@code false} otherwise.
-     */
+    
     @Override
     public boolean isInfinite() {
         if (isNaN()) {
@@ -797,7 +659,7 @@ public class ArrayRealVector extends RealVector implements Serializable {
         return false;
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     public boolean equals(Object other) {
         if (this == other) {
@@ -825,9 +687,7 @@ public class ArrayRealVector extends RealVector implements Serializable {
         return true;
     }
 
-    /**
-     * {@inheritDoc} All {@code NaN} values have the same hash code.
-     */
+    
     @Override
     public int hashCode() {
         if (isNaN()) {
@@ -836,14 +696,14 @@ public class ArrayRealVector extends RealVector implements Serializable {
         return MathUtils.hash(data);
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     public ArrayRealVector combine(double a, double b, RealVector y)
         throws DimensionMismatchException {
         return copy().combineToSelf(a, b, y);
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     public ArrayRealVector combineToSelf(double a, double b, RealVector y)
         throws DimensionMismatchException {
@@ -862,7 +722,7 @@ public class ArrayRealVector extends RealVector implements Serializable {
         return this;
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     public double walkInDefaultOrder(final RealVectorPreservingVisitor visitor) {
         visitor.start(data.length, 0, data.length - 1);
@@ -872,7 +732,7 @@ public class ArrayRealVector extends RealVector implements Serializable {
         return visitor.end();
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     public double walkInDefaultOrder(final RealVectorPreservingVisitor visitor,
         final int start, final int end) throws NumberIsTooSmallException,
@@ -885,21 +745,13 @@ public class ArrayRealVector extends RealVector implements Serializable {
         return visitor.end();
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * In this implementation, the optimized order is the default order.
-     */
+    
     @Override
     public double walkInOptimizedOrder(final RealVectorPreservingVisitor visitor) {
         return walkInDefaultOrder(visitor);
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * In this implementation, the optimized order is the default order.
-     */
+    
     @Override
     public double walkInOptimizedOrder(final RealVectorPreservingVisitor visitor,
         final int start, final int end) throws NumberIsTooSmallException,
@@ -907,7 +759,7 @@ public class ArrayRealVector extends RealVector implements Serializable {
         return walkInDefaultOrder(visitor, start, end);
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     public double walkInDefaultOrder(final RealVectorChangingVisitor visitor) {
         visitor.start(data.length, 0, data.length - 1);
@@ -917,7 +769,7 @@ public class ArrayRealVector extends RealVector implements Serializable {
         return visitor.end();
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     public double walkInDefaultOrder(final RealVectorChangingVisitor visitor,
         final int start, final int end) throws NumberIsTooSmallException,
@@ -930,21 +782,13 @@ public class ArrayRealVector extends RealVector implements Serializable {
         return visitor.end();
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * In this implementation, the optimized order is the default order.
-     */
+    
     @Override
     public double walkInOptimizedOrder(final RealVectorChangingVisitor visitor) {
         return walkInDefaultOrder(visitor);
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * In this implementation, the optimized order is the default order.
-     */
+    
     @Override
     public double walkInOptimizedOrder(final RealVectorChangingVisitor visitor,
         final int start, final int end) throws NumberIsTooSmallException,

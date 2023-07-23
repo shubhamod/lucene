@@ -19,43 +19,22 @@ package org.apache.lucene.util.hnsw.math.optim.linear;
 import org.apache.lucene.util.hnsw.math.optim.OptimizationData;
 import org.apache.lucene.util.hnsw.math.optim.PointValuePair;
 
-/**
- * A callback object that can be provided to a linear optimizer to keep track
- * of the best solution found.
- *
- * @since 3.3
- */
+
 public class SolutionCallback implements OptimizationData {
-    /** The SimplexTableau used by the SimplexSolver. */
+    
     private SimplexTableau tableau;
 
-    /**
-     * Set the simplex tableau used during the optimization once a feasible
-     * solution has been found.
-     *
-     * @param tableau the simplex tableau containing a feasible solution
-     */
+    
     void setTableau(final SimplexTableau tableau) {
         this.tableau = tableau;
     }
 
-    /**
-     * Retrieve the best solution found so far.
-     * <p>
-     * <b>Note:</b> the returned solution may not be optimal, e.g. in case
-     * the optimizer did reach the iteration limits.
-     *
-     * @return the best solution found so far by the optimizer, or {@code null} if
-     * no feasible solution could be found
-     */
+    
     public PointValuePair getSolution() {
         return tableau != null ? tableau.getSolution() : null;
     }
 
-    /**
-     * Returns if the found solution is optimal.
-     * @return {@code true} if the solution is optimal, {@code false} otherwise
-     */
+    
     public boolean isSolutionOptimal() {
         return tableau != null ? tableau.isOptimal() : false;
     }

@@ -24,30 +24,18 @@ import org.apache.lucene.util.hnsw.math.linear.RealMatrix;
 import org.apache.lucene.util.hnsw.math.linear.RealVector;
 import org.apache.lucene.util.hnsw.math.util.FastMath;
 
-/**
- * An implementation of {@link Evaluation} that is designed for extension. All of the
- * methods implemented here use the methods that are left unimplemented.
- * <p/>
- * TODO cache results?
- *
- * @since 3.3
- */
+
 public abstract class AbstractEvaluation implements Evaluation {
 
-    /** number of observations */
+    
     private final int observationSize;
 
-    /**
-     * Constructor.
-     *
-     * @param observationSize the number of observation. Needed for {@link
-     *                        #getRMS()}.
-     */
+    
     AbstractEvaluation(final int observationSize) {
         this.observationSize = observationSize;
     }
 
-    /** {@inheritDoc} */
+    
     public RealMatrix getCovariances(double threshold) {
         // Set up the Jacobian.
         final RealMatrix j = this.getJacobian();
@@ -61,7 +49,7 @@ public abstract class AbstractEvaluation implements Evaluation {
         return solver.getInverse();
     }
 
-    /** {@inheritDoc} */
+    
     public RealVector getSigma(double covarianceSingularityThreshold) {
         final RealMatrix cov = this.getCovariances(covarianceSingularityThreshold);
         final int nC = cov.getColumnDimension();
@@ -72,13 +60,13 @@ public abstract class AbstractEvaluation implements Evaluation {
         return sig;
     }
 
-    /** {@inheritDoc} */
+    
     public double getRMS() {
         final double cost = this.getCost();
         return FastMath.sqrt(cost * cost / this.observationSize);
     }
 
-    /** {@inheritDoc} */
+    
     public double getCost() {
         final ArrayRealVector r = new ArrayRealVector(this.getResiduals());
         return FastMath.sqrt(r.dotProduct(r));

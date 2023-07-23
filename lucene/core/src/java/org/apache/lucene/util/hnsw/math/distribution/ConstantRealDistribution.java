@@ -19,40 +19,32 @@ package org.apache.lucene.util.hnsw.math.distribution;
 
 import org.apache.lucene.util.hnsw.math.exception.OutOfRangeException;
 
-/**
- * Implementation of the constant real distribution.
- *
- * @since 3.4
- */
+
 public class ConstantRealDistribution extends AbstractRealDistribution {
 
-    /** Serialization ID */
+    
     private static final long serialVersionUID = -4157745166772046273L;
 
-    /** Constant value of the distribution */
+    
     private final double value;
 
-    /**
-     * Create a constant real distribution with the given value.
-     *
-     * @param value the constant value of this distribution
-     */
+    
     public ConstantRealDistribution(double value) {
         super(null);  // Avoid creating RandomGenerator
         this.value = value;
     }
 
-    /** {@inheritDoc} */
+    
     public double density(double x) {
         return x == value ? 1 : 0;
     }
 
-    /** {@inheritDoc} */
+    
     public double cumulativeProbability(double x)  {
         return x < value ? 0 : 1;
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     public double inverseCumulativeProbability(final double p)
             throws OutOfRangeException {
@@ -62,61 +54,48 @@ public class ConstantRealDistribution extends AbstractRealDistribution {
         return value;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    
     public double getNumericalMean() {
         return value;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    
     public double getNumericalVariance() {
         return 0;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    
     public double getSupportLowerBound() {
         return value;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    
     public double getSupportUpperBound() {
         return value;
     }
 
-    /** {@inheritDoc} */
+    
     public boolean isSupportLowerBoundInclusive() {
         return true;
     }
 
-    /** {@inheritDoc} */
+    
     public boolean isSupportUpperBoundInclusive() {
         return true;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    
     public boolean isSupportConnected() {
         return true;
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     public double sample()  {
         return value;
     }
 
-    /**
-     * Override with no-op (there is no generator).
-     * @param seed (ignored)
-     */
+    
     @Override
     public void reseedRandomGenerator(long seed) {}
 }

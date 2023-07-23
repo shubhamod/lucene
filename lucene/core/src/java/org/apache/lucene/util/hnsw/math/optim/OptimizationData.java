@@ -16,13 +16,5 @@
  */
 package org.apache.lucene.util.hnsw.math.optim;
 
-/**
- * Marker interface.
- * Implementations will provide functionality (optional or required) needed
- * by the optimizers, and those will need to check the actual type of the
- * arguments and perform the appropriate cast in order to access the data
- * they need.
- *
- * @since 3.1
- */
+
 public interface OptimizationData {}

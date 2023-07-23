@@ -19,17 +19,13 @@ package org.apache.lucene.util.hnsw.math.ml.distance;
 import org.apache.lucene.util.hnsw.math.exception.DimensionMismatchException;
 import org.apache.lucene.util.hnsw.math.util.MathArrays;
 
-/**
- * Calculates the L<sub>2</sub> (Euclidean) distance between two points.
- *
- * @since 3.2
- */
+
 public class EuclideanDistance implements DistanceMeasure {
 
-    /** Serializable version identifier. */
+    
     private static final long serialVersionUID = 1717556319784040040L;
 
-    /** {@inheritDoc} */
+    
     public double compute(double[] a, double[] b)
     throws DimensionMismatchException {
         return MathArrays.distance(a, b);

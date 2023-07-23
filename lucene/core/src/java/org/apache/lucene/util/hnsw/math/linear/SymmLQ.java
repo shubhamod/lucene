@@ -24,132 +24,7 @@ import org.apache.lucene.util.hnsw.math.util.FastMath;
 import org.apache.lucene.util.hnsw.math.util.IterationManager;
 import org.apache.lucene.util.hnsw.math.util.MathUtils;
 
-/**
- * <p>
- * Implementation of the SYMMLQ iterative linear solver proposed by <a
- * href="#PAIG1975">Paige and Saunders (1975)</a>. This implementation is
- * largely based on the FORTRAN code by Pr. Michael A. Saunders, available <a
- * href="http://www.stanford.edu/group/SOL/software/symmlq/f77/">here</a>.
- * </p>
- * <p>
- * SYMMLQ is designed to solve the system of linear equations A &middot; x = b
- * where A is an n &times; n self-adjoint linear operator (defined as a
- * {@link RealLinearOperator}), and b is a given vector. The operator A is not
- * required to be positive definite. If A is known to be definite, the method of
- * conjugate gradients might be preferred, since it will require about the same
- * number of iterations as SYMMLQ but slightly less work per iteration.
- * </p>
- * <p>
- * SYMMLQ is designed to solve the system (A - shift &middot; I) &middot; x = b,
- * where shift is a specified scalar value. If shift and b are suitably chosen,
- * the computed vector x may approximate an (unnormalized) eigenvector of A, as
- * in the methods of inverse iteration and/or Rayleigh-quotient iteration.
- * Again, the linear operator (A - shift &middot; I) need not be positive
- * definite (but <em>must</em> be self-adjoint). The work per iteration is very
- * slightly less if shift = 0.
- * </p>
- * <h3>Preconditioning</h3>
- * <p>
- * Preconditioning may reduce the number of iterations required. The solver may
- * be provided with a positive definite preconditioner
- * M = P<sup>T</sup> &middot; P
- * that is known to approximate
- * (A - shift &middot; I)<sup>-1</sup> in some sense, where matrix-vector
- * products of the form M &middot; y = x can be computed efficiently. Then
- * SYMMLQ will implicitly solve the system of equations
- * P &middot; (A - shift &middot; I) &middot; P<sup>T</sup> &middot;
- * x<sub>hat</sub> = P &middot; b, i.e.
- * A<sub>hat</sub> &middot; x<sub>hat</sub> = b<sub>hat</sub>,
- * where
- * A<sub>hat</sub> = P &middot; (A - shift &middot; I) &middot; P<sup>T</sup>,
- * b<sub>hat</sub> = P &middot; b,
- * and return the solution
- * x = P<sup>T</sup> &middot; x<sub>hat</sub>.
- * The associated residual is
- * r<sub>hat</sub> = b<sub>hat</sub> - A<sub>hat</sub> &middot; x<sub>hat</sub>
- *                 = P &middot; [b - (A - shift &middot; I) &middot; x]
- *                 = P &middot; r.
- * </p>
- * <p>
- * In the case of preconditioning, the {@link IterativeLinearSolverEvent}s that
- * this solver fires are such that
- * {@link IterativeLinearSolverEvent#getNormOfResidual()} returns the norm of
- * the <em>preconditioned</em>, updated residual, ||P &middot; r||, not the norm
- * of the <em>true</em> residual ||r||.
- * </p>
- * <h3><a id="stopcrit">Default stopping criterion</a></h3>
- * <p>
- * A default stopping criterion is implemented. The iterations stop when || rhat
- * || &le; &delta; || Ahat || || xhat ||, where xhat is the current estimate of
- * the solution of the transformed system, rhat the current estimate of the
- * corresponding residual, and &delta; a user-specified tolerance.
- * </p>
- * <h3>Iteration count</h3>
- * <p>
- * In the present context, an iteration should be understood as one evaluation
- * of the matrix-vector product A &middot; x. The initialization phase therefore
- * counts as one iteration. If the user requires checks on the symmetry of A,
- * this entails one further matrix-vector product in the initial phase. This
- * further product is <em>not</em> accounted for in the iteration count. In
- * other words, the number of iterations required to reach convergence will be
- * identical, whether checks have been required or not.
- * </p>
- * <p>
- * The present definition of the iteration count differs from that adopted in
- * the original FOTRAN code, where the initialization phase was <em>not</em>
- * taken into account.
- * </p>
- * <h3><a id="initguess">Initial guess of the solution</a></h3>
- * <p>
- * The {@code x} parameter in
- * <ul>
- * <li>{@link #solve(RealLinearOperator, RealVector, RealVector)},</li>
- * <li>{@link #solve(RealLinearOperator, RealLinearOperator, RealVector, RealVector)}},</li>
- * <li>{@link #solveInPlace(RealLinearOperator, RealVector, RealVector)},</li>
- * <li>{@link #solveInPlace(RealLinearOperator, RealLinearOperator, RealVector, RealVector)},</li>
- * <li>{@link #solveInPlace(RealLinearOperator, RealLinearOperator, RealVector, RealVector, boolean, double)},</li>
- * </ul>
- * should not be considered as an initial guess, as it is set to zero in the
- * initial phase. If x<sub>0</sub> is known to be a good approximation to x, one
- * should compute r<sub>0</sub> = b - A &middot; x, solve A &middot; dx = r0,
- * and set x = x<sub>0</sub> + dx.
- * </p>
- * <h3><a id="context">Exception context</a></h3>
- * <p>
- * Besides standard {@link DimensionMismatchException}, this class might throw
- * {@link NonSelfAdjointOperatorException} if the linear operator or the
- * preconditioner are not symmetric. In this case, the {@link ExceptionContext}
- * provides more information
- * <ul>
- * <li>key {@code "operator"} points to the offending linear operator, say L,</li>
- * <li>key {@code "vector1"} points to the first offending vector, say x,
- * <li>key {@code "vector2"} points to the second offending vector, say y, such
- * that x<sup>T</sup> &middot; L &middot; y &ne; y<sup>T</sup> &middot; L
- * &middot; x (within a certain accuracy).</li>
- * </ul>
- * </p>
- * <p>
- * {@link NonPositiveDefiniteOperatorException} might also be thrown in case the
- * preconditioner is not positive definite. The relevant keys to the
- * {@link ExceptionContext} are
- * <ul>
- * <li>key {@code "operator"}, which points to the offending linear operator,
- * say L,</li>
- * <li>key {@code "vector"}, which points to the offending vector, say x, such
- * that x<sup>T</sup> &middot; L &middot; x < 0.</li>
- * </ul>
- * </p>
- * <h3>References</h3>
- * <dl>
- * <dt><a id="PAIG1975">Paige and Saunders (1975)</a></dt>
- * <dd>C. C. Paige and M. A. Saunders, <a
- * href="http://www.stanford.edu/group/SOL/software/symmlq/PS75.pdf"><em>
- * Solution of Sparse Indefinite Systems of Linear Equations</em></a>, SIAM
- * Journal on Numerical Analysis 12(4): 617-629, 1975</dd>
- * </dl>
- *
- * @since 3.0
- */
+
 public class SymmLQ
     extends PreconditionedIterativeLinearSolver {
 
@@ -222,143 +97,105 @@ public class SymmLQ
      *           + (bstep[k-1] + s[1] * ... * s[k-1] * zbar[k]) * v[1].
      */
 
-    /**
-     * <p>
-     * A simple container holding the non-final variables used in the
-     * iterations. Making the current state of the solver visible from the
-     * outside is necessary, because during the iterations, {@code x} does not
-     * <em>exactly</em> hold the current estimate of the solution. Indeed,
-     * {@code x} needs in general to be moved from the LQ point to the CG point.
-     * Besides, additional upudates must be carried out in case {@code goodb} is
-     * set to {@code true}.
-     * </p>
-     * <p>
-     * In all subsequent comments, the description of the state variables refer
-     * to their value after a call to {@link #update()}. In these comments, k is
-     * the current number of evaluations of matrix-vector products.
-     * </p>
-     */
+    
     private static class State {
-        /** The cubic root of {@link #MACH_PREC}. */
+        
         static final double CBRT_MACH_PREC;
 
-        /** The machine precision. */
+        
         static final double MACH_PREC;
 
-        /** Reference to the linear operator. */
+        
         private final RealLinearOperator a;
 
-        /** Reference to the right-hand side vector. */
+        
         private final RealVector b;
 
-        /** {@code true} if symmetry of matrix and conditioner must be checked. */
+        
         private final boolean check;
 
-        /**
-         * The value of the custom tolerance &delta; for the default stopping
-         * criterion.
-         */
+        
         private final double delta;
 
-        /** The value of beta[k+1]. */
+        
         private double beta;
 
-        /** The value of beta[1]. */
+        
         private double beta1;
 
-        /** The value of bstep[k-1]. */
+        
         private double bstep;
 
-        /** The estimate of the norm of P * rC[k]. */
+        
         private double cgnorm;
 
-        /** The value of dbar[k+1] = -beta[k+1] * c[k-1]. */
+        
         private double dbar;
 
-        /**
-         * The value of gamma[k] * zeta[k]. Was called {@code rhs1} in the
-         * initial code.
-         */
+        
         private double gammaZeta;
 
-        /** The value of gbar[k]. */
+        
         private double gbar;
 
-        /** The value of max(|alpha[1]|, gamma[1], ..., gamma[k-1]). */
+        
         private double gmax;
 
-        /** The value of min(|alpha[1]|, gamma[1], ..., gamma[k-1]). */
+        
         private double gmin;
 
-        /** Copy of the {@code goodb} parameter. */
+        
         private final boolean goodb;
 
-        /** {@code true} if the default convergence criterion is verified. */
+        
         private boolean hasConverged;
 
-        /** The estimate of the norm of P * rL[k-1]. */
+        
         private double lqnorm;
 
-        /** Reference to the preconditioner, M. */
+        
         private final RealLinearOperator m;
 
-        /**
-         * The value of (-eps[k+1] * zeta[k-1]). Was called {@code rhs2} in the
-         * initial code.
-         */
+        
         private double minusEpsZeta;
 
-        /** The value of M * b. */
+        
         private final RealVector mb;
 
-        /** The value of beta[k]. */
+        
         private double oldb;
 
-        /** The value of beta[k] * M^(-1) * P' * v[k]. */
+        
         private RealVector r1;
 
-        /** The value of beta[k+1] * M^(-1) * P' * v[k+1]. */
+        
         private RealVector r2;
 
-        /**
-         * The value of the updated, preconditioned residual P * r. This value is
-         * given by {@code min(}{@link #cgnorm}{@code , }{@link #lqnorm}{@code )}.
-         */
+        
         private double rnorm;
 
-        /** Copy of the {@code shift} parameter. */
+        
         private final double shift;
 
-        /** The value of s[1] * ... * s[k-1]. */
+        
         private double snprod;
 
-        /**
-         * An estimate of the square of the norm of A * V[k], based on Paige and
-         * Saunders (1975), equation (3.3).
-         */
+        
         private double tnorm;
 
-        /**
-         * The value of P' * wbar[k] or P' * (wbar[k] - s[1] * ... * s[k-1] *
-         * v[1]) if {@code goodb} is {@code true}. Was called {@code w} in the
-         * initial code.
-         */
+        
         private RealVector wbar;
 
-        /**
-         * A reference to the vector to be updated with the solution. Contains
-         * the value of xL[k-1] if {@code goodb} is {@code false}, (xL[k-1] -
-         * bstep[k-1] * v[1]) otherwise.
-         */
+        
         private final RealVector xL;
 
-        /** The value of beta[k+1] * P' * v[k+1]. */
+        
         private RealVector y;
 
-        /** The value of zeta[1]^2 + ... + zeta[k-1]^2. */
+        
         private double ynorm2;
 
-        /** The value of {@code b == 0} (exact floating-point equality). */
+        
         private boolean bIsNull;
 
         static {
@@ -366,20 +203,7 @@ public class SymmLQ
             CBRT_MACH_PREC = FastMath.cbrt(MACH_PREC);
         }
 
-        /**
-         * Creates and inits to k = 1 a new instance of this class.
-         *
-         * @param a the linear operator A of the system
-         * @param m the preconditioner, M (can be {@code null})
-         * @param b the right-hand side vector
-         * @param goodb usually {@code false}, except if {@code x} is expected
-         * to contain a large multiple of {@code b}
-         * @param shift the amount to be subtracted to all diagonal elements of
-         * A
-         * @param delta the &delta; parameter for the default stopping criterion
-         * @param check {@code true} if self-adjointedness of both matrix and
-         * preconditioner should be checked
-         */
+        
         State(final RealLinearOperator a,
             final RealLinearOperator m,
             final RealVector b,
@@ -399,19 +223,7 @@ public class SymmLQ
             this.delta = delta;
         }
 
-        /**
-         * Performs a symmetry check on the specified linear operator, and throws an
-         * exception in case this check fails. Given a linear operator L, and a
-         * vector x, this method checks that
-         * x' &middot; L &middot; y = y' &middot; L &middot; x
-         * (within a given accuracy), where y = L &middot; x.
-         *
-         * @param l the linear operator L
-         * @param x the candidate vector x
-         * @param y the candidate vector y = L &middot; x
-         * @param z the vector z = L &middot; y
-         * @throws NonSelfAdjointOperatorException when the test fails
-         */
+        
         private static void checkSymmetry(final RealLinearOperator l,
             final RealVector x, final RealVector y, final RealVector z)
             throws NonSelfAdjointOperatorException {
@@ -430,14 +242,7 @@ public class SymmLQ
             }
         }
 
-        /**
-         * Throws a new {@link NonPositiveDefiniteOperatorException} with
-         * appropriate context.
-         *
-         * @param l the offending linear operator
-         * @param v the offending vector
-         * @throws NonPositiveDefiniteOperatorException in any circumstances
-         */
+        
         private static void throwNPDLOException(final RealLinearOperator l,
             final RealVector v) throws NonPositiveDefiniteOperatorException {
             final NonPositiveDefiniteOperatorException e;
@@ -448,15 +253,7 @@ public class SymmLQ
             throw e;
         }
 
-        /**
-         * A clone of the BLAS {@code DAXPY} function, which carries out the
-         * operation y &larr; a &middot; x + y. This is for internal use only: no
-         * dimension checks are provided.
-         *
-         * @param a the scalar by which {@code x} is to be multiplied
-         * @param x the vector to be added to {@code y}
-         * @param y the vector to be incremented
-         */
+        
         private static void daxpy(final double a, final RealVector x,
             final RealVector y) {
             final int n = x.getDimension();
@@ -465,17 +262,7 @@ public class SymmLQ
             }
         }
 
-        /**
-         * A BLAS-like function, for the operation z &larr; a &middot; x + b
-         * &middot; y + z. This is for internal use only: no dimension checks are
-         * provided.
-         *
-         * @param a the scalar by which {@code x} is to be multiplied
-         * @param x the first vector to be added to {@code z}
-         * @param b the scalar by which {@code y} is to be multiplied
-         * @param y the second vector to be added to {@code z}
-         * @param z the vector to be incremented
-         */
+        
         private static void daxpbypz(final double a, final RealVector x,
             final double b, final RealVector y, final RealVector z) {
             final int n = z.getDimension();
@@ -486,19 +273,7 @@ public class SymmLQ
             }
         }
 
-        /**
-         * <p>
-         * Move to the CG point if it seems better. In this version of SYMMLQ,
-         * the convergence tests involve only cgnorm, so we're unlikely to stop
-         * at an LQ point, except if the iteration limit interferes.
-         * </p>
-         * <p>
-         * Additional upudates are also carried out in case {@code goodb} is set
-         * to {@code true}.
-         * </p>
-         *
-         * @param x the vector to be updated with the refined value of xL
-         */
+        
          void refineSolution(final RealVector x) {
             final int n = this.xL.getDimension();
             if (lqnorm < cgnorm) {
@@ -535,11 +310,7 @@ public class SymmLQ
             }
         }
 
-        /**
-         * Performs the initial phase of the SYMMLQ algorithm. On return, the
-         * value of the state variables of {@code this} object correspond to k =
-         * 1.
-         */
+        
          void init() {
             this.xL.set(0.);
             /*
@@ -627,12 +398,7 @@ public class SymmLQ
             updateNorms();
         }
 
-        /**
-         * Performs the next iteration of the algorithm. The iteration count
-         * should be incremented prior to calling this method. On return, the
-         * value of the state variables of {@code this} object correspond to the
-         * current iteration count {@code k}.
-         */
+        
         void update() {
             final RealVector v = y.mapMultiply(1. / beta);
             y = a.operate(v);
@@ -752,10 +518,7 @@ public class SymmLQ
             updateNorms();
         }
 
-        /**
-         * Computes the norms of the residuals, and checks for convergence.
-         * Updates {@link #lqnorm} and {@link #cgnorm}.
-         */
+        
         private void updateNorms() {
             final double anorm = FastMath.sqrt(tnorm);
             final double ynorm = FastMath.sqrt(ynorm2);
@@ -794,78 +557,49 @@ public class SymmLQ
             hasConverged = (cgnorm <= epsx) || (cgnorm <= epsr);
         }
 
-        /**
-         * Returns {@code true} if the default stopping criterion is fulfilled.
-         *
-         * @return {@code true} if convergence of the iterations has occurred
-         */
+        
         boolean hasConverged() {
             return hasConverged;
         }
 
-        /**
-         * Returns {@code true} if the right-hand side vector is zero exactly.
-         *
-         * @return the boolean value of {@code b == 0}
-         */
+        
         boolean bEqualsNullVector() {
             return bIsNull;
         }
 
-        /**
-         * Returns {@code true} if {@code beta} is essentially zero. This method
-         * is used to check for early stop of the iterations.
-         *
-         * @return {@code true} if {@code beta < }{@link #MACH_PREC}
-         */
+        
         boolean betaEqualsZero() {
             return beta < MACH_PREC;
         }
 
-        /**
-         * Returns the norm of the updated, preconditioned residual.
-         *
-         * @return the norm of the residual, ||P * r||
-         */
+        
         double getNormOfResidual() {
             return rnorm;
         }
     }
 
-    /** Key for the exception context. */
+    
     private static final String OPERATOR = "operator";
 
-    /** Key for the exception context. */
+    
     private static final String THRESHOLD = "threshold";
 
-    /** Key for the exception context. */
+    
     private static final String VECTOR = "vector";
 
-    /** Key for the exception context. */
+    
     private static final String VECTOR1 = "vector1";
 
-    /** Key for the exception context. */
+    
     private static final String VECTOR2 = "vector2";
 
-    /** {@code true} if symmetry of matrix and conditioner must be checked. */
+    
     private final boolean check;
 
-    /**
-     * The value of the custom tolerance &delta; for the default stopping
-     * criterion.
-     */
+    
     private final double delta;
 
-    /**
-     * Creates a new instance of this class, with <a href="#stopcrit">default
-     * stopping criterion</a>. Note that setting {@code check} to {@code true}
-     * entails an extra matrix-vector product in the initial phase.
-     *
-     * @param maxIterations the maximum number of iterations
-     * @param delta the &delta; parameter for the default stopping criterion
-     * @param check {@code true} if self-adjointedness of both matrix and
-     * preconditioner should be checked
-     */
+    
     public SymmLQ(final int maxIterations, final double delta,
                   final boolean check) {
         super(maxIterations);
@@ -873,17 +607,7 @@ public class SymmLQ
         this.check = check;
     }
 
-    /**
-     * Creates a new instance of this class, with <a href="#stopcrit">default
-     * stopping criterion</a> and custom iteration manager. Note that setting
-     * {@code check} to {@code true} entails an extra matrix-vector product in
-     * the initial phase.
-     *
-     * @param manager the custom iteration manager
-     * @param delta the &delta; parameter for the default stopping criterion
-     * @param check {@code true} if self-adjointedness of both matrix and
-     * preconditioner should be checked
-     */
+    
     public SymmLQ(final IterationManager manager, final double delta,
                   final boolean check) {
         super(manager);
@@ -891,25 +615,12 @@ public class SymmLQ
         this.check = check;
     }
 
-    /**
-     * Returns {@code true} if symmetry of the matrix, and symmetry as well as
-     * positive definiteness of the preconditioner should be checked.
-     *
-     * @return {@code true} if the tests are to be performed
-     */
+    
     public final boolean getCheck() {
         return check;
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @throws NonSelfAdjointOperatorException if {@link #getCheck()} is
-     * {@code true}, and {@code a} or {@code m} is not self-adjoint
-     * @throws NonPositiveDefiniteOperatorException if {@code m} is not
-     * positive definite
-     * @throws IllConditionedOperatorException if {@code a} is ill-conditioned
-     */
+    
     @Override
     public RealVector solve(final RealLinearOperator a,
         final RealLinearOperator m, final RealVector b) throws
@@ -922,46 +633,7 @@ public class SymmLQ
         return solveInPlace(a, m, b, x, false, 0.);
     }
 
-    /**
-     * Returns an estimate of the solution to the linear system (A - shift
-     * &middot; I) &middot; x = b.
-     * <p>
-     * If the solution x is expected to contain a large multiple of {@code b}
-     * (as in Rayleigh-quotient iteration), then better precision may be
-     * achieved with {@code goodb} set to {@code true}; this however requires an
-     * extra call to the preconditioner.
-     * </p>
-     * <p>
-     * {@code shift} should be zero if the system A &middot; x = b is to be
-     * solved. Otherwise, it could be an approximation to an eigenvalue of A,
-     * such as the Rayleigh quotient b<sup>T</sup> &middot; A &middot; b /
-     * (b<sup>T</sup> &middot; b) corresponding to the vector b. If b is
-     * sufficiently like an eigenvector corresponding to an eigenvalue near
-     * shift, then the computed x may have very large components. When
-     * normalized, x may be closer to an eigenvector than b.
-     * </p>
-     *
-     * @param a the linear operator A of the system
-     * @param m the preconditioner, M (can be {@code null})
-     * @param b the right-hand side vector
-     * @param goodb usually {@code false}, except if {@code x} is expected to
-     * contain a large multiple of {@code b}
-     * @param shift the amount to be subtracted to all diagonal elements of A
-     * @return a reference to {@code x} (shallow copy)
-     * @throws NullArgumentException if one of the parameters is {@code null}
-     * @throws NonSquareOperatorException if {@code a} or {@code m} is not square
-     * @throws DimensionMismatchException if {@code m} or {@code b} have dimensions
-     * inconsistent with {@code a}
-     * @throws MaxCountExceededException at exhaustion of the iteration count,
-     * unless a custom
-     * {@link org.apache.lucene.util.hnsw.math.util.Incrementor.MaxCountExceededCallback callback}
-     * has been set at construction of the {@link IterationManager}
-     * @throws NonSelfAdjointOperatorException if {@link #getCheck()} is
-     * {@code true}, and {@code a} or {@code m} is not self-adjoint
-     * @throws NonPositiveDefiniteOperatorException if {@code m} is not
-     * positive definite
-     * @throws IllConditionedOperatorException if {@code a} is ill-conditioned
-     */
+    
     public RealVector solve(final RealLinearOperator a,
         final RealLinearOperator m, final RealVector b, final boolean goodb,
         final double shift) throws NullArgumentException,
@@ -973,17 +645,7 @@ public class SymmLQ
         return solveInPlace(a, m, b, x, goodb, shift);
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @param x not meaningful in this implementation; should not be considered
-     * as an initial guess (<a href="#initguess">more</a>)
-     * @throws NonSelfAdjointOperatorException if {@link #getCheck()} is
-     * {@code true}, and {@code a} or {@code m} is not self-adjoint
-     * @throws NonPositiveDefiniteOperatorException if {@code m} is not positive
-     * definite
-     * @throws IllConditionedOperatorException if {@code a} is ill-conditioned
-     */
+    
     @Override
     public RealVector solve(final RealLinearOperator a,
         final RealLinearOperator m, final RealVector b, final RealVector x)
@@ -995,13 +657,7 @@ public class SymmLQ
         return solveInPlace(a, m, b, x.copy(), false, 0.);
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @throws NonSelfAdjointOperatorException if {@link #getCheck()} is
-     * {@code true}, and {@code a} is not self-adjoint
-     * @throws IllConditionedOperatorException if {@code a} is ill-conditioned
-     */
+    
     @Override
     public RealVector solve(final RealLinearOperator a, final RealVector b)
         throws NullArgumentException, NonSquareOperatorException,
@@ -1013,41 +669,7 @@ public class SymmLQ
         return solveInPlace(a, null, b, x, false, 0.);
     }
 
-    /**
-     * Returns the solution to the system (A - shift &middot; I) &middot; x = b.
-     * <p>
-     * If the solution x is expected to contain a large multiple of {@code b}
-     * (as in Rayleigh-quotient iteration), then better precision may be
-     * achieved with {@code goodb} set to {@code true}.
-     * </p>
-     * <p>
-     * {@code shift} should be zero if the system A &middot; x = b is to be
-     * solved. Otherwise, it could be an approximation to an eigenvalue of A,
-     * such as the Rayleigh quotient b<sup>T</sup> &middot; A &middot; b /
-     * (b<sup>T</sup> &middot; b) corresponding to the vector b. If b is
-     * sufficiently like an eigenvector corresponding to an eigenvalue near
-     * shift, then the computed x may have very large components. When
-     * normalized, x may be closer to an eigenvector than b.
-     * </p>
-     *
-     * @param a the linear operator A of the system
-     * @param b the right-hand side vector
-     * @param goodb usually {@code false}, except if {@code x} is expected to
-     * contain a large multiple of {@code b}
-     * @param shift the amount to be subtracted to all diagonal elements of A
-     * @return a reference to {@code x}
-     * @throws NullArgumentException if one of the parameters is {@code null}
-     * @throws NonSquareOperatorException if {@code a} is not square
-     * @throws DimensionMismatchException if {@code b} has dimensions
-     * inconsistent with {@code a}
-     * @throws MaxCountExceededException at exhaustion of the iteration count,
-     * unless a custom
-     * {@link org.apache.lucene.util.hnsw.math.util.Incrementor.MaxCountExceededCallback callback}
-     * has been set at construction of the {@link IterationManager}
-     * @throws NonSelfAdjointOperatorException if {@link #getCheck()} is
-     * {@code true}, and {@code a} is not self-adjoint
-     * @throws IllConditionedOperatorException if {@code a} is ill-conditioned
-     */
+    
     public RealVector solve(final RealLinearOperator a, final RealVector b,
         final boolean goodb, final double shift) throws NullArgumentException,
         NonSquareOperatorException, DimensionMismatchException,
@@ -1058,15 +680,7 @@ public class SymmLQ
         return solveInPlace(a, null, b, x, goodb, shift);
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @param x not meaningful in this implementation; should not be considered
-     * as an initial guess (<a href="#initguess">more</a>)
-     * @throws NonSelfAdjointOperatorException if {@link #getCheck()} is
-     * {@code true}, and {@code a} is not self-adjoint
-     * @throws IllConditionedOperatorException if {@code a} is ill-conditioned
-     */
+    
     @Override
     public RealVector solve(final RealLinearOperator a, final RealVector b,
         final RealVector x) throws NullArgumentException,
@@ -1077,17 +691,7 @@ public class SymmLQ
         return solveInPlace(a, null, b, x.copy(), false, 0.);
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @param x the vector to be updated with the solution; {@code x} should
-     * not be considered as an initial guess (<a href="#initguess">more</a>)
-     * @throws NonSelfAdjointOperatorException if {@link #getCheck()} is
-     * {@code true}, and {@code a} or {@code m} is not self-adjoint
-     * @throws NonPositiveDefiniteOperatorException if {@code m} is not
-     * positive definite
-     * @throws IllConditionedOperatorException if {@code a} is ill-conditioned
-     */
+    
     @Override
     public RealVector solveInPlace(final RealLinearOperator a,
         final RealLinearOperator m, final RealVector b, final RealVector x)
@@ -1098,48 +702,7 @@ public class SymmLQ
         return solveInPlace(a, m, b, x, false, 0.);
     }
 
-    /**
-     * Returns an estimate of the solution to the linear system (A - shift
-     * &middot; I) &middot; x = b. The solution is computed in-place.
-     * <p>
-     * If the solution x is expected to contain a large multiple of {@code b}
-     * (as in Rayleigh-quotient iteration), then better precision may be
-     * achieved with {@code goodb} set to {@code true}; this however requires an
-     * extra call to the preconditioner.
-     * </p>
-     * <p>
-     * {@code shift} should be zero if the system A &middot; x = b is to be
-     * solved. Otherwise, it could be an approximation to an eigenvalue of A,
-     * such as the Rayleigh quotient b<sup>T</sup> &middot; A &middot; b /
-     * (b<sup>T</sup> &middot; b) corresponding to the vector b. If b is
-     * sufficiently like an eigenvector corresponding to an eigenvalue near
-     * shift, then the computed x may have very large components. When
-     * normalized, x may be closer to an eigenvector than b.
-     * </p>
-     *
-     * @param a the linear operator A of the system
-     * @param m the preconditioner, M (can be {@code null})
-     * @param b the right-hand side vector
-     * @param x the vector to be updated with the solution; {@code x} should
-     * not be considered as an initial guess (<a href="#initguess">more</a>)
-     * @param goodb usually {@code false}, except if {@code x} is expected to
-     * contain a large multiple of {@code b}
-     * @param shift the amount to be subtracted to all diagonal elements of A
-     * @return a reference to {@code x} (shallow copy).
-     * @throws NullArgumentException if one of the parameters is {@code null}
-     * @throws NonSquareOperatorException if {@code a} or {@code m} is not square
-     * @throws DimensionMismatchException if {@code m}, {@code b} or {@code x}
-     * have dimensions inconsistent with {@code a}.
-     * @throws MaxCountExceededException at exhaustion of the iteration count,
-     * unless a custom
-     * {@link org.apache.lucene.util.hnsw.math.util.Incrementor.MaxCountExceededCallback callback}
-     * has been set at construction of the {@link IterationManager}
-     * @throws NonSelfAdjointOperatorException if {@link #getCheck()} is
-     * {@code true}, and {@code a} or {@code m} is not self-adjoint
-     * @throws NonPositiveDefiniteOperatorException if {@code m} is not positive
-     * definite
-     * @throws IllConditionedOperatorException if {@code a} is ill-conditioned
-     */
+    
     public RealVector solveInPlace(final RealLinearOperator a,
         final RealLinearOperator m, final RealVector b,
         final RealVector x, final boolean goodb, final double shift)
@@ -1201,15 +764,7 @@ public class SymmLQ
         return x;
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @param x the vector to be updated with the solution; {@code x} should
-     * not be considered as an initial guess (<a href="#initguess">more</a>)
-     * @throws NonSelfAdjointOperatorException if {@link #getCheck()} is
-     * {@code true}, and {@code a} is not self-adjoint
-     * @throws IllConditionedOperatorException if {@code a} is ill-conditioned
-     */
+    
     @Override
     public RealVector solveInPlace(final RealLinearOperator a,
         final RealVector b, final RealVector x) throws NullArgumentException,

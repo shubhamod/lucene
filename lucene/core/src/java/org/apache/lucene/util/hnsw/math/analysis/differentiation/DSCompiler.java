@@ -30,132 +30,35 @@ import org.apache.lucene.util.hnsw.math.util.CombinatoricsUtils;
 import org.apache.lucene.util.hnsw.math.util.FastMath;
 import org.apache.lucene.util.hnsw.math.util.MathArrays;
 
-/** Class holding "compiled" computation rules for derivative structures.
- * <p>This class implements the computation rules described in Dan Kalman's paper <a
- * href="http://www1.american.edu/cas/mathstat/People/kalman/pdffiles/mmgautodiff.pdf">Doubly
- * Recursive Multivariate Automatic Differentiation</a>, Mathematics Magazine, vol. 75,
- * no. 3, June 2002. However, in order to avoid performances bottlenecks, the recursive
- * rules are "compiled" once in an unfold form. This class does this recursion unrolling
- * and stores the computation rules as simple loops with pre-computed indirection arrays.</p>
- * <p>
- * This class maps all derivative computation into single dimension arrays that hold the
- * value and partial derivatives. The class does not hold these arrays, which remains under
- * the responsibility of the caller. For each combination of number of free parameters and
- * derivation order, only one compiler is necessary, and this compiler will be used to
- * perform computations on all arrays provided to it, which can represent hundreds or
- * thousands of different parameters kept together with all theur partial derivatives.
- * </p>
- * <p>
- * The arrays on which compilers operate contain only the partial derivatives together
- * with the 0<sup>th</sup> derivative, i.e. the value. The partial derivatives are stored in
- * a compiler-specific order, which can be retrieved using methods {@link
- * #getPartialDerivativeIndex(int...) getPartialDerivativeIndex} and {@link
- * #getPartialDerivativeOrders(int)}. The value is guaranteed to be stored as the first element
- * (i.e. the {@link #getPartialDerivativeIndex(int...) getPartialDerivativeIndex} method returns
- * 0 when called with 0 for all derivation orders and {@link #getPartialDerivativeOrders(int)
- * getPartialDerivativeOrders} returns an array filled with 0 when called with 0 as the index).
- * </p>
- * <p>
- * Note that the ordering changes with number of parameters and derivation order. For example
- * given 2 parameters x and y, df/dy is stored at index 2 when derivation order is set to 1 (in
- * this case the array has three elements: f, df/dx and df/dy). If derivation order is set to
- * 2, then df/dy will be stored at index 3 (in this case the array has six elements: f, df/dx,
- * df/dxdx, df/dy, df/dxdy and df/dydy).
- * </p>
- * <p>
- * Given this structure, users can perform some simple operations like adding, subtracting
- * or multiplying constants and negating the elements by themselves, knowing if they want to
- * mutate their array or create a new array. These simple operations are not provided by
- * the compiler. The compiler provides only the more complex operations between several arrays.
- * </p>
- * <p>This class is mainly used as the engine for scalar variable {@link DerivativeStructure}.
- * It can also be used directly to hold several variables in arrays for more complex data
- * structures. User can for example store a vector of n variables depending on three x, y
- * and z free parameters in one array as follows:</p> <pre>
- *   // parameter 0 is x, parameter 1 is y, parameter 2 is z
- *   int parameters = 3;
- *   DSCompiler compiler = DSCompiler.getCompiler(parameters, order);
- *   int size = compiler.getSize();
- *
- *   // pack all elements in a single array
- *   double[] array = new double[n * size];
- *   for (int i = 0; i &lt; n; ++i) {
- *
- *     // we know value is guaranteed to be the first element
- *     array[i * size] = v[i];
- *
- *     // we don't know where first derivatives are stored, so we ask the compiler
- *     array[i * size + compiler.getPartialDerivativeIndex(1, 0, 0) = dvOnDx[i][0];
- *     array[i * size + compiler.getPartialDerivativeIndex(0, 1, 0) = dvOnDy[i][0];
- *     array[i * size + compiler.getPartialDerivativeIndex(0, 0, 1) = dvOnDz[i][0];
- *
- *     // we let all higher order derivatives set to 0
- *
- *   }
- * </pre>
- * <p>Then in another function, user can perform some operations on all elements stored
- * in the single array, such as a simple product of all variables:</p> <pre>
- *   // compute the product of all elements
- *   double[] product = new double[size];
- *   prod[0] = 1.0;
- *   for (int i = 0; i &lt; n; ++i) {
- *     double[] tmp = product.clone();
- *     compiler.multiply(tmp, 0, array, i * size, product, 0);
- *   }
- *
- *   // value
- *   double p = product[0];
- *
- *   // first derivatives
- *   double dPdX = product[compiler.getPartialDerivativeIndex(1, 0, 0)];
- *   double dPdY = product[compiler.getPartialDerivativeIndex(0, 1, 0)];
- *   double dPdZ = product[compiler.getPartialDerivativeIndex(0, 0, 1)];
- *
- *   // cross derivatives (assuming order was at least 2)
- *   double dPdXdX = product[compiler.getPartialDerivativeIndex(2, 0, 0)];
- *   double dPdXdY = product[compiler.getPartialDerivativeIndex(1, 1, 0)];
- *   double dPdXdZ = product[compiler.getPartialDerivativeIndex(1, 0, 1)];
- *   double dPdYdY = product[compiler.getPartialDerivativeIndex(0, 2, 0)];
- *   double dPdYdZ = product[compiler.getPartialDerivativeIndex(0, 1, 1)];
- *   double dPdZdZ = product[compiler.getPartialDerivativeIndex(0, 0, 2)];
- * </pre>
- * @see DerivativeStructure
- * @since 3.1
- */
+
 public class DSCompiler {
 
-    /** Array of all compilers created so far. */
+    
     private static AtomicReference<DSCompiler[][]> compilers =
             new AtomicReference<DSCompiler[][]>(null);
 
-    /** Number of free parameters. */
+    
     private final int parameters;
 
-    /** Derivation order. */
+    
     private final int order;
 
-    /** Number of partial derivatives (including the single 0 order derivative element). */
+    
     private final int[][] sizes;
 
-    /** Indirection array for partial derivatives. */
+    
     private final int[][] derivativesIndirection;
 
-    /** Indirection array of the lower derivative elements. */
+    
     private final int[] lowerIndirection;
 
-    /** Indirection arrays for multiplication. */
+    
     private final int[][][] multIndirection;
 
-    /** Indirection arrays for function composition. */
+    
     private final int[][][] compIndirection;
 
-    /** Private constructor, reserved for the factory method {@link #getCompiler(int, int)}.
-     * @param parameters number of free parameters
-     * @param order derivation order
-     * @param valueCompiler compiler for the value part
-     * @param derivativeCompiler compiler for the derivative part
-     * @throws NumberIsTooLargeException if order is too large
-     */
+    
     private DSCompiler(final int parameters, final int order,
                        final DSCompiler valueCompiler, final DSCompiler derivativeCompiler)
         throws NumberIsTooLargeException {
@@ -179,12 +82,7 @@ public class DSCompiler {
 
     }
 
-    /** Get the compiler for number of free parameters and order.
-     * @param parameters number of free parameters
-     * @param order derivation order
-     * @return cached rules set
-     * @throws NumberIsTooLargeException if order is too large
-     */
+    
     public static DSCompiler getCompiler(int parameters, int order)
         throws NumberIsTooLargeException {
 
@@ -227,12 +125,7 @@ public class DSCompiler {
 
     }
 
-    /** Compile the sizes array.
-     * @param parameters number of free parameters
-     * @param order derivation order
-     * @param valueCompiler compiler for the value part
-     * @return sizes array
-     */
+    
     private static int[][] compileSizes(final int parameters, final int order,
                                         final DSCompiler valueCompiler) {
 
@@ -251,13 +144,7 @@ public class DSCompiler {
 
     }
 
-    /** Compile the derivatives indirection array.
-     * @param parameters number of free parameters
-     * @param order derivation order
-     * @param valueCompiler compiler for the value part
-     * @param derivativeCompiler compiler for the derivative part
-     * @return derivatives indirection array
-     */
+    
     private static int[][] compileDerivativesIndirection(final int parameters, final int order,
                                                       final DSCompiler valueCompiler,
                                                       final DSCompiler derivativeCompiler) {
@@ -295,17 +182,7 @@ public class DSCompiler {
 
     }
 
-    /** Compile the lower derivatives indirection array.
-     * <p>
-     * This indirection array contains the indices of all elements
-     * except derivatives for last derivation order.
-     * </p>
-     * @param parameters number of free parameters
-     * @param order derivation order
-     * @param valueCompiler compiler for the value part
-     * @param derivativeCompiler compiler for the derivative part
-     * @return lower derivatives indirection array
-     */
+    
     private static int[] compileLowerIndirection(final int parameters, final int order,
                                               final DSCompiler valueCompiler,
                                               final DSCompiler derivativeCompiler) {
@@ -327,19 +204,7 @@ public class DSCompiler {
 
     }
 
-    /** Compile the multiplication indirection array.
-     * <p>
-     * This indirection array contains the indices of all pairs of elements
-     * involved when computing a multiplication. This allows a straightforward
-     * loop-based multiplication (see {@link #multiply(double[], int, double[], int, double[], int)}).
-     * </p>
-     * @param parameters number of free parameters
-     * @param order derivation order
-     * @param valueCompiler compiler for the value part
-     * @param derivativeCompiler compiler for the derivative part
-     * @param lowerIndirection lower derivatives indirection array
-     * @return multiplication indirection array
-     */
+    
     private static int[][][] compileMultiplicationIndirection(final int parameters, final int order,
                                                            final DSCompiler valueCompiler,
                                                            final DSCompiler derivativeCompiler,
@@ -390,21 +255,7 @@ public class DSCompiler {
 
     }
 
-    /** Compile the function composition indirection array.
-     * <p>
-     * This indirection array contains the indices of all sets of elements
-     * involved when computing a composition. This allows a straightforward
-     * loop-based composition (see {@link #compose(double[], int, double[], double[], int)}).
-     * </p>
-     * @param parameters number of free parameters
-     * @param order derivation order
-     * @param valueCompiler compiler for the value part
-     * @param derivativeCompiler compiler for the derivative part
-     * @param sizes sizes array
-     * @param derivativesIndirection derivatives indirection array
-     * @return multiplication indirection array
-     * @throws NumberIsTooLargeException if order is too large
-     */
+    
     private static int[][][] compileCompositionIndirection(final int parameters, final int order,
                                                            final DSCompiler valueCompiler,
                                                            final DSCompiler derivativeCompiler,
@@ -504,38 +355,7 @@ public class DSCompiler {
 
     }
 
-    /** Get the index of a partial derivative in the array.
-     * <p>
-     * If all orders are set to 0, then the 0<sup>th</sup> order derivative
-     * is returned, which is the value of the function.
-     * </p>
-     * <p>The indices of derivatives are between 0 and {@link #getSize() getSize()} - 1.
-     * Their specific order is fixed for a given compiler, but otherwise not
-     * publicly specified. There are however some simple cases which have guaranteed
-     * indices:
-     * </p>
-     * <ul>
-     *   <li>the index of 0<sup>th</sup> order derivative is always 0</li>
-     *   <li>if there is only 1 {@link #getFreeParameters() free parameter}, then the
-     *   derivatives are sorted in increasing derivation order (i.e. f at index 0, df/dp
-     *   at index 1, d<sup>2</sup>f/dp<sup>2</sup> at index 2 ...
-     *   d<sup>k</sup>f/dp<sup>k</sup> at index k),</li>
-     *   <li>if the {@link #getOrder() derivation order} is 1, then the derivatives
-     *   are sorted in increasing free parameter order (i.e. f at index 0, df/dx<sub>1</sub>
-     *   at index 1, df/dx<sub>2</sub> at index 2 ... df/dx<sub>k</sub> at index k),</li>
-     *   <li>all other cases are not publicly specified</li>
-     * </ul>
-     * <p>
-     * This method is the inverse of method {@link #getPartialDerivativeOrders(int)}
-     * </p>
-     * @param orders derivation orders with respect to each parameter
-     * @return index of the partial derivative
-     * @exception DimensionMismatchException if the numbers of parameters does not
-     * match the instance
-     * @exception NumberIsTooLargeException if sum of derivation orders is larger
-     * than the instance limits
-     * @see #getPartialDerivativeOrders(int)
-     */
+    
     public int getPartialDerivativeIndex(final int ... orders)
             throws DimensionMismatchException, NumberIsTooLargeException {
 
@@ -548,16 +368,7 @@ public class DSCompiler {
 
     }
 
-    /** Get the index of a partial derivative in an array.
-     * @param parameters number of free parameters
-     * @param order derivation order
-     * @param sizes sizes array
-     * @param orders derivation orders with respect to each parameter
-     * (the lenght of this array must match the number of parameters)
-     * @return index of the partial derivative
-     * @exception NumberIsTooLargeException if sum of derivation orders is larger
-     * than the instance limits
-     */
+    
     private static int getPartialDerivativeIndex(final int parameters, final int order,
                                                  final int[][] sizes, final int ... orders)
         throws NumberIsTooLargeException {
@@ -591,18 +402,7 @@ public class DSCompiler {
 
     }
 
-    /** Convert an index from one (parameters, order) structure to another.
-     * @param index index of a partial derivative in source derivative structure
-     * @param srcP number of free parameters in source derivative structure
-     * @param srcDerivativesIndirection derivatives indirection array for the source
-     * derivative structure
-     * @param destP number of free parameters in destination derivative structure
-     * @param destO derivation order in destination derivative structure
-     * @param destSizes sizes array for the destination derivative structure
-     * @return index of the partial derivative with the <em>same</em> characteristics
-     * in destination derivative structure
-     * @throws NumberIsTooLargeException if order is too large
-     */
+    
     private static int convertIndex(final int index,
                                     final int srcP, final int[][] srcDerivativesIndirection,
                                     final int destP, final int destO, final int[][] destSizes)
@@ -612,55 +412,27 @@ public class DSCompiler {
         return getPartialDerivativeIndex(destP, destO, destSizes, orders);
     }
 
-    /** Get the derivation orders for a specific index in the array.
-     * <p>
-     * This method is the inverse of {@link #getPartialDerivativeIndex(int...)}.
-     * </p>
-     * @param index of the partial derivative
-     * @return orders derivation orders with respect to each parameter
-     * @see #getPartialDerivativeIndex(int...)
-     */
+    
     public int[] getPartialDerivativeOrders(final int index) {
         return derivativesIndirection[index];
     }
 
-    /** Get the number of free parameters.
-     * @return number of free parameters
-     */
+    
     public int getFreeParameters() {
         return parameters;
     }
 
-    /** Get the derivation order.
-     * @return derivation order
-     */
+    
     public int getOrder() {
         return order;
     }
 
-    /** Get the array size required for holding partial derivatives data.
-     * <p>
-     * This number includes the single 0 order derivative element, which is
-     * guaranteed to be stored in the first element of the array.
-     * </p>
-     * @return array size required for holding partial derivatives data
-     */
+    
     public int getSize() {
         return sizes[parameters][order];
     }
 
-    /** Compute linear combination.
-     * The derivative structure built will be a1 * ds1 + a2 * ds2
-     * @param a1 first scale factor
-     * @param c1 first base (unscaled) component
-     * @param offset1 offset of first operand in its array
-     * @param a2 second scale factor
-     * @param c2 second base (unscaled) component
-     * @param offset2 offset of second operand in its array
-     * @param result array where result must be stored (it may be
-     * one of the input arrays)
-     * @param resultOffset offset of the result in its array
-     */
+    
     public void linearCombination(final double a1, final double[] c1, final int offset1,
                                   final double a2, final double[] c2, final int offset2,
                                   final double[] result, final int resultOffset) {
@@ -670,21 +442,7 @@ public class DSCompiler {
         }
     }
 
-    /** Compute linear combination.
-     * The derivative structure built will be a1 * ds1 + a2 * ds2 + a3 * ds3 + a4 * ds4
-     * @param a1 first scale factor
-     * @param c1 first base (unscaled) component
-     * @param offset1 offset of first operand in its array
-     * @param a2 second scale factor
-     * @param c2 second base (unscaled) component
-     * @param offset2 offset of second operand in its array
-     * @param a3 third scale factor
-     * @param c3 third base (unscaled) component
-     * @param offset3 offset of third operand in its array
-     * @param result array where result must be stored (it may be
-     * one of the input arrays)
-     * @param resultOffset offset of the result in its array
-     */
+    
     public void linearCombination(final double a1, final double[] c1, final int offset1,
                                   final double a2, final double[] c2, final int offset2,
                                   final double a3, final double[] c3, final int offset3,
@@ -697,24 +455,7 @@ public class DSCompiler {
         }
     }
 
-    /** Compute linear combination.
-     * The derivative structure built will be a1 * ds1 + a2 * ds2 + a3 * ds3 + a4 * ds4
-     * @param a1 first scale factor
-     * @param c1 first base (unscaled) component
-     * @param offset1 offset of first operand in its array
-     * @param a2 second scale factor
-     * @param c2 second base (unscaled) component
-     * @param offset2 offset of second operand in its array
-     * @param a3 third scale factor
-     * @param c3 third base (unscaled) component
-     * @param offset3 offset of third operand in its array
-     * @param a4 fourth scale factor
-     * @param c4 fourth base (unscaled) component
-     * @param offset4 offset of fourth operand in its array
-     * @param result array where result must be stored (it may be
-     * one of the input arrays)
-     * @param resultOffset offset of the result in its array
-     */
+    
     public void linearCombination(final double a1, final double[] c1, final int offset1,
                                   final double a2, final double[] c2, final int offset2,
                                   final double a3, final double[] c3, final int offset3,
@@ -729,15 +470,7 @@ public class DSCompiler {
         }
     }
 
-    /** Perform addition of two derivative structures.
-     * @param lhs array holding left hand side of addition
-     * @param lhsOffset offset of the left hand side in its array
-     * @param rhs array right hand side of addition
-     * @param rhsOffset offset of the right hand side in its array
-     * @param result array where result must be stored (it may be
-     * one of the input arrays)
-     * @param resultOffset offset of the result in its array
-     */
+    
     public void add(final double[] lhs, final int lhsOffset,
                     final double[] rhs, final int rhsOffset,
                     final double[] result, final int resultOffset) {
@@ -745,15 +478,7 @@ public class DSCompiler {
             result[resultOffset + i] = lhs[lhsOffset + i] + rhs[rhsOffset + i];
         }
     }
-    /** Perform subtraction of two derivative structures.
-     * @param lhs array holding left hand side of subtraction
-     * @param lhsOffset offset of the left hand side in its array
-     * @param rhs array right hand side of subtraction
-     * @param rhsOffset offset of the right hand side in its array
-     * @param result array where result must be stored (it may be
-     * one of the input arrays)
-     * @param resultOffset offset of the result in its array
-     */
+    
     public void subtract(final double[] lhs, final int lhsOffset,
                          final double[] rhs, final int rhsOffset,
                          final double[] result, final int resultOffset) {
@@ -762,16 +487,7 @@ public class DSCompiler {
         }
     }
 
-    /** Perform multiplication of two derivative structures.
-     * @param lhs array holding left hand side of multiplication
-     * @param lhsOffset offset of the left hand side in its array
-     * @param rhs array right hand side of multiplication
-     * @param rhsOffset offset of the right hand side in its array
-     * @param result array where result must be stored (for
-     * multiplication the result array <em>cannot</em> be one of
-     * the input arrays)
-     * @param resultOffset offset of the result in its array
-     */
+    
     public void multiply(final double[] lhs, final int lhsOffset,
                          final double[] rhs, final int rhsOffset,
                          final double[] result, final int resultOffset) {
@@ -787,16 +503,7 @@ public class DSCompiler {
         }
     }
 
-    /** Perform division of two derivative structures.
-     * @param lhs array holding left hand side of division
-     * @param lhsOffset offset of the left hand side in its array
-     * @param rhs array right hand side of division
-     * @param rhsOffset offset of the right hand side in its array
-     * @param result array where result must be stored (for
-     * division the result array <em>cannot</em> be one of
-     * the input arrays)
-     * @param resultOffset offset of the result in its array
-     */
+    
     public void divide(final double[] lhs, final int lhsOffset,
                        final double[] rhs, final int rhsOffset,
                        final double[] result, final int resultOffset) {
@@ -805,15 +512,7 @@ public class DSCompiler {
         multiply(lhs, lhsOffset, reciprocal, 0, result, resultOffset);
     }
 
-    /** Perform remainder of two derivative structures.
-     * @param lhs array holding left hand side of remainder
-     * @param lhsOffset offset of the left hand side in its array
-     * @param rhs array right hand side of remainder
-     * @param rhsOffset offset of the right hand side in its array
-     * @param result array where result must be stored (it may be
-     * one of the input arrays)
-     * @param resultOffset offset of the result in its array
-     */
+    
     public void remainder(final double[] lhs, final int lhsOffset,
                           final double[] rhs, final int rhsOffset,
                           final double[] result, final int resultOffset) {
@@ -832,16 +531,7 @@ public class DSCompiler {
 
     }
 
-    /** Compute power of a double to a derivative structure.
-     * @param a number to exponentiate
-     * @param operand array holding the power
-     * @param operandOffset offset of the power in its array
-     * @param result array where result must be stored (for
-     * power the result array <em>cannot</em> be the input
-     * array)
-     * @param resultOffset offset of the result in its array
-     * @since 3.3
-     */
+    
     public void pow(final double a,
                     final double[] operand, final int operandOffset,
                     final double[] result, final int resultOffset) {
@@ -874,15 +564,7 @@ public class DSCompiler {
 
     }
 
-    /** Compute power of a derivative structure.
-     * @param operand array holding the operand
-     * @param operandOffset offset of the operand in its array
-     * @param p power to apply
-     * @param result array where result must be stored (for
-     * power the result array <em>cannot</em> be the input
-     * array)
-     * @param resultOffset offset of the result in its array
-     */
+    
     public void pow(final double[] operand, final int operandOffset, final double p,
                     final double[] result, final int resultOffset) {
 
@@ -906,15 +588,7 @@ public class DSCompiler {
 
     }
 
-    /** Compute integer power of a derivative structure.
-     * @param operand array holding the operand
-     * @param operandOffset offset of the operand in its array
-     * @param n power to apply
-     * @param result array where result must be stored (for
-     * power the result array <em>cannot</em> be the input
-     * array)
-     * @param resultOffset offset of the result in its array
-     */
+    
     public void pow(final double[] operand, final int operandOffset, final int n,
                     final double[] result, final int resultOffset) {
 
@@ -959,16 +633,7 @@ public class DSCompiler {
 
     }
 
-    /** Compute power of a derivative structure.
-     * @param x array holding the base
-     * @param xOffset offset of the base in its array
-     * @param y array holding the exponent
-     * @param yOffset offset of the exponent in its array
-     * @param result array where result must be stored (for
-     * power the result array <em>cannot</em> be the input
-     * array)
-     * @param resultOffset offset of the result in its array
-     */
+    
     public void pow(final double[] x, final int xOffset,
                     final double[] y, final int yOffset,
                     final double[] result, final int resultOffset) {
@@ -979,15 +644,7 @@ public class DSCompiler {
         exp(yLogX, 0, result, resultOffset);
     }
 
-    /** Compute n<sup>th</sup> root of a derivative structure.
-     * @param operand array holding the operand
-     * @param operandOffset offset of the operand in its array
-     * @param n order of the root
-     * @param result array where result must be stored (for
-     * n<sup>th</sup> root the result array <em>cannot</em> be the input
-     * array)
-     * @param resultOffset offset of the result in its array
-     */
+    
     public void rootN(final double[] operand, final int operandOffset, final int n,
                       final double[] result, final int resultOffset) {
 
@@ -1017,14 +674,7 @@ public class DSCompiler {
 
     }
 
-    /** Compute exponential of a derivative structure.
-     * @param operand array holding the operand
-     * @param operandOffset offset of the operand in its array
-     * @param result array where result must be stored (for
-     * exponential the result array <em>cannot</em> be the input
-     * array)
-     * @param resultOffset offset of the result in its array
-     */
+    
     public void exp(final double[] operand, final int operandOffset,
                     final double[] result, final int resultOffset) {
 
@@ -1037,14 +687,7 @@ public class DSCompiler {
 
     }
 
-    /** Compute exp(x) - 1 of a derivative structure.
-     * @param operand array holding the operand
-     * @param operandOffset offset of the operand in its array
-     * @param result array where result must be stored (for
-     * exponential the result array <em>cannot</em> be the input
-     * array)
-     * @param resultOffset offset of the result in its array
-     */
+    
     public void expm1(final double[] operand, final int operandOffset,
                       final double[] result, final int resultOffset) {
 
@@ -1058,14 +701,7 @@ public class DSCompiler {
 
     }
 
-    /** Compute natural logarithm of a derivative structure.
-     * @param operand array holding the operand
-     * @param operandOffset offset of the operand in its array
-     * @param result array where result must be stored (for
-     * logarithm the result array <em>cannot</em> be the input
-     * array)
-     * @param resultOffset offset of the result in its array
-     */
+    
     public void log(final double[] operand, final int operandOffset,
                     final double[] result, final int resultOffset) {
 
@@ -1086,13 +722,7 @@ public class DSCompiler {
 
     }
 
-    /** Computes shifted logarithm of a derivative structure.
-     * @param operand array holding the operand
-     * @param operandOffset offset of the operand in its array
-     * @param result array where result must be stored (for
-     * shifted logarithm the result array <em>cannot</em> be the input array)
-     * @param resultOffset offset of the result in its array
-     */
+    
     public void log1p(final double[] operand, final int operandOffset,
                       final double[] result, final int resultOffset) {
 
@@ -1113,13 +743,7 @@ public class DSCompiler {
 
     }
 
-    /** Computes base 10 logarithm of a derivative structure.
-     * @param operand array holding the operand
-     * @param operandOffset offset of the operand in its array
-     * @param result array where result must be stored (for
-     * base 10 logarithm the result array <em>cannot</em> be the input array)
-     * @param resultOffset offset of the result in its array
-     */
+    
     public void log10(final double[] operand, final int operandOffset,
                       final double[] result, final int resultOffset) {
 
@@ -1140,14 +764,7 @@ public class DSCompiler {
 
     }
 
-    /** Compute cosine of a derivative structure.
-     * @param operand array holding the operand
-     * @param operandOffset offset of the operand in its array
-     * @param result array where result must be stored (for
-     * cosine the result array <em>cannot</em> be the input
-     * array)
-     * @param resultOffset offset of the result in its array
-     */
+    
     public void cos(final double[] operand, final int operandOffset,
                     final double[] result, final int resultOffset) {
 
@@ -1166,14 +783,7 @@ public class DSCompiler {
 
     }
 
-    /** Compute sine of a derivative structure.
-     * @param operand array holding the operand
-     * @param operandOffset offset of the operand in its array
-     * @param result array where result must be stored (for
-     * sine the result array <em>cannot</em> be the input
-     * array)
-     * @param resultOffset offset of the result in its array
-     */
+    
     public void sin(final double[] operand, final int operandOffset,
                     final double[] result, final int resultOffset) {
 
@@ -1192,14 +802,7 @@ public class DSCompiler {
 
     }
 
-    /** Compute tangent of a derivative structure.
-     * @param operand array holding the operand
-     * @param operandOffset offset of the operand in its array
-     * @param result array where result must be stored (for
-     * tangent the result array <em>cannot</em> be the input
-     * array)
-     * @param resultOffset offset of the result in its array
-     */
+    
     public void tan(final double[] operand, final int operandOffset,
                     final double[] result, final int resultOffset) {
 
@@ -1247,14 +850,7 @@ public class DSCompiler {
 
     }
 
-    /** Compute arc cosine of a derivative structure.
-     * @param operand array holding the operand
-     * @param operandOffset offset of the operand in its array
-     * @param result array where result must be stored (for
-     * arc cosine the result array <em>cannot</em> be the input
-     * array)
-     * @param resultOffset offset of the result in its array
-     */
+    
     public void acos(final double[] operand, final int operandOffset,
                     final double[] result, final int resultOffset) {
 
@@ -1304,14 +900,7 @@ public class DSCompiler {
 
     }
 
-    /** Compute arc sine of a derivative structure.
-     * @param operand array holding the operand
-     * @param operandOffset offset of the operand in its array
-     * @param result array where result must be stored (for
-     * arc sine the result array <em>cannot</em> be the input
-     * array)
-     * @param resultOffset offset of the result in its array
-     */
+    
     public void asin(final double[] operand, final int operandOffset,
                     final double[] result, final int resultOffset) {
 
@@ -1361,14 +950,7 @@ public class DSCompiler {
 
     }
 
-    /** Compute arc tangent of a derivative structure.
-     * @param operand array holding the operand
-     * @param operandOffset offset of the operand in its array
-     * @param result array where result must be stored (for
-     * arc tangent the result array <em>cannot</em> be the input
-     * array)
-     * @param resultOffset offset of the result in its array
-     */
+    
     public void atan(final double[] operand, final int operandOffset,
                      final double[] result, final int resultOffset) {
 
@@ -1418,16 +1000,7 @@ public class DSCompiler {
 
     }
 
-    /** Compute two arguments arc tangent of a derivative structure.
-     * @param y array holding the first operand
-     * @param yOffset offset of the first operand in its array
-     * @param x array holding the second operand
-     * @param xOffset offset of the second operand in its array
-     * @param result array where result must be stored (for
-     * two arguments arc tangent the result array <em>cannot</em>
-     * be the input array)
-     * @param resultOffset offset of the result in its array
-     */
+    
     public void atan2(final double[] y, final int yOffset,
                       final double[] x, final int xOffset,
                       final double[] result, final int resultOffset) {
@@ -1469,14 +1042,7 @@ public class DSCompiler {
 
     }
 
-    /** Compute hyperbolic cosine of a derivative structure.
-     * @param operand array holding the operand
-     * @param operandOffset offset of the operand in its array
-     * @param result array where result must be stored (for
-     * hyperbolic cosine the result array <em>cannot</em> be the input
-     * array)
-     * @param resultOffset offset of the result in its array
-     */
+    
     public void cosh(final double[] operand, final int operandOffset,
                      final double[] result, final int resultOffset) {
 
@@ -1495,14 +1061,7 @@ public class DSCompiler {
 
     }
 
-    /** Compute hyperbolic sine of a derivative structure.
-     * @param operand array holding the operand
-     * @param operandOffset offset of the operand in its array
-     * @param result array where result must be stored (for
-     * hyperbolic sine the result array <em>cannot</em> be the input
-     * array)
-     * @param resultOffset offset of the result in its array
-     */
+    
     public void sinh(final double[] operand, final int operandOffset,
                      final double[] result, final int resultOffset) {
 
@@ -1521,14 +1080,7 @@ public class DSCompiler {
 
     }
 
-    /** Compute hyperbolic tangent of a derivative structure.
-     * @param operand array holding the operand
-     * @param operandOffset offset of the operand in its array
-     * @param result array where result must be stored (for
-     * hyperbolic tangent the result array <em>cannot</em> be the input
-     * array)
-     * @param resultOffset offset of the result in its array
-     */
+    
     public void tanh(final double[] operand, final int operandOffset,
                      final double[] result, final int resultOffset) {
 
@@ -1576,14 +1128,7 @@ public class DSCompiler {
 
     }
 
-    /** Compute inverse hyperbolic cosine of a derivative structure.
-     * @param operand array holding the operand
-     * @param operandOffset offset of the operand in its array
-     * @param result array where result must be stored (for
-     * inverse hyperbolic cosine the result array <em>cannot</em> be the input
-     * array)
-     * @param resultOffset offset of the result in its array
-     */
+    
     public void acosh(final double[] operand, final int operandOffset,
                      final double[] result, final int resultOffset) {
 
@@ -1633,14 +1178,7 @@ public class DSCompiler {
 
     }
 
-    /** Compute inverse hyperbolic sine of a derivative structure.
-     * @param operand array holding the operand
-     * @param operandOffset offset of the operand in its array
-     * @param result array where result must be stored (for
-     * inverse hyperbolic sine the result array <em>cannot</em> be the input
-     * array)
-     * @param resultOffset offset of the result in its array
-     */
+    
     public void asinh(final double[] operand, final int operandOffset,
                      final double[] result, final int resultOffset) {
 
@@ -1690,14 +1228,7 @@ public class DSCompiler {
 
     }
 
-    /** Compute inverse hyperbolic tangent of a derivative structure.
-     * @param operand array holding the operand
-     * @param operandOffset offset of the operand in its array
-     * @param result array where result must be stored (for
-     * inverse hyperbolic tangent the result array <em>cannot</em> be the input
-     * array)
-     * @param resultOffset offset of the result in its array
-     */
+    
     public void atanh(final double[] operand, final int operandOffset,
                       final double[] result, final int resultOffset) {
 
@@ -1747,16 +1278,7 @@ public class DSCompiler {
 
     }
 
-    /** Compute composition of a derivative structure by a function.
-     * @param operand array holding the operand
-     * @param operandOffset offset of the operand in its array
-     * @param f array of value and derivatives of the function at
-     * the current point (i.e. at {@code operand[operandOffset]}).
-     * @param result array where result must be stored (for
-     * composition the result array <em>cannot</em> be the input
-     * array)
-     * @param resultOffset offset of the result in its array
-     */
+    
     public void compose(final double[] operand, final int operandOffset, final double[] f,
                         final double[] result, final int resultOffset) {
         for (int i = 0; i < compIndirection.length; ++i) {
@@ -1774,13 +1296,7 @@ public class DSCompiler {
         }
     }
 
-    /** Evaluate Taylor expansion of a derivative structure.
-     * @param ds array holding the derivative structure
-     * @param dsOffset offset of the derivative structure in its array
-     * @param delta parameters offsets (&Delta;x, &Delta;y, ...)
-     * @return value of the Taylor expansion at x + &Delta;x, y + &Delta;y, ...
-     * @throws MathArithmeticException if factorials becomes too large
-     */
+    
     public double taylor(final double[] ds, final int dsOffset, final double ... delta)
        throws MathArithmeticException {
         double value = 0;
@@ -1803,10 +1319,7 @@ public class DSCompiler {
         return value;
     }
 
-    /** Check rules set compatibility.
-     * @param compiler other compiler to check against instance
-     * @exception DimensionMismatchException if number of free parameters or orders are inconsistent
-     */
+    
     public void checkCompatibility(final DSCompiler compiler)
             throws DimensionMismatchException {
         if (parameters != compiler.parameters) {

@@ -15,8 +15,6 @@
  * limitations under the License.
  */
 
-/**
- * One-dimensional neural networks.
- */
+
 
 package org.apache.lucene.util.hnsw.math.ml.neuralnet.oned;

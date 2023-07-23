@@ -23,27 +23,16 @@ import org.apache.lucene.util.hnsw.math.fitting.leastsquares.LeastSquaresBuilder
 import org.apache.lucene.util.hnsw.math.fitting.leastsquares.LeastSquaresProblem;
 import org.apache.lucene.util.hnsw.math.linear.DiagonalMatrix;
 
-/**
- * Fits points to a user-defined {@link ParametricUnivariateFunction function}.
- *
- * @since 3.4
- */
+
 public class SimpleCurveFitter extends AbstractCurveFitter {
-    /** Function to fit. */
+    
     private final ParametricUnivariateFunction function;
-    /** Initial guess for the parameters. */
+    
     private final double[] initialGuess;
-    /** Maximum number of iterations of the optimization algorithm. */
+    
     private final int maxIter;
 
-    /**
-     * Contructor used by the factory methods.
-     *
-     * @param function Function to fit.
-     * @param initialGuess Initial guess. Cannot be {@code null}. Its length must
-     * be consistent with the number of parameters of the {@code function} to fit.
-     * @param maxIter Maximum number of iterations of the optimization algorithm.
-     */
+    
     private SimpleCurveFitter(ParametricUnivariateFunction function,
                               double[] initialGuess,
                               int maxIter) {
@@ -52,48 +41,27 @@ public class SimpleCurveFitter extends AbstractCurveFitter {
         this.maxIter = maxIter;
     }
 
-    /**
-     * Creates a curve fitter.
-     * The maximum number of iterations of the optimization algorithm is set
-     * to {@link Integer#MAX_VALUE}.
-     *
-     * @param f Function to fit.
-     * @param start Initial guess for the parameters.  Cannot be {@code null}.
-     * Its length must be consistent with the number of parameters of the
-     * function to fit.
-     * @return a curve fitter.
-     *
-     * @see #withStartPoint(double[])
-     * @see #withMaxIterations(int)
-     */
+    
     public static SimpleCurveFitter create(ParametricUnivariateFunction f,
                                            double[] start) {
         return new SimpleCurveFitter(f, start, Integer.MAX_VALUE);
     }
 
-    /**
-     * Configure the start point (initial guess).
-     * @param newStart new start point (initial guess)
-     * @return a new instance.
-     */
+    
     public SimpleCurveFitter withStartPoint(double[] newStart) {
         return new SimpleCurveFitter(function,
                                      newStart.clone(),
                                      maxIter);
     }
 
-    /**
-     * Configure the maximum number of iterations.
-     * @param newMaxIter maximum number of iterations
-     * @return a new instance.
-     */
+    
     public SimpleCurveFitter withMaxIterations(int newMaxIter) {
         return new SimpleCurveFitter(function,
                                      initialGuess,
                                      newMaxIter);
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     protected LeastSquaresProblem getProblem(Collection<WeightedObservedPoint> observations) {
         // Prepare least-squares problem.

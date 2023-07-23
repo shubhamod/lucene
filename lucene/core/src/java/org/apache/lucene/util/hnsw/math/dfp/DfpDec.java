@@ -17,112 +17,83 @@
 
 package org.apache.lucene.util.hnsw.math.dfp;
 
-/** Subclass of {@link Dfp} which hides the radix-10000 artifacts of the superclass.
- * This should give outward appearances of being a decimal number with DIGITS*4-3
- * decimal digits. This class can be subclassed to appear to be an arbitrary number
- * of decimal digits less than DIGITS*4-3.
- * @since 2.2
- */
+
 public class DfpDec extends Dfp {
 
-    /** Makes an instance with a value of zero.
-     * @param factory factory linked to this instance
-     */
+    
     protected DfpDec(final DfpField factory) {
         super(factory);
     }
 
-    /** Create an instance from a byte value.
-     * @param factory factory linked to this instance
-     * @param x value to convert to an instance
-     */
+    
     protected DfpDec(final DfpField factory, byte x) {
         super(factory, x);
     }
 
-    /** Create an instance from an int value.
-     * @param factory factory linked to this instance
-     * @param x value to convert to an instance
-     */
+    
     protected DfpDec(final DfpField factory, int x) {
         super(factory, x);
     }
 
-    /** Create an instance from a long value.
-     * @param factory factory linked to this instance
-     * @param x value to convert to an instance
-     */
+    
     protected DfpDec(final DfpField factory, long x) {
         super(factory, x);
     }
 
-    /** Create an instance from a double value.
-     * @param factory factory linked to this instance
-     * @param x value to convert to an instance
-     */
+    
     protected DfpDec(final DfpField factory, double x) {
         super(factory, x);
         round(0);
     }
 
-    /** Copy constructor.
-     * @param d instance to copy
-     */
+    
     public DfpDec(final Dfp d) {
         super(d);
         round(0);
     }
 
-    /** Create an instance from a String representation.
-     * @param factory factory linked to this instance
-     * @param s string representation of the instance
-     */
+    
     protected DfpDec(final DfpField factory, final String s) {
         super(factory, s);
         round(0);
     }
 
-    /** Creates an instance with a non-finite value.
-     * @param factory factory linked to this instance
-     * @param sign sign of the Dfp to create
-     * @param nans code of the value, must be one of {@link #INFINITE},
-     * {@link #SNAN},  {@link #QNAN}
-     */
+    
     protected DfpDec(final DfpField factory, final byte sign, final byte nans) {
         super(factory, sign, nans);
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     public Dfp newInstance() {
         return new DfpDec(getField());
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     public Dfp newInstance(final byte x) {
         return new DfpDec(getField(), x);
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     public Dfp newInstance(final int x) {
         return new DfpDec(getField(), x);
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     public Dfp newInstance(final long x) {
         return new DfpDec(getField(), x);
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     public Dfp newInstance(final double x) {
         return new DfpDec(getField(), x);
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     public Dfp newInstance(final Dfp d) {
 
@@ -138,28 +109,24 @@ public class DfpDec extends Dfp {
 
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     public Dfp newInstance(final String s) {
         return new DfpDec(getField(), s);
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     public Dfp newInstance(final byte sign, final byte nans) {
         return new DfpDec(getField(), sign, nans);
     }
 
-    /** Get the number of decimal digits this class is going to represent.
-     * Default implementation returns {@link #getRadixDigits()}*4-3. Subclasses can
-     * override this to return something less.
-     * @return number of decimal digits this class is going to represent
-     */
+    
     protected int getDecimalDigits() {
         return getRadixDigits() * 4 - 3;
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     protected int round(int in) {
 
@@ -287,7 +254,7 @@ public class DfpDec extends Dfp {
         return 0;
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     public Dfp nextAfter(Dfp x) {
 

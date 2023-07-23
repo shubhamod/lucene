@@ -29,35 +29,16 @@ import org.apache.lucene.util.hnsw.math.random.RandomVectorGenerator;
 import org.apache.lucene.util.hnsw.math.optim.BaseMultiStartMultivariateOptimizer;
 import org.apache.lucene.util.hnsw.math.optim.PointVectorValuePair;
 
-/**
- * Multi-start optimizer for a (vector) model function.
- *
- * This class wraps an optimizer in order to use it several times in
- * turn with different starting points (trying to avoid being trapped
- * in a local extremum when looking for a global one).
- *
- * @since 3.0
- */
+
 @Deprecated
 public class MultiStartMultivariateVectorOptimizer
     extends BaseMultiStartMultivariateOptimizer<PointVectorValuePair> {
-    /** Underlying optimizer. */
+    
     private final MultivariateVectorOptimizer optimizer;
-    /** Found optima. */
+    
     private final List<PointVectorValuePair> optima = new ArrayList<PointVectorValuePair>();
 
-    /**
-     * Create a multi-start optimizer from a single-start optimizer.
-     *
-     * @param optimizer Single-start optimizer to wrap.
-     * @param starts Number of starts to perform.
-     * If {@code starts == 1}, the result will be same as if {@code optimizer}
-     * is called directly.
-     * @param generator Random vector generator to use for restarts.
-     * @throws NullArgumentException if {@code optimizer} or {@code generator}
-     * is {@code null}.
-     * @throws NotStrictlyPositiveException if {@code starts < 1}.
-     */
+    
     public MultiStartMultivariateVectorOptimizer(final MultivariateVectorOptimizer optimizer,
                                                  final int starts,
                                                  final RandomVectorGenerator generator)
@@ -67,42 +48,34 @@ public class MultiStartMultivariateVectorOptimizer
         this.optimizer = optimizer;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    
     @Override
     public PointVectorValuePair[] getOptima() {
         Collections.sort(optima, getPairComparator());
         return optima.toArray(new PointVectorValuePair[0]);
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    
     @Override
     protected void store(PointVectorValuePair optimum) {
         optima.add(optimum);
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    
     @Override
     protected void clear() {
         optima.clear();
     }
 
-    /**
-     * @return a comparator for sorting the optima.
-     */
+    
     private Comparator<PointVectorValuePair> getPairComparator() {
         return new Comparator<PointVectorValuePair>() {
-            /** Observed value to be matched. */
+            
             private final RealVector target = new ArrayRealVector(optimizer.getTarget(), false);
-            /** Observations weights. */
+            
             private final RealMatrix weight = optimizer.getWeight();
 
-            /** {@inheritDoc} */
+            
             public int compare(final PointVectorValuePair o1,
                                final PointVectorValuePair o2) {
                 if (o1 == null) {

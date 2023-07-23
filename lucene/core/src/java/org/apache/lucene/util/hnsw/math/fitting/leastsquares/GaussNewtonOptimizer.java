@@ -34,31 +34,13 @@ import org.apache.lucene.util.hnsw.math.optim.ConvergenceChecker;
 import org.apache.lucene.util.hnsw.math.util.Incrementor;
 import org.apache.lucene.util.hnsw.math.util.Pair;
 
-/**
- * Gauss-Newton least-squares solver.
- * <p> This class solve a least-square problem by
- * solving the normal equations of the linearized problem at each iteration. Either LU
- * decomposition or Cholesky decomposition can be used to solve the normal equations,
- * or QR decomposition or SVD decomposition can be used to solve the linear system. LU
- * decomposition is faster but QR decomposition is more robust for difficult problems,
- * and SVD can compute a solution for rank-deficient problems.
- * </p>
- *
- * @since 3.3
- */
+
 public class GaussNewtonOptimizer implements LeastSquaresOptimizer {
 
-    /** The decomposition algorithm to use to solve the normal equations. */
+    
     //TODO move to linear package and expand options?
     public enum Decomposition {
-        /**
-         * Solve by forming the normal equations (J<sup>T</sup>Jx=J<sup>T</sup>r) and
-         * using the {@link LUDecomposition}.
-         *
-         * <p> Theoretically this method takes mn<sup>2</sup>/2 operations to compute the
-         * normal matrix and n<sup>3</sup>/3 operations (m > n) to solve the system using
-         * the LU decomposition. </p>
-         */
+        
         LU {
             @Override
             protected RealVector solve(final RealMatrix jacobian,
@@ -76,14 +58,7 @@ public class GaussNewtonOptimizer implements LeastSquaresOptimizer {
                 }
             }
         },
-        /**
-         * Solve the linear least squares problem (Jx=r) using the {@link
-         * QRDecomposition}.
-         *
-         * <p> Theoretically this method takes mn<sup>2</sup> - n<sup>3</sup>/3 operations
-         * (m > n) and has better numerical accuracy than any method that forms the normal
-         * equations. </p>
-         */
+        
         QR {
             @Override
             protected RealVector solve(final RealMatrix jacobian,
@@ -97,14 +72,7 @@ public class GaussNewtonOptimizer implements LeastSquaresOptimizer {
                 }
             }
         },
-        /**
-         * Solve by forming the normal equations (J<sup>T</sup>Jx=J<sup>T</sup>r) and
-         * using the {@link CholeskyDecomposition}.
-         *
-         * <p> Theoretically this method takes mn<sup>2</sup>/2 operations to compute the
-         * normal matrix and n<sup>3</sup>/6 operations (m > n) to solve the system using
-         * the Cholesky decomposition. </p>
-         */
+        
         CHOLESKY {
             @Override
             protected RealVector solve(final RealMatrix jacobian,
@@ -123,13 +91,7 @@ public class GaussNewtonOptimizer implements LeastSquaresOptimizer {
                 }
             }
         },
-        /**
-         * Solve the linear least squares problem using the {@link
-         * SingularValueDecomposition}.
-         *
-         * <p> This method is slower, but can provide a solution for rank deficient and
-         * nearly singular systems.
-         */
+        
         SVD {
             @Override
             protected RealVector solve(final RealMatrix jacobian,
@@ -140,70 +102,38 @@ public class GaussNewtonOptimizer implements LeastSquaresOptimizer {
             }
         };
 
-        /**
-         * Solve the linear least squares problem Jx=r.
-         *
-         * @param jacobian  the Jacobian matrix, J. the number of rows >= the number or
-         *                  columns.
-         * @param residuals the computed residuals, r.
-         * @return the solution x, to the linear least squares problem Jx=r.
-         * @throws ConvergenceException if the matrix properties (e.g. singular) do not
-         *                              permit a solution.
-         */
+        
         protected abstract RealVector solve(RealMatrix jacobian,
                                             RealVector residuals);
     }
 
-    /**
-     * The singularity threshold for matrix decompositions. Determines when a {@link
-     * ConvergenceException} is thrown. The current value was the default value for {@link
-     * LUDecomposition}.
-     */
+    
     private static final double SINGULARITY_THRESHOLD = 1e-11;
 
-    /** Indicator for using LU decomposition. */
+    
     private final Decomposition decomposition;
 
-    /**
-     * Creates a Gauss Newton optimizer.
-     * <p/>
-     * The default for the algorithm is to solve the normal equations using QR
-     * decomposition.
-     */
+    
     public GaussNewtonOptimizer() {
         this(Decomposition.QR);
     }
 
-    /**
-     * Create a Gauss Newton optimizer that uses the given decomposition algorithm to
-     * solve the normal equations.
-     *
-     * @param decomposition the {@link Decomposition} algorithm.
-     */
+    
     public GaussNewtonOptimizer(final Decomposition decomposition) {
         this.decomposition = decomposition;
     }
 
-    /**
-     * Get the matrix decomposition algorithm used to solve the normal equations.
-     *
-     * @return the matrix {@link Decomposition} algoritm.
-     */
+    
     public Decomposition getDecomposition() {
         return this.decomposition;
     }
 
-    /**
-     * Configure the decomposition algorithm.
-     *
-     * @param newDecomposition the {@link Decomposition} algorithm to use.
-     * @return a new instance.
-     */
+    
     public GaussNewtonOptimizer withDecomposition(final Decomposition newDecomposition) {
         return new GaussNewtonOptimizer(newDecomposition);
     }
 
-    /** {@inheritDoc} */
+    
     public Optimum optimize(final LeastSquaresProblem lsp) {
         //create local evaluation and iteration counts
         final Incrementor evaluationCounter = lsp.getEvaluationCounter();
@@ -247,7 +177,7 @@ public class GaussNewtonOptimizer implements LeastSquaresOptimizer {
         }
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     public String toString() {
         return "GaussNewtonOptimizer{" +
@@ -255,13 +185,7 @@ public class GaussNewtonOptimizer implements LeastSquaresOptimizer {
                 '}';
     }
 
-    /**
-     * Compute the normal matrix, J<sup>T</sup>J.
-     *
-     * @param jacobian  the m by n jacobian matrix, J. Input.
-     * @param residuals the m by 1 residual vector, r. Input.
-     * @return  the n by n normal matrix and  the n by 1 J<sup>Tr vector.
-     */
+    
     private static Pair<RealMatrix, RealVector> computeNormalMatrix(final RealMatrix jacobian,
                                                                     final RealVector residuals) {
         //since the normal matrix is symmetric, we only need to compute half of it.

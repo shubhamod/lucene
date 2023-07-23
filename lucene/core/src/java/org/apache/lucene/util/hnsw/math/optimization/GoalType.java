@@ -19,19 +19,14 @@ package org.apache.lucene.util.hnsw.math.optimization;
 
 import java.io.Serializable;
 
-/**
- * Goal type for an optimization problem.
- *
- * @deprecated As of 3.1 (to be removed in 4.0).
- * @since 2.0
- */
+
 @Deprecated
 public enum GoalType implements Serializable {
 
-    /** Maximization goal. */
+    
     MAXIMIZE,
 
-    /** Minimization goal. */
+    
     MINIMIZE
 
 }

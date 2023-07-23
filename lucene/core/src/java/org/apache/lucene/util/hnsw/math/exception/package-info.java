@@ -14,10 +14,5 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/**
- *
- *     Specialized exceptions for algorithms errors. The exceptions can be localized
- *     using simple java properties.
- *
- */
+
 package org.apache.lucene.util.hnsw.math.exception;

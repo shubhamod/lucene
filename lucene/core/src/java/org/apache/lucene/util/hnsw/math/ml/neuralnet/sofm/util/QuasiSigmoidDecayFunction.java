@@ -21,35 +21,14 @@ import org.apache.lucene.util.hnsw.math.exception.NotStrictlyPositiveException;
 import org.apache.lucene.util.hnsw.math.exception.NumberIsTooLargeException;
 import org.apache.lucene.util.hnsw.math.analysis.function.Logistic;
 
-/**
- * Decay function whose shape is similar to a sigmoid.
- * <br/>
- * Class is immutable.
- *
- * @since 3.3
- */
+
 public class QuasiSigmoidDecayFunction {
-    /** Sigmoid. */
+    
     private final Logistic sigmoid;
-    /** See {@link #value(long)}. */
+    
     private final double scale;
 
-    /**
-     * Creates an instance.
-     * The function {@code f} will have the following properties:
-     * <ul>
-     *  <li>{@code f(0) = initValue}</li>
-     *  <li>{@code numCall} is the inflexion point</li>
-     *  <li>{@code slope = f'(numCall)}</li>
-     * </ul>
-     *
-     * @param initValue Initial value, i.e. {@link #value(long) value(0)}.
-     * @param slope Value of the function derivative at {@code numCall}.
-     * @param numCall Inflexion point.
-     * @throws NotStrictlyPositiveException if {@code initValue <= 0}.
-     * @throws NumberIsTooLargeException if {@code slope >= 0}.
-     * @throws NotStrictlyPositiveException if {@code numCall <= 0}.
-     */
+    
     public QuasiSigmoidDecayFunction(double initValue,
                                      double slope,
                                      long numCall) {
@@ -75,12 +54,7 @@ public class QuasiSigmoidDecayFunction {
         scale = k / y0;
     }
 
-    /**
-     * Computes the value of the learning factor.
-     *
-     * @param numCall Current step of the training task.
-     * @return the value of the function at {@code numCall}.
-     */
+    
     public double value(long numCall) {
         return scale * sigmoid.value(numCall);
     }

@@ -28,44 +28,10 @@ import org.apache.lucene.util.hnsw.math.exception.util.LocalizedFormats;
 import org.apache.lucene.util.hnsw.math.random.RandomGenerator;
 import org.apache.lucene.util.hnsw.math.util.FastMath;
 
-/**
- * Order 1 Crossover [OX1] builds offspring from <b>ordered</b> chromosomes by copying a
- * consecutive slice from one parent, and filling up the remaining genes from the other
- * parent as they appear.
- * <p>
- * This policy works by applying the following rules:
- * <ol>
- *   <li>select a random slice of consecutive genes from parent 1</li>
- *   <li>copy the slice to child 1 and mark out the genes in parent 2</li>
- *   <li>starting from the right side of the slice, copy genes from parent 2 as they
- *       appear to child 1 if they are not yet marked out.</li>
- * </ol>
- * <p>
- * Example (random sublist from index 3 to 7, underlined):
- * <pre>
- * p1 = (8 4 7 3 6 2 5 1 9 0)   X   c1 = (0 4 7 3 6 2 5 1 8 9)
- *             ---------                        ---------
- * p2 = (0 1 2 3 4 5 6 7 8 9)   X   c2 = (8 1 2 3 4 5 6 7 9 0)
- * </pre>
- * <p>
- * This policy works only on {@link AbstractListChromosome}, and therefore it
- * is parameterized by T. Moreover, the chromosomes must have same lengths.
- *
- * @see <a href="http://www.rubicite.com/Tutorials/GeneticAlgorithms/CrossoverOperators/Order1CrossoverOperator.aspx">
- * Order 1 Crossover Operator</a>
- *
- * @param <T> generic type of the {@link AbstractListChromosome}s for crossover
- * @since 3.1
- */
+
 public class OrderedCrossover<T> implements CrossoverPolicy {
 
-    /**
-     * {@inheritDoc}
-     *
-     * @throws MathIllegalArgumentException iff one of the chromosomes is
-     *   not an instance of {@link AbstractListChromosome}
-     * @throws DimensionMismatchException if the length of the two chromosomes is different
-     */
+    
     @SuppressWarnings("unchecked")
     public ChromosomePair crossover(final Chromosome first, final Chromosome second)
         throws DimensionMismatchException, MathIllegalArgumentException {
@@ -76,14 +42,7 @@ public class OrderedCrossover<T> implements CrossoverPolicy {
         return mate((AbstractListChromosome<T>) first, (AbstractListChromosome<T>) second);
     }
 
-    /**
-     * Helper for {@link #crossover(Chromosome, Chromosome)}. Performs the actual crossover.
-     *
-     * @param first the first chromosome
-     * @param second the second chromosome
-     * @return the pair of new chromosomes that resulted from the crossover
-     * @throws DimensionMismatchException if the length of the two chromosomes is different
-     */
+    
     protected ChromosomePair mate(final AbstractListChromosome<T> first, final AbstractListChromosome<T> second)
         throws DimensionMismatchException {
 

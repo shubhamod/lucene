@@ -20,34 +20,13 @@ import org.apache.lucene.util.hnsw.math.special.Gamma;
 import org.apache.lucene.util.hnsw.math.util.FastMath;
 import org.apache.lucene.util.hnsw.math.util.MathUtils;
 
-/**
- * <p>
- * Utility class used by various distributions to accurately compute their
- * respective probability mass functions. The implementation for this class is
- * based on the Catherine Loader's <a target="_blank"
- * href="http://www.herine.net/stat/software/dbinom.html">dbinom</a> routines.
- * </p>
- * <p>
- * This class is not intended to be called directly.
- * </p>
- * <p>
- * References:
- * <ol>
- * <li>Catherine Loader (2000). "Fast and Accurate Computation of Binomial
- * Probabilities.". <a target="_blank"
- * href="http://www.herine.net/stat/papers/dbinom.pdf">
- * http://www.herine.net/stat/papers/dbinom.pdf</a></li>
- * </ol>
- * </p>
- *
- * @since 2.1
- */
+
 final class SaddlePointExpansion {
 
-    /** 1/2 * log(2 &#960;). */
+    
     private static final double HALF_LOG_2_PI = 0.5 * FastMath.log(MathUtils.TWO_PI);
 
-    /** exact Stirling expansion error for certain values. */
+    
     private static final double[] EXACT_STIRLING_ERRORS = { 0.0, /* 0.0 */
     0.1534264097200273452913848, /* 0.5 */
     0.0810614667953272582196702, /* 1.0 */
@@ -81,28 +60,12 @@ final class SaddlePointExpansion {
     0.005554733551962801371038690 /* 15.0 */
     };
 
-    /**
-     * Default constructor.
-     */
+    
     private SaddlePointExpansion() {
         super();
     }
 
-    /**
-     * Compute the error of Stirling's series at the given value.
-     * <p>
-     * References:
-     * <ol>
-     * <li>Eric W. Weisstein. "Stirling's Series." From MathWorld--A Wolfram Web
-     * Resource. <a target="_blank"
-     * href="http://mathworld.wolfram.com/StirlingsSeries.html">
-     * http://mathworld.wolfram.com/StirlingsSeries.html</a></li>
-     * </ol>
-     * </p>
-     *
-     * @param z the value.
-     * @return the Striling's series error.
-     */
+    
     static double getStirlingError(double z) {
         double ret;
         if (z < 15.0) {
@@ -125,22 +88,7 @@ final class SaddlePointExpansion {
         return ret;
     }
 
-    /**
-     * A part of the deviance portion of the saddle point approximation.
-     * <p>
-     * References:
-     * <ol>
-     * <li>Catherine Loader (2000). "Fast and Accurate Computation of Binomial
-     * Probabilities.". <a target="_blank"
-     * href="http://www.herine.net/stat/papers/dbinom.pdf">
-     * http://www.herine.net/stat/papers/dbinom.pdf</a></li>
-     * </ol>
-     * </p>
-     *
-     * @param x the x value.
-     * @param mu the average.
-     * @return a part of the deviance.
-     */
+    
     static double getDeviancePart(double x, double mu) {
         double ret;
         if (FastMath.abs(x - mu) < 0.1 * (x + mu)) {
@@ -164,16 +112,7 @@ final class SaddlePointExpansion {
         return ret;
     }
 
-    /**
-     * Compute the logarithm of the PMF for a binomial distribution
-     * using the saddle point expansion.
-     *
-     * @param x the value at which the probability is evaluated.
-     * @param n the number of trials.
-     * @param p the probability of success.
-     * @param q the probability of failure (1 - p).
-     * @return log(p(x)).
-     */
+    
     static double logBinomialProbability(int x, int n, double p, double q) {
         double ret;
         if (x == 0) {

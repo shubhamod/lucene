@@ -20,17 +20,13 @@ import org.apache.lucene.util.hnsw.math.exception.DimensionMismatchException;
 import org.apache.lucene.util.hnsw.math.util.FastMath;
 import org.apache.lucene.util.hnsw.math.util.MathArrays;
 
-/**
- * Calculates the Canberra distance between two points.
- *
- * @since 3.2
- */
+
 public class CanberraDistance implements DistanceMeasure {
 
-    /** Serializable version identifier. */
+    
     private static final long serialVersionUID = -6972277381587032228L;
 
-    /** {@inheritDoc} */
+    
     public double compute(double[] a, double[] b)
     throws DimensionMismatchException {
         MathArrays.checkEqualLength(a, b);

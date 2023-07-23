@@ -19,19 +19,7 @@ package org.apache.lucene.util.hnsw.math.optimization;
 
 import org.apache.lucene.util.hnsw.math.analysis.differentiation.MultivariateDifferentiableFunction;
 
-/**
- * This interface represents an optimization algorithm for
- * {@link MultivariateDifferentiableFunction scalar differentiable objective
- * functions}.
- * Optimization algorithms find the input point set that either {@link GoalType
- * maximize or minimize} an objective function.
- *
- * @see MultivariateOptimizer
- * @see MultivariateDifferentiableVectorOptimizer
- *
- * @deprecated As of 3.1 (to be removed in 4.0).
- * @since 3.1
- */
+
 @Deprecated
 public interface MultivariateDifferentiableOptimizer
     extends BaseMultivariateOptimizer<MultivariateDifferentiableFunction> {}

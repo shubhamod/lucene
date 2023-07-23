@@ -15,8 +15,6 @@
  * limitations under the License.
  */
 
-/**
- * Self Organizing Feature Map.
- */
+
 
 package org.apache.lucene.util.hnsw.math.ml.neuralnet.sofm;

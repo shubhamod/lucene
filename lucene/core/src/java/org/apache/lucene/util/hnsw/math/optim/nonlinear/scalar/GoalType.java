@@ -18,15 +18,10 @@ package org.apache.lucene.util.hnsw.math.optim.nonlinear.scalar;
 
 import org.apache.lucene.util.hnsw.math.optim.OptimizationData;
 
-/**
- * Goal type for an optimization problem (minimization or maximization of
- * a scalar function.
- *
- * @since 2.0
- */
+
 public enum GoalType implements OptimizationData {
-    /** Maximization. */
+    
     MAXIMIZE,
-    /** Minimization. */
+    
     MINIMIZE
 }

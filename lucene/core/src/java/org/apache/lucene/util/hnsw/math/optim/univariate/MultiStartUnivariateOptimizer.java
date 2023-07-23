@@ -27,51 +27,27 @@ import org.apache.lucene.util.hnsw.math.optim.MaxEval;
 import org.apache.lucene.util.hnsw.math.optim.nonlinear.scalar.GoalType;
 import org.apache.lucene.util.hnsw.math.optim.OptimizationData;
 
-/**
- * Special implementation of the {@link UnivariateOptimizer} interface
- * adding multi-start features to an existing optimizer.
- * <br/>
- * This class wraps an optimizer in order to use it several times in
- * turn with different starting points (trying to avoid being trapped
- * in a local extremum when looking for a global one).
- *
- * @since 3.0
- */
+
 public class MultiStartUnivariateOptimizer
     extends UnivariateOptimizer {
-    /** Underlying classical optimizer. */
+    
     private final UnivariateOptimizer optimizer;
-    /** Number of evaluations already performed for all starts. */
+    
     private int totalEvaluations;
-    /** Number of starts to go. */
+    
     private int starts;
-    /** Random generator for multi-start. */
+    
     private RandomGenerator generator;
-    /** Found optima. */
+    
     private UnivariatePointValuePair[] optima;
-    /** Optimization data. */
+    
     private OptimizationData[] optimData;
-    /**
-     * Location in {@link #optimData} where the updated maximum
-     * number of evaluations will be stored.
-     */
+    
     private int maxEvalIndex = -1;
-    /**
-     * Location in {@link #optimData} where the updated start value
-     * will be stored.
-     */
+    
     private int searchIntervalIndex = -1;
 
-    /**
-     * Create a multi-start optimizer from a single-start optimizer.
-     *
-     * @param optimizer Single-start optimizer to wrap.
-     * @param starts Number of starts to perform. If {@code starts == 1},
-     * the {@code optimize} methods will return the same solution as
-     * {@code optimizer} would.
-     * @param generator Random generator to use for restarts.
-     * @throws NotStrictlyPositiveException if {@code starts < 1}.
-     */
+    
     public MultiStartUnivariateOptimizer(final UnivariateOptimizer optimizer,
                                          final int starts,
                                          final RandomGenerator generator) {
@@ -86,34 +62,13 @@ public class MultiStartUnivariateOptimizer
         this.generator = generator;
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     public int getEvaluations() {
         return totalEvaluations;
     }
 
-    /**
-     * Gets all the optima found during the last call to {@code optimize}.
-     * The optimizer stores all the optima found during a set of
-     * restarts. The {@code optimize} method returns the best point only.
-     * This method returns all the points found at the end of each starts,
-     * including the best one already returned by the {@code optimize} method.
-     * <br/>
-     * The returned array as one element for each start as specified
-     * in the constructor. It is ordered with the results from the
-     * runs that did converge first, sorted from best to worst
-     * objective value (i.e in ascending order if minimizing and in
-     * descending order if maximizing), followed by {@code null} elements
-     * corresponding to the runs that did not converge. This means all
-     * elements will be {@code null} if the {@code optimize} method did throw
-     * an exception.
-     * This also means that if the first element is not {@code null}, it is
-     * the best point found across all starts.
-     *
-     * @return an array containing the optima.
-     * @throws MathIllegalStateException if {@link #optimize(OptimizationData[])
-     * optimize} has not been called.
-     */
+    
     public UnivariatePointValuePair[] getOptima() {
         if (optima == null) {
             throw new MathIllegalStateException(LocalizedFormats.NO_OPTIMUM_COMPUTED_YET);
@@ -121,12 +76,7 @@ public class MultiStartUnivariateOptimizer
         return optima.clone();
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @throws MathIllegalStateException if {@code optData} does not contain an
-     * instance of {@link MaxEval} or {@link SearchInterval}.
-     */
+    
     @Override
     public UnivariatePointValuePair optimize(OptimizationData... optData) {
         // Store arguments in order to pass them to the internal optimizer.
@@ -135,7 +85,7 @@ public class MultiStartUnivariateOptimizer
         return super.optimize(optData);
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     protected UnivariatePointValuePair doOptimize() {
         // Remove all instances of "MaxEval" and "SearchInterval" from the
@@ -203,14 +153,10 @@ public class MultiStartUnivariateOptimizer
         return optima[0];
     }
 
-    /**
-     * Sort the optima from best to worst, followed by {@code null} elements.
-     *
-     * @param goal Goal type.
-     */
+    
     private void sortPairs(final GoalType goal) {
         Arrays.sort(optima, new Comparator<UnivariatePointValuePair>() {
-                /** {@inheritDoc} */
+                
                 public int compare(final UnivariatePointValuePair o1,
                                    final UnivariatePointValuePair o2) {
                     if (o1 == null) {

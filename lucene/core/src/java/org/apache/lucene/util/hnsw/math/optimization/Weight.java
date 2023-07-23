@@ -21,33 +21,18 @@ import org.apache.lucene.util.hnsw.math.linear.RealMatrix;
 import org.apache.lucene.util.hnsw.math.linear.DiagonalMatrix;
 import org.apache.lucene.util.hnsw.math.linear.NonSquareMatrixException;
 
-/**
- * Weight matrix of the residuals between model and observations.
- * <br/>
- * Immutable class.
- *
- * @deprecated As of 3.1 (to be removed in 4.0).
- * @since 3.1
- */
+
 @Deprecated
 public class Weight implements OptimizationData {
-    /** Weight matrix. */
+    
     private final RealMatrix weightMatrix;
 
-    /**
-     * Creates a diagonal weight matrix.
-     *
-     * @param weight List of the values of the diagonal.
-     */
+    
     public Weight(double[] weight) {
         weightMatrix = new DiagonalMatrix(weight);
     }
 
-    /**
-     * @param weight Weight matrix.
-     * @throws NonSquareMatrixException if the argument is not
-     * a square matrix.
-     */
+    
     public Weight(RealMatrix weight) {
         if (weight.getColumnDimension() != weight.getRowDimension()) {
             throw new NonSquareMatrixException(weight.getColumnDimension(),
@@ -57,11 +42,7 @@ public class Weight implements OptimizationData {
         weightMatrix = weight.copy();
     }
 
-    /**
-     * Gets the initial guess.
-     *
-     * @return the initial guess.
-     */
+    
     public RealMatrix getWeight() {
         return weightMatrix.copy();
     }

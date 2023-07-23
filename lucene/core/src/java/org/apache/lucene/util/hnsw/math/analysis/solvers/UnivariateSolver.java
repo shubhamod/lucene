@@ -19,10 +19,6 @@ package org.apache.lucene.util.hnsw.math.analysis.solvers;
 import org.apache.lucene.util.hnsw.math.analysis.UnivariateFunction;
 
 
-/**
- * Interface for (univariate real) root-finding algorithms.
- * Implementations will search for only one zero in the given interval.
- *
- */
+
 public interface UnivariateSolver
     extends BaseUnivariateSolver<UnivariateFunction> {}

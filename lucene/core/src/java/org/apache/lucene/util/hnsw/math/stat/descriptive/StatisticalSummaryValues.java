@@ -22,44 +22,32 @@ import org.apache.lucene.util.hnsw.math.util.FastMath;
 import org.apache.lucene.util.hnsw.math.util.MathUtils;
 import org.apache.lucene.util.hnsw.math.util.Precision;
 
-/**
- *  Value object representing the results of a univariate statistical summary.
- *
- */
+
 public class StatisticalSummaryValues implements Serializable,
     StatisticalSummary {
 
-    /** Serialization id */
+    
     private static final long serialVersionUID = -5108854841843722536L;
 
-    /** The sample mean */
+    
     private final double mean;
 
-    /** The sample variance */
+    
     private final double variance;
 
-    /** The number of observations in the sample */
+    
     private final long n;
 
-    /** The maximum value */
+    
     private final double max;
 
-    /** The minimum value */
+    
     private final double min;
 
-    /** The sum of the sample values */
+    
     private final double sum;
 
-    /**
-      * Constructor
-      *
-      * @param mean  the sample mean
-      * @param variance  the sample variance
-      * @param n  the number of observations in the sample
-      * @param max  the maximum value
-      * @param min  the minimum value
-      * @param sum  the sum of the values
-     */
+    
     public StatisticalSummaryValues(double mean, double variance, long n,
         double max, double min, double sum) {
         super();
@@ -71,63 +59,42 @@ public class StatisticalSummaryValues implements Serializable,
         this.sum = sum;
     }
 
-    /**
-     * @return Returns the max.
-     */
+    
     public double getMax() {
         return max;
     }
 
-    /**
-     * @return Returns the mean.
-     */
+    
     public double getMean() {
         return mean;
     }
 
-    /**
-     * @return Returns the min.
-     */
+    
     public double getMin() {
         return min;
     }
 
-    /**
-     * @return Returns the number of values.
-     */
+    
     public long getN() {
         return n;
     }
 
-    /**
-     * @return Returns the sum.
-     */
+    
     public double getSum() {
         return sum;
     }
 
-    /**
-     * @return Returns the standard deviation
-     */
+    
     public double getStandardDeviation() {
         return FastMath.sqrt(variance);
     }
 
-    /**
-     * @return Returns the variance.
-     */
+    
     public double getVariance() {
         return variance;
     }
 
-    /**
-     * Returns true iff <code>object</code> is a
-     * <code>StatisticalSummaryValues</code> instance and all statistics have
-     *  the same values as this.
-     *
-     * @param object the object to test equality against.
-     * @return true if object equals this
-     */
+    
     @Override
     public boolean equals(Object object) {
         if (object == this ) {
@@ -145,11 +112,7 @@ public class StatisticalSummaryValues implements Serializable,
                Precision.equalsIncludingNaN(stat.getVariance(), getVariance());
     }
 
-    /**
-     * Returns hash code based on values of statistics
-     *
-     * @return hash code
-     */
+    
     @Override
     public int hashCode() {
         int result = 31 + MathUtils.hash(getMax());
@@ -161,12 +124,7 @@ public class StatisticalSummaryValues implements Serializable,
         return result;
     }
 
-    /**
-     * Generates a text report displaying values of statistics.
-     * Each statistic is displayed on a separate line.
-     *
-     * @return String with line feeds displaying statistics
-     */
+    
     @Override
     public String toString() {
         StringBuffer outBuffer = new StringBuffer();

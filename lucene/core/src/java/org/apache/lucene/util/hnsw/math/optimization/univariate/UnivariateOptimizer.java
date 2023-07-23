@@ -18,12 +18,7 @@ package org.apache.lucene.util.hnsw.math.optimization.univariate;
 
 import org.apache.lucene.util.hnsw.math.analysis.UnivariateFunction;
 
-/**
- * Interface for univariate optimization algorithms.
- *
- * @deprecated As of 3.1 (to be removed in 4.0).
- * @since 3.0
- */
+
 @Deprecated
 public interface UnivariateOptimizer
     extends BaseUnivariateOptimizer<UnivariateFunction> {}

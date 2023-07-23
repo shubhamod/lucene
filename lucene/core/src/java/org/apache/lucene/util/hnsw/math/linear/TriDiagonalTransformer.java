@@ -22,42 +22,22 @@ import java.util.Arrays;
 import org.apache.lucene.util.hnsw.math.util.FastMath;
 
 
-/**
- * Class transforming a symmetrical matrix to tridiagonal shape.
- * <p>A symmetrical m &times; m matrix A can be written as the product of three matrices:
- * A = Q &times; T &times; Q<sup>T</sup> with Q an orthogonal matrix and T a symmetrical
- * tridiagonal matrix. Both Q and T are m &times; m matrices.</p>
- * <p>This implementation only uses the upper part of the matrix, the part below the
- * diagonal is not accessed at all.</p>
- * <p>Transformation to tridiagonal shape is often not a goal by itself, but it is
- * an intermediate step in more general decomposition algorithms like {@link
- * EigenDecomposition eigen decomposition}. This class is therefore intended for internal
- * use by the library and is not public. As a consequence of this explicitly limited scope,
- * many methods directly returns references to internal arrays, not copies.</p>
- * @since 2.0
- */
+
 class TriDiagonalTransformer {
-    /** Householder vectors. */
+    
     private final double householderVectors[][];
-    /** Main diagonal. */
+    
     private final double[] main;
-    /** Secondary diagonal. */
+    
     private final double[] secondary;
-    /** Cached value of Q. */
+    
     private RealMatrix cachedQ;
-    /** Cached value of Qt. */
+    
     private RealMatrix cachedQt;
-    /** Cached value of T. */
+    
     private RealMatrix cachedT;
 
-    /**
-     * Build the transformation to tridiagonal shape of a symmetrical matrix.
-     * <p>The specified matrix is assumed to be symmetrical without any check.
-     * Only the upper triangular part of the matrix is used.</p>
-     *
-     * @param matrix Symmetrical matrix to transform.
-     * @throws NonSquareMatrixException if the matrix is not square.
-     */
+    
     TriDiagonalTransformer(RealMatrix matrix) {
         if (!matrix.isSquare()) {
             throw new NonSquareMatrixException(matrix.getRowDimension(),
@@ -76,11 +56,7 @@ class TriDiagonalTransformer {
         transform();
     }
 
-    /**
-     * Returns the matrix Q of the transform.
-     * <p>Q is an orthogonal matrix, i.e. its transpose is also its inverse.</p>
-     * @return the Q matrix
-     */
+    
     public RealMatrix getQ() {
         if (cachedQ == null) {
             cachedQ = getQT().transpose();
@@ -88,11 +64,7 @@ class TriDiagonalTransformer {
         return cachedQ;
     }
 
-    /**
-     * Returns the transpose of the matrix Q of the transform.
-     * <p>Q is an orthogonal matrix, i.e. its transpose is also its inverse.</p>
-     * @return the Q matrix
-     */
+    
     public RealMatrix getQT() {
         if (cachedQt == null) {
             final int m = householderVectors.length;
@@ -130,10 +102,7 @@ class TriDiagonalTransformer {
         return cachedQt;
     }
 
-    /**
-     * Returns the tridiagonal matrix T of the transform.
-     * @return the T matrix
-     */
+    
     public RealMatrix getT() {
         if (cachedT == null) {
             final int m = main.length;
@@ -154,40 +123,22 @@ class TriDiagonalTransformer {
         return cachedT;
     }
 
-    /**
-     * Get the Householder vectors of the transform.
-     * <p>Note that since this class is only intended for internal use,
-     * it returns directly a reference to its internal arrays, not a copy.</p>
-     * @return the main diagonal elements of the B matrix
-     */
+    
     double[][] getHouseholderVectorsRef() {
         return householderVectors;
     }
 
-    /**
-     * Get the main diagonal elements of the matrix T of the transform.
-     * <p>Note that since this class is only intended for internal use,
-     * it returns directly a reference to its internal arrays, not a copy.</p>
-     * @return the main diagonal elements of the T matrix
-     */
+    
     double[] getMainDiagonalRef() {
         return main;
     }
 
-    /**
-     * Get the secondary diagonal elements of the matrix T of the transform.
-     * <p>Note that since this class is only intended for internal use,
-     * it returns directly a reference to its internal arrays, not a copy.</p>
-     * @return the secondary diagonal elements of the T matrix
-     */
+    
     double[] getSecondaryDiagonalRef() {
         return secondary;
     }
 
-    /**
-     * Transform original matrix to tridiagonal form.
-     * <p>Transformation is done using Householder transforms.</p>
-     */
+    
     private void transform() {
         final int m = householderVectors.length;
         final double[] z = new double[m];

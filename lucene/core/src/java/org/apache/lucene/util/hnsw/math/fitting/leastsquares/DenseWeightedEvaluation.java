@@ -20,24 +20,15 @@ import org.apache.lucene.util.hnsw.math.fitting.leastsquares.LeastSquaresProblem
 import org.apache.lucene.util.hnsw.math.linear.RealMatrix;
 import org.apache.lucene.util.hnsw.math.linear.RealVector;
 
-/**
- * Applies a dense weight matrix to an evaluation.
- *
- * @since 3.3
- */
+
 class DenseWeightedEvaluation extends AbstractEvaluation {
 
-    /** the unweighted evaluation */
+    
     private final Evaluation unweighted;
-    /** reference to the weight square root matrix */
+    
     private final RealMatrix weightSqrt;
 
-    /**
-     * Create a weighted evaluation from an unweighted one.
-     *
-     * @param unweighted the evalutation before weights are applied
-     * @param weightSqrt the matrix square root of the weight matrix
-     */
+    
     DenseWeightedEvaluation(final Evaluation unweighted,
                             final RealMatrix weightSqrt) {
         // weight square root is square, nR=nC=number of observations
@@ -48,19 +39,19 @@ class DenseWeightedEvaluation extends AbstractEvaluation {
 
     /* apply weights */
 
-    /** {@inheritDoc} */
+    
     public RealMatrix getJacobian() {
         return weightSqrt.multiply(this.unweighted.getJacobian());
     }
 
-    /** {@inheritDoc} */
+    
     public RealVector getResiduals() {
         return this.weightSqrt.operate(this.unweighted.getResiduals());
     }
 
     /* delegate */
 
-    /** {@inheritDoc} */
+    
     public RealVector getPoint() {
         return unweighted.getPoint();
     }

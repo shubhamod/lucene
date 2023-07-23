@@ -21,64 +21,27 @@ import org.apache.lucene.util.hnsw.math.exception.NumberIsTooLargeException;
 import org.apache.lucene.util.hnsw.math.exception.TooManyEvaluationsException;
 import org.apache.lucene.util.hnsw.math.util.FastMath;
 
-/**
- * This class implements the <a href="http://mathworld.wolfram.com/MullersMethod.html">
- * Muller's Method</a> for root finding of real univariate functions. For
- * reference, see <b>Elementary Numerical Analysis</b>, ISBN 0070124477,
- * chapter 3.
- * <p>
- * Muller's method applies to both real and complex functions, but here we
- * restrict ourselves to real functions.
- * This class differs from {@link MullerSolver} in the way it avoids complex
- * operations.</p><p>
- * Muller's original method would have function evaluation at complex point.
- * Since our f(x) is real, we have to find ways to avoid that. Bracketing
- * condition is one way to go: by requiring bracketing in every iteration,
- * the newly computed approximation is guaranteed to be real.</p>
- * <p>
- * Normally Muller's method converges quadratically in the vicinity of a
- * zero, however it may be very slow in regions far away from zeros. For
- * example, f(x) = exp(x) - 1, min = -50, max = 100. In such case we use
- * bisection as a safety backup if it performs very poorly.</p>
- * <p>
- * The formulas here use divided differences directly.</p>
- *
- * @since 1.2
- * @see MullerSolver2
- */
+
 public class MullerSolver extends AbstractUnivariateSolver {
 
-    /** Default absolute accuracy. */
+    
     private static final double DEFAULT_ABSOLUTE_ACCURACY = 1e-6;
 
-    /**
-     * Construct a solver with default accuracy (1e-6).
-     */
+    
     public MullerSolver() {
         this(DEFAULT_ABSOLUTE_ACCURACY);
     }
-    /**
-     * Construct a solver.
-     *
-     * @param absoluteAccuracy Absolute accuracy.
-     */
+    
     public MullerSolver(double absoluteAccuracy) {
         super(absoluteAccuracy);
     }
-    /**
-     * Construct a solver.
-     *
-     * @param relativeAccuracy Relative accuracy.
-     * @param absoluteAccuracy Absolute accuracy.
-     */
+    
     public MullerSolver(double relativeAccuracy,
                         double absoluteAccuracy) {
         super(relativeAccuracy, absoluteAccuracy);
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    
     @Override
     protected double doSolve()
         throws TooManyEvaluationsException,
@@ -115,17 +78,7 @@ public class MullerSolver extends AbstractUnivariateSolver {
         }
     }
 
-    /**
-     * Find a real root in the given interval.
-     *
-     * @param min Lower bound for the interval.
-     * @param max Upper bound for the interval.
-     * @param fMin function value at the lower bound.
-     * @param fMax function value at the upper bound.
-     * @return the point at which the function value is zero.
-     * @throws TooManyEvaluationsException if the allowed number of calls to
-     * the function to be solved has been exhausted.
-     */
+    
     private double solve(double min, double max,
                          double fMin, double fMax)
         throws TooManyEvaluationsException {

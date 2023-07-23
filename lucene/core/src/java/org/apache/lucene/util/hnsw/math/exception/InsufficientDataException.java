@@ -19,30 +19,19 @@ package org.apache.lucene.util.hnsw.math.exception;
 import org.apache.lucene.util.hnsw.math.exception.util.Localizable;
 import org.apache.lucene.util.hnsw.math.exception.util.LocalizedFormats;
 
-/**
- * Exception to be thrown when there is insufficient data to perform a computation.
- *
- * @since 3.3
- */
+
 public class InsufficientDataException
     extends MathIllegalArgumentException {
 
-    /** Serializable version Id. */
+    
     private static final long serialVersionUID = -2629324471511903359L;
 
-    /**
-     * Construct the exception.
-     */
+    
     public InsufficientDataException() {
         this(LocalizedFormats.INSUFFICIENT_DATA);
     }
 
-    /**
-     * Construct the exception with a specific context.
-     *
-     * @param pattern Message pattern providing the specific context of the error.
-     * @param arguments Values for replacing the placeholders in {@code pattern}.
-     */
+    
     public InsufficientDataException(Localizable pattern, Object... arguments) {
         super(pattern, arguments);
     }

@@ -14,7 +14,5 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/**
- * Fitting of parameters against distributions.
- */
+
 package org.apache.lucene.util.hnsw.math.distribution.fitting;

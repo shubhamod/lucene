@@ -20,20 +20,10 @@ import org.apache.lucene.util.hnsw.math.linear.RealMatrix;
 import org.apache.lucene.util.hnsw.math.linear.RealVector;
 import org.apache.lucene.util.hnsw.math.util.Pair;
 
-/**
- * A interface for functions that compute a vector of values and can compute their
- * derivatives (Jacobian).
- *
- * @since 3.3
- */
+
 public interface MultivariateJacobianFunction {
 
-    /**
-     * Compute the function value and its Jacobian.
-     *
-     * @param point the abscissae
-     * @return the values and their Jacobian of this vector valued function.
-     */
+    
     Pair<RealVector, RealMatrix> value(RealVector point);
 
 }

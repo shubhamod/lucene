@@ -28,49 +28,25 @@ import org.apache.lucene.util.hnsw.math.stat.ranking.NaturalRanking;
 import org.apache.lucene.util.hnsw.math.stat.ranking.TiesStrategy;
 import org.apache.lucene.util.hnsw.math.util.FastMath;
 
-/**
- * An implementation of the Wilcoxon signed-rank test.
- *
- */
+
 public class WilcoxonSignedRankTest {
 
-    /** Ranking algorithm. */
+    
     private NaturalRanking naturalRanking;
 
-    /**
-     * Create a test instance where NaN's are left in place and ties get
-     * the average of applicable ranks. Use this unless you are very sure
-     * of what you are doing.
-     */
+    
     public WilcoxonSignedRankTest() {
         naturalRanking = new NaturalRanking(NaNStrategy.FIXED,
                 TiesStrategy.AVERAGE);
     }
 
-    /**
-     * Create a test instance using the given strategies for NaN's and ties.
-     * Only use this if you are sure of what you are doing.
-     *
-     * @param nanStrategy
-     *            specifies the strategy that should be used for Double.NaN's
-     * @param tiesStrategy
-     *            specifies the strategy that should be used for ties
-     */
+    
     public WilcoxonSignedRankTest(final NaNStrategy nanStrategy,
                                   final TiesStrategy tiesStrategy) {
         naturalRanking = new NaturalRanking(nanStrategy, tiesStrategy);
     }
 
-    /**
-     * Ensures that the provided arrays fulfills the assumptions.
-     *
-     * @param x first sample
-     * @param y second sample
-     * @throws NullArgumentException if {@code x} or {@code y} are {@code null}.
-     * @throws NoDataException if {@code x} or {@code y} are zero-length.
-     * @throws DimensionMismatchException if {@code x} and {@code y} do not
-     * have the same length.
-     */
+    
     private void ensureDataConformance(final double[] x, final double[] y)
         throws NullArgumentException, NoDataException, DimensionMismatchException {
 
@@ -87,13 +63,7 @@ public class WilcoxonSignedRankTest {
         }
     }
 
-    /**
-     * Calculates y[i] - x[i] for all i
-     *
-     * @param x first sample
-     * @param y second sample
-     * @return z = y - x
-     */
+    
     private double[] calculateDifferences(final double[] x, final double[] y) {
 
         final double[] z = new double[x.length];
@@ -105,14 +75,7 @@ public class WilcoxonSignedRankTest {
         return z;
     }
 
-    /**
-     * Calculates |z[i]| for all i
-     *
-     * @param z sample
-     * @return |z|
-     * @throws NullArgumentException if {@code z} is {@code null}
-     * @throws NoDataException if {@code z} is zero-length.
-     */
+    
     private double[] calculateAbsoluteDifferences(final double[] z)
         throws NullArgumentException, NoDataException {
 
@@ -133,41 +96,7 @@ public class WilcoxonSignedRankTest {
         return zAbs;
     }
 
-    /**
-     * Computes the <a
-     * href="http://en.wikipedia.org/wiki/Wilcoxon_signed-rank_test">
-     * Wilcoxon signed ranked statistic</a> comparing mean for two related
-     * samples or repeated measurements on a single sample.
-     * <p>
-     * This statistic can be used to perform a Wilcoxon signed ranked test
-     * evaluating the null hypothesis that the two related samples or repeated
-     * measurements on a single sample has equal mean.
-     * </p>
-     * <p>
-     * Let X<sub>i</sub> denote the i'th individual of the first sample and
-     * Y<sub>i</sub> the related i'th individual in the second sample. Let
-     * Z<sub>i</sub> = Y<sub>i</sub> - X<sub>i</sub>.
-     * </p>
-     * <p>
-     * <strong>Preconditions</strong>:
-     * <ul>
-     * <li>The differences Z<sub>i</sub> must be independent.</li>
-     * <li>Each Z<sub>i</sub> comes from a continuous population (they must be
-     * identical) and is symmetric about a common median.</li>
-     * <li>The values that X<sub>i</sub> and Y<sub>i</sub> represent are
-     * ordered, so the comparisons greater than, less than, and equal to are
-     * meaningful.</li>
-     * </ul>
-     * </p>
-     *
-     * @param x the first sample
-     * @param y the second sample
-     * @return wilcoxonSignedRank statistic (the larger of W+ and W-)
-     * @throws NullArgumentException if {@code x} or {@code y} are {@code null}.
-     * @throws NoDataException if {@code x} or {@code y} are zero-length.
-     * @throws DimensionMismatchException if {@code x} and {@code y} do not
-     * have the same length.
-     */
+    
     public double wilcoxonSignedRank(final double[] x, final double[] y)
         throws NullArgumentException, NoDataException, DimensionMismatchException {
 
@@ -194,16 +123,7 @@ public class WilcoxonSignedRankTest {
         return FastMath.max(Wplus, Wminus);
     }
 
-    /**
-     * Algorithm inspired by
-     * http://www.fon.hum.uva.nl/Service/Statistics/Signed_Rank_Algorihms.html#C
-     * by Rob van Son, Institute of Phonetic Sciences & IFOTT,
-     * University of Amsterdam
-     *
-     * @param Wmax largest Wilcoxon signed rank value
-     * @param N number of subjects (corresponding to x.length)
-     * @return two-sided exact p-value
-     */
+    
     private double calculateExactPValue(final double Wmax, final int N) {
 
         // Total number of outcomes (equal to 2^N but a lot faster)
@@ -235,11 +155,7 @@ public class WilcoxonSignedRankTest {
         return 2 * ((double) largerRankSums) / ((double) m);
     }
 
-    /**
-     * @param Wmin smallest Wilcoxon signed rank value
-     * @param N number of subjects (corresponding to x.length)
-     * @return two-sided asymptotic p-value
-     */
+    
     private double calculateAsymptoticPValue(final double Wmin, final int N) {
 
         final double ES = (double) (N * (N + 1)) / 4.0;
@@ -259,48 +175,7 @@ public class WilcoxonSignedRankTest {
         return 2*standardNormal.cumulativeProbability(z);
     }
 
-    /**
-     * Returns the <i>observed significance level</i>, or <a href=
-     * "http://www.cas.lancs.ac.uk/glossary_v1.1/hyptest.html#pvalue">
-     * p-value</a>, associated with a <a
-     * href="http://en.wikipedia.org/wiki/Wilcoxon_signed-rank_test">
-     * Wilcoxon signed ranked statistic</a> comparing mean for two related
-     * samples or repeated measurements on a single sample.
-     * <p>
-     * Let X<sub>i</sub> denote the i'th individual of the first sample and
-     * Y<sub>i</sub> the related i'th individual in the second sample. Let
-     * Z<sub>i</sub> = Y<sub>i</sub> - X<sub>i</sub>.
-     * </p>
-     * <p>
-     * <strong>Preconditions</strong>:
-     * <ul>
-     * <li>The differences Z<sub>i</sub> must be independent.</li>
-     * <li>Each Z<sub>i</sub> comes from a continuous population (they must be
-     * identical) and is symmetric about a common median.</li>
-     * <li>The values that X<sub>i</sub> and Y<sub>i</sub> represent are
-     * ordered, so the comparisons greater than, less than, and equal to are
-     * meaningful.</li>
-     * </ul>
-     * </p>
-     *
-     * @param x the first sample
-     * @param y the second sample
-     * @param exactPValue
-     *            if the exact p-value is wanted (only works for x.length <= 30,
-     *            if true and x.length > 30, this is ignored because
-     *            calculations may take too long)
-     * @return p-value
-     * @throws NullArgumentException if {@code x} or {@code y} are {@code null}.
-     * @throws NoDataException if {@code x} or {@code y} are zero-length.
-     * @throws DimensionMismatchException if {@code x} and {@code y} do not
-     * have the same length.
-     * @throws NumberIsTooLargeException if {@code exactPValue} is {@code true}
-     * and {@code x.length} > 30
-     * @throws ConvergenceException if the p-value can not be computed due to
-     * a convergence error
-     * @throws MaxCountExceededException if the maximum number of iterations
-     * is exceeded
-     */
+    
     public double wilcoxonSignedRankTest(final double[] x, final double[] y,
                                          final boolean exactPValue)
         throws NullArgumentException, NoDataException, DimensionMismatchException,

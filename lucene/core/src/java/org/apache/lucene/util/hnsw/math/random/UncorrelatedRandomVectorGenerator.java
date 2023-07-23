@@ -21,34 +21,21 @@ import java.util.Arrays;
 
 import org.apache.lucene.util.hnsw.math.exception.DimensionMismatchException;
 
-/**
- * A {@link RandomVectorGenerator} that generates vectors with uncorrelated
- * components. Components of generated vectors follow (independent) Gaussian
- * distributions, with parameters supplied in the constructor.
- *
- * @since 1.2
- */
+
 
 public class UncorrelatedRandomVectorGenerator
   implements RandomVectorGenerator {
 
-    /** Underlying scalar generator. */
+    
     private final NormalizedRandomGenerator generator;
 
-    /** Mean vector. */
+    
     private final double[] mean;
 
-    /** Standard deviation vector. */
+    
     private final double[] standardDeviation;
 
-  /** Simple constructor.
-   * <p>Build an uncorrelated random vector generator from
-   * its mean and standard deviation vectors.</p>
-   * @param mean expected mean values for each component
-   * @param standardDeviation standard deviation for each component
-   * @param generator underlying generator for uncorrelated normalized
-   * components
-   */
+  
   public UncorrelatedRandomVectorGenerator(double[] mean,
                                            double[] standardDeviation,
                                            NormalizedRandomGenerator generator) {
@@ -60,13 +47,7 @@ public class UncorrelatedRandomVectorGenerator
     this.generator = generator;
   }
 
-  /** Simple constructor.
-   * <p>Build a null mean random and unit standard deviation
-   * uncorrelated vector generator</p>
-   * @param dimension dimension of the vectors to generate
-   * @param generator underlying generator for uncorrelated normalized
-   * components
-   */
+  
   public UncorrelatedRandomVectorGenerator(int dimension,
                                            NormalizedRandomGenerator generator) {
     mean              = new double[dimension];
@@ -75,9 +56,7 @@ public class UncorrelatedRandomVectorGenerator
     this.generator = generator;
   }
 
-  /** Generate an uncorrelated random vector.
-   * @return a random vector as a newly built array of double
-   */
+  
   public double[] nextVector() {
 
     double[] random = new double[mean.length];

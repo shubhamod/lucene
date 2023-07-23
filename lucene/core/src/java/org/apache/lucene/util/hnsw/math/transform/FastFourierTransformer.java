@@ -30,36 +30,13 @@ import org.apache.lucene.util.hnsw.math.util.ArithmeticUtils;
 import org.apache.lucene.util.hnsw.math.util.FastMath;
 import org.apache.lucene.util.hnsw.math.util.MathArrays;
 
-/**
- * Implements the Fast Fourier Transform for transformation of one-dimensional
- * real or complex data sets. For reference, see <em>Applied Numerical Linear
- * Algebra</em>, ISBN 0898713897, chapter 6.
- * <p>
- * There are several variants of the discrete Fourier transform, with various
- * normalization conventions, which are specified by the parameter
- * {@link DftNormalization}.
- * <p>
- * The current implementation of the discrete Fourier transform as a fast
- * Fourier transform requires the length of the data set to be a power of 2.
- * This greatly simplifies and speeds up the code. Users can pad the data with
- * zeros to meet this requirement. There are other flavors of FFT, for
- * reference, see S. Winograd,
- * <i>On computing the discrete Fourier transform</i>, Mathematics of
- * Computation, 32 (1978), 175 - 199.
- *
- * @see DftNormalization
- * @since 1.2
- */
+
 public class FastFourierTransformer implements Serializable {
 
-    /** Serializable version identifier. */
+    
     static final long serialVersionUID = 20120210L;
 
-    /**
-     * {@code W_SUB_N_R[i]} is the real part of
-     * {@code exp(- 2 * i * pi / n)}:
-     * {@code W_SUB_N_R[i] = cos(2 * pi/ n)}, where {@code n = 2^i}.
-     */
+    
     private static final double[] W_SUB_N_R =
             {  0x1.0p0, -0x1.0p0, 0x1.1a62633145c07p-54, 0x1.6a09e667f3bcdp-1
             , 0x1.d906bcf328d46p-1, 0x1.f6297cff75cbp-1, 0x1.fd88da3d12526p-1, 0x1.ff621e3796d7ep-1
@@ -78,11 +55,7 @@ public class FastFourierTransformer implements Serializable {
             , 0x1.0p0, 0x1.0p0, 0x1.0p0, 0x1.0p0
             , 0x1.0p0, 0x1.0p0, 0x1.0p0 };
 
-    /**
-     * {@code W_SUB_N_I[i]} is the imaginary part of
-     * {@code exp(- 2 * i * pi / n)}:
-     * {@code W_SUB_N_I[i] = -sin(2 * pi/ n)}, where {@code n = 2^i}.
-     */
+    
     private static final double[] W_SUB_N_I =
             {  0x1.1a62633145c07p-52, -0x1.1a62633145c07p-53, -0x1.0p0, -0x1.6a09e667f3bccp-1
             , -0x1.87de2a6aea963p-2, -0x1.8f8b83c69a60ap-3, -0x1.917a6bc29b42cp-4, -0x1.91f65f10dd814p-5
@@ -101,30 +74,15 @@ public class FastFourierTransformer implements Serializable {
             , -0x1.921fb54442d18p-54, -0x1.921fb54442d18p-55, -0x1.921fb54442d18p-56, -0x1.921fb54442d18p-57
             , -0x1.921fb54442d18p-58, -0x1.921fb54442d18p-59, -0x1.921fb54442d18p-60 };
 
-    /** The type of DFT to be performed. */
+    
     private final DftNormalization normalization;
 
-    /**
-     * Creates a new instance of this class, with various normalization
-     * conventions.
-     *
-     * @param normalization the type of normalization to be applied to the
-     * transformed data
-     */
+    
     public FastFourierTransformer(final DftNormalization normalization) {
         this.normalization = normalization;
     }
 
-    /**
-     * Performs identical index bit reversal shuffles on two arrays of identical
-     * size. Each element in the array is swapped with another element based on
-     * the bit-reversal of the index. For example, in an array with length 16,
-     * item at binary index 0011 (decimal 3) would be swapped with the item at
-     * binary index 1100 (decimal 12).
-     *
-     * @param a the first array to be shuffled
-     * @param b the second array to be shuffled
-     */
+    
     private static void bitReversalShuffle2(double[] a, double[] b) {
         final int n = a.length;
         assert b.length == n;
@@ -152,13 +110,7 @@ public class FastFourierTransformer implements Serializable {
         }
     }
 
-    /**
-     * Applies the proper normalization to the specified transformed data.
-     *
-     * @param dataRI the unscaled transformed data
-     * @param normalization the normalization to be applied
-     * @param type the type of transform (forward, inverse) which resulted in the specified data
-     */
+    
     private static void normalizeTransformedData(final double[][] dataRI,
         final DftNormalization normalization, final TransformType type) {
 
@@ -195,22 +147,7 @@ public class FastFourierTransformer implements Serializable {
         }
     }
 
-    /**
-     * Computes the standard transform of the specified complex data. The
-     * computation is done in place. The input data is laid out as follows
-     * <ul>
-     *   <li>{@code dataRI[0][i]} is the real part of the {@code i}-th data point,</li>
-     *   <li>{@code dataRI[1][i]} is the imaginary part of the {@code i}-th data point.</li>
-     * </ul>
-     *
-     * @param dataRI the two dimensional array of real and imaginary parts of the data
-     * @param normalization the normalization to be applied to the transformed data
-     * @param type the type of transform (forward, inverse) to be performed
-     * @throws DimensionMismatchException if the number of rows of the specified
-     *   array is not two, or the array is not rectangular
-     * @throws MathIllegalArgumentException if the number of data points is not
-     *   a power of two
-     */
+    
     public static void transformInPlace(final double[][] dataRI,
         final DftNormalization normalization, final TransformType type) {
 
@@ -358,14 +295,7 @@ public class FastFourierTransformer implements Serializable {
         normalizeTransformedData(dataRI, normalization, type);
     }
 
-    /**
-     * Returns the (forward, inverse) transform of the specified real data set.
-     *
-     * @param f the real data array to be transformed
-     * @param type the type of transform (forward, inverse) to be performed
-     * @return the complex transformed array
-     * @throws MathIllegalArgumentException if the length of the data array is not a power of two
-     */
+    
     public Complex[] transform(final double[] f, final TransformType type) {
         final double[][] dataRI = new double[][] {
             MathArrays.copyOf(f, f.length), new double[f.length]
@@ -376,23 +306,7 @@ public class FastFourierTransformer implements Serializable {
         return TransformUtils.createComplexArray(dataRI);
     }
 
-    /**
-     * Returns the (forward, inverse) transform of the specified real function,
-     * sampled on the specified interval.
-     *
-     * @param f the function to be sampled and transformed
-     * @param min the (inclusive) lower bound for the interval
-     * @param max the (exclusive) upper bound for the interval
-     * @param n the number of sample points
-     * @param type the type of transform (forward, inverse) to be performed
-     * @return the complex transformed array
-     * @throws org.apache.lucene.util.hnsw.math.exception.NumberIsTooLargeException
-     *   if the lower bound is greater than, or equal to the upper bound
-     * @throws org.apache.lucene.util.hnsw.math.exception.NotStrictlyPositiveException
-     *   if the number of sample points {@code n} is negative
-     * @throws MathIllegalArgumentException if the number of sample points
-     *   {@code n} is not a power of two
-     */
+    
     public Complex[] transform(final UnivariateFunction f,
                                final double min, final double max, final int n,
                                final TransformType type) {
@@ -401,14 +315,7 @@ public class FastFourierTransformer implements Serializable {
         return transform(data, type);
     }
 
-    /**
-     * Returns the (forward, inverse) transform of the specified complex data set.
-     *
-     * @param f the complex data array to be transformed
-     * @param type the type of transform (forward, inverse) to be performed
-     * @return the complex transformed array
-     * @throws MathIllegalArgumentException if the length of the data array is not a power of two
-     */
+    
     public Complex[] transform(final Complex[] f, final TransformType type) {
         final double[][] dataRI = TransformUtils.createRealImaginaryArray(f);
 
@@ -417,21 +324,7 @@ public class FastFourierTransformer implements Serializable {
         return TransformUtils.createComplexArray(dataRI);
     }
 
-    /**
-     * Performs a multi-dimensional Fourier transform on a given array. Use
-     * {@link #transform(Complex[], TransformType)} in a row-column
-     * implementation in any number of dimensions with
-     * O(N&times;log(N)) complexity with
-     * N = n<sub>1</sub> &times; n<sub>2</sub> &times;n<sub>3</sub> &times; ...
-     * &times; n<sub>d</sub>, where n<sub>k</sub> is the number of elements in
-     * dimension k, and d is the total number of dimensions.
-     *
-     * @param mdca Multi-Dimensional Complex Array, i.e. {@code Complex[][][][]}
-     * @param type the type of transform (forward, inverse) to be performed
-     * @return transform of {@code mdca} as a Multi-Dimensional Complex Array, i.e. {@code Complex[][][][]}
-     * @throws IllegalArgumentException if any dimension is not a power of two
-     * @deprecated see MATH-736
-     */
+    
     @Deprecated
     public Object mdfft(Object mdca, TransformType type) {
         MultiDimensionalComplexMatrix mdcm = (MultiDimensionalComplexMatrix)
@@ -444,16 +337,7 @@ public class FastFourierTransformer implements Serializable {
         return mdcm.getArray();
     }
 
-    /**
-     * Performs one dimension of a multi-dimensional Fourier transform.
-     *
-     * @param mdcm input matrix
-     * @param type the type of transform (forward, inverse) to be performed
-     * @param d index of the dimension to process
-     * @param subVector recursion subvector
-     * @throws IllegalArgumentException if any dimension is not a power of two
-     * @deprecated see MATH-736
-     */
+    
     @Deprecated
     private void mdfft(MultiDimensionalComplexMatrix mdcm,
             TransformType type, int d, int[] subVector) {
@@ -492,30 +376,18 @@ public class FastFourierTransformer implements Serializable {
         }
     }
 
-    /**
-     * Complex matrix implementation. Not designed for synchronized access may
-     * eventually be replaced by jsr-83 of the java community process
-     * http://jcp.org/en/jsr/detail?id=83
-     * may require additional exception throws for other basic requirements.
-     *
-     * @deprecated see MATH-736
-     */
+    
     @Deprecated
     private static class MultiDimensionalComplexMatrix
         implements Cloneable {
 
-        /** Size in all dimensions. */
+        
         protected int[] dimensionSize;
 
-        /** Storage array. */
+        
         protected Object multiDimensionalComplexArray;
 
-        /**
-         * Simple constructor.
-         *
-         * @param multiDimensionalComplexArray array containing the matrix
-         * elements
-         */
+        
         MultiDimensionalComplexMatrix(Object multiDimensionalComplexArray) {
 
             this.multiDimensionalComplexArray = multiDimensionalComplexArray;
@@ -543,13 +415,7 @@ public class FastFourierTransformer implements Serializable {
 
         }
 
-        /**
-         * Get a matrix element.
-         *
-         * @param vector indices of the element
-         * @return matrix element
-         * @exception DimensionMismatchException if dimensions do not match
-         */
+        
         public Complex get(int... vector)
                 throws DimensionMismatchException {
 
@@ -575,14 +441,7 @@ public class FastFourierTransformer implements Serializable {
             return (Complex) lastDimension;
         }
 
-        /**
-         * Set a matrix element.
-         *
-         * @param magnitude magnitude of the element
-         * @param vector indices of the element
-         * @return the previous value
-         * @exception DimensionMismatchException if dimensions do not match
-         */
+        
         public Complex set(Complex magnitude, int... vector)
                 throws DimensionMismatchException {
 
@@ -611,25 +470,17 @@ public class FastFourierTransformer implements Serializable {
             return lastValue;
         }
 
-        /**
-         * Get the size in all dimensions.
-         *
-         * @return size in all dimensions
-         */
+        
         public int[] getDimensionSizes() {
             return dimensionSize.clone();
         }
 
-        /**
-         * Get the underlying storage array.
-         *
-         * @return underlying storage array
-         */
+        
         public Object getArray() {
             return multiDimensionalComplexArray;
         }
 
-        /** {@inheritDoc} */
+        
         @Override
         public Object clone() {
             MultiDimensionalComplexMatrix mdcm =
@@ -639,11 +490,7 @@ public class FastFourierTransformer implements Serializable {
             return mdcm;
         }
 
-        /**
-         * Copy contents of current array into mdcm.
-         *
-         * @param mdcm array where to copy data
-         */
+        
         private void clone(MultiDimensionalComplexMatrix mdcm) {
 
             int[] vector = new int[dimensionSize.length];

@@ -14,7 +14,5 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/**
- * Clustering algorithms.
- */
+
 package org.apache.lucene.util.hnsw.math.ml.clustering;

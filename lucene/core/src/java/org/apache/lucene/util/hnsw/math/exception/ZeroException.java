@@ -19,29 +19,18 @@ package org.apache.lucene.util.hnsw.math.exception;
 import org.apache.lucene.util.hnsw.math.exception.util.Localizable;
 import org.apache.lucene.util.hnsw.math.exception.util.LocalizedFormats;
 
-/**
- * Exception to be thrown when zero is provided where it is not allowed.
- *
- * @since 2.2
- */
+
 public class ZeroException extends MathIllegalNumberException {
 
-    /** Serializable version identifier */
+    
     private static final long serialVersionUID = -1960874856936000015L;
 
-    /**
-     * Construct the exception.
-     */
+    
     public ZeroException() {
         this(LocalizedFormats.ZERO_NOT_ALLOWED);
     }
 
-    /**
-     * Construct the exception with a specific context.
-     *
-     * @param specific Specific context pattern.
-     * @param arguments Arguments.
-     */
+    
     public ZeroException(Localizable specific, Object ... arguments) {
         super(specific, INTEGER_ZERO, arguments);
     }

@@ -14,10 +14,5 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/**
- *
- *     Univariate real polynomials implementations, seen as differentiable
- *     univariate real functions.
- *
- */
+
 package org.apache.lucene.util.hnsw.math.analysis.polynomials;

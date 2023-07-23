@@ -21,62 +21,15 @@ import org.apache.lucene.util.hnsw.math.exception.OutOfRangeException;
 import org.apache.lucene.util.hnsw.math.util.ContinuedFraction;
 import org.apache.lucene.util.hnsw.math.util.FastMath;
 
-/**
- * <p>
- * This is a utility class that provides computation methods related to the
- * Beta family of functions.
- * </p>
- * <p>
- * Implementation of {@link #logBeta(double, double)} is based on the
- * algorithms described in
- * <ul>
- * <li><a href="http://dx.doi.org/10.1145/22721.23109">Didonato and Morris
- *     (1986)</a>, <em>Computation of the Incomplete Gamma Function Ratios
- *     and their Inverse</em>, TOMS 12(4), 377-393,</li>
- * <li><a href="http://dx.doi.org/10.1145/131766.131776">Didonato and Morris
- *     (1992)</a>, <em>Algorithm 708: Significant Digit Computation of the
- *     Incomplete Beta Function Ratios</em>, TOMS 18(3), 360-373,</li>
- * </ul>
- * and implemented in the
- * <a href="http://www.dtic.mil/docs/citations/ADA476840">NSWC Library of Mathematical Functions</a>,
- * available
- * <a href="http://www.ualberta.ca/CNS/RESEARCH/Software/NumericalNSWC/site.html">here</a>.
- * This library is "approved for public release", and the
- * <a href="http://www.dtic.mil/dtic/pdf/announcements/CopyrightGuidance.pdf">Copyright guidance</a>
- * indicates that unless otherwise stated in the code, all FORTRAN functions in
- * this library are license free. Since no such notice appears in the code these
- * functions can safely be ported to Commons-Math.
- * </p>
- *
- *
- */
+
 public class Beta {
-    /** Maximum allowed numerical error. */
+    
     private static final double DEFAULT_EPSILON = 1E-14;
 
-    /** The constant value of ½log 2π. */
+    
     private static final double HALF_LOG_TWO_PI = .9189385332046727;
 
-    /**
-     * <p>
-     * The coefficients of the series expansion of the Δ function. This function
-     * is defined as follows
-     * </p>
-     * <center>Δ(x) = log Γ(x) - (x - 0.5) log a + a - 0.5 log 2π,</center>
-     * <p>
-     * see equation (23) in Didonato and Morris (1992). The series expansion,
-     * which applies for x ≥ 10, reads
-     * </p>
-     * <pre>
-     *                 14
-     *                ====
-     *             1  \                2 n
-     *     Δ(x) = ---  >    d  (10 / x)
-     *             x  /      n
-     *                ====
-     *                n = 0
-     * <pre>
-     */
+    
     private static final double[] DELTA = {
         .833333333333333333333333333333E-01,
         -.277777777777777777777777752282E-04,
@@ -95,89 +48,29 @@ public class Beta {
         .171348014966398575409015466667E-22
     };
 
-    /**
-     * Default constructor.  Prohibit instantiation.
-     */
+    
     private Beta() {}
 
-    /**
-     * Returns the
-     * <a href="http://mathworld.wolfram.com/RegularizedBetaFunction.html">
-     * regularized beta function</a> I(x, a, b).
-     *
-     * @param x Value.
-     * @param a Parameter {@code a}.
-     * @param b Parameter {@code b}.
-     * @return the regularized beta function I(x, a, b).
-     * @throws org.apache.lucene.util.hnsw.math.exception.MaxCountExceededException
-     * if the algorithm fails to converge.
-     */
+    
     public static double regularizedBeta(double x, double a, double b) {
         return regularizedBeta(x, a, b, DEFAULT_EPSILON, Integer.MAX_VALUE);
     }
 
-    /**
-     * Returns the
-     * <a href="http://mathworld.wolfram.com/RegularizedBetaFunction.html">
-     * regularized beta function</a> I(x, a, b).
-     *
-     * @param x Value.
-     * @param a Parameter {@code a}.
-     * @param b Parameter {@code b}.
-     * @param epsilon When the absolute value of the nth item in the
-     * series is less than epsilon the approximation ceases to calculate
-     * further elements in the series.
-     * @return the regularized beta function I(x, a, b)
-     * @throws org.apache.lucene.util.hnsw.math.exception.MaxCountExceededException
-     * if the algorithm fails to converge.
-     */
+    
     public static double regularizedBeta(double x,
                                          double a, double b,
                                          double epsilon) {
         return regularizedBeta(x, a, b, epsilon, Integer.MAX_VALUE);
     }
 
-    /**
-     * Returns the regularized beta function I(x, a, b).
-     *
-     * @param x the value.
-     * @param a Parameter {@code a}.
-     * @param b Parameter {@code b}.
-     * @param maxIterations Maximum number of "iterations" to complete.
-     * @return the regularized beta function I(x, a, b)
-     * @throws org.apache.lucene.util.hnsw.math.exception.MaxCountExceededException
-     * if the algorithm fails to converge.
-     */
+    
     public static double regularizedBeta(double x,
                                          double a, double b,
                                          int maxIterations) {
         return regularizedBeta(x, a, b, DEFAULT_EPSILON, maxIterations);
     }
 
-    /**
-     * Returns the regularized beta function I(x, a, b).
-     *
-     * The implementation of this method is based on:
-     * <ul>
-     * <li>
-     * <a href="http://mathworld.wolfram.com/RegularizedBetaFunction.html">
-     * Regularized Beta Function</a>.</li>
-     * <li>
-     * <a href="http://functions.wolfram.com/06.21.10.0001.01">
-     * Regularized Beta Function</a>.</li>
-     * </ul>
-     *
-     * @param x the value.
-     * @param a Parameter {@code a}.
-     * @param b Parameter {@code b}.
-     * @param epsilon When the absolute value of the nth item in the
-     * series is less than epsilon the approximation ceases to calculate
-     * further elements in the series.
-     * @param maxIterations Maximum number of "iterations" to complete.
-     * @return the regularized beta function I(x, a, b)
-     * @throws org.apache.lucene.util.hnsw.math.exception.MaxCountExceededException
-     * if the algorithm fails to converge.
-     */
+    
     public static double regularizedBeta(double x,
                                          final double a, final double b,
                                          double epsilon, int maxIterations) {
@@ -197,7 +90,7 @@ public class Beta {
         } else {
             ContinuedFraction fraction = new ContinuedFraction() {
 
-                /** {@inheritDoc} */
+                
                 @Override
                 protected double getB(int n, double x) {
                     double ret;
@@ -214,7 +107,7 @@ public class Beta {
                     return ret;
                 }
 
-                /** {@inheritDoc} */
+                
                 @Override
                 protected double getA(int n, double x) {
                     return 1.0;
@@ -228,25 +121,7 @@ public class Beta {
         return ret;
     }
 
-    /**
-     * Returns the natural logarithm of the beta function B(a, b).
-     *
-     * The implementation of this method is based on:
-     * <ul>
-     * <li><a href="http://mathworld.wolfram.com/BetaFunction.html">
-     * Beta Function</a>, equation (1).</li>
-     * </ul>
-     *
-     * @param a Parameter {@code a}.
-     * @param b Parameter {@code b}.
-     * @param epsilon This parameter is ignored.
-     * @param maxIterations This parameter is ignored.
-     * @return log(B(a, b)).
-     * @deprecated as of version 3.1, this method is deprecated as the
-     * computation of the beta function is no longer iterative; it will be
-     * removed in version 4.0. Current implementation of this method
-     * internally calls {@link #logBeta(double, double)}.
-     */
+    
     @Deprecated
     public static double logBeta(double a, double b,
                                  double epsilon,
@@ -256,18 +131,7 @@ public class Beta {
     }
 
 
-    /**
-     * Returns the value of log Γ(a + b) for 1 ≤ a, b ≤ 2. Based on the
-     * <em>NSWC Library of Mathematics Subroutines</em> double precision
-     * implementation, {@code DGSMLN}. In {@code BetaTest.testLogGammaSum()},
-     * this private method is accessed through reflection.
-     *
-     * @param a First argument.
-     * @param b Second argument.
-     * @return the value of {@code log(Gamma(a + b))}.
-     * @throws OutOfRangeException if {@code a} or {@code b} is lower than
-     * {@code 1.0} or greater than {@code 2.0}.
-     */
+    
     private static double logGammaSum(final double a, final double b)
         throws OutOfRangeException {
 
@@ -288,18 +152,7 @@ public class Beta {
         }
     }
 
-    /**
-     * Returns the value of log[Γ(b) / Γ(a + b)] for a ≥ 0 and b ≥ 10. Based on
-     * the <em>NSWC Library of Mathematics Subroutines</em> double precision
-     * implementation, {@code DLGDIV}. In
-     * {@code BetaTest.testLogGammaMinusLogGammaSum()}, this private method is
-     * accessed through reflection.
-     *
-     * @param a First argument.
-     * @param b Second argument.
-     * @return the value of {@code log(Gamma(b) / Gamma(a + b))}.
-     * @throws NumberIsTooSmallException if {@code a < 0.0} or {@code b < 10.0}.
-     */
+    
     private static double logGammaMinusLogGammaSum(final double a,
                                                    final double b)
         throws NumberIsTooSmallException {
@@ -330,16 +183,7 @@ public class Beta {
         return u <= v ? (w - u) - v : (w - v) - u;
     }
 
-    /**
-     * Returns the value of Δ(b) - Δ(a + b), with 0 ≤ a ≤ b and b ≥ 10. Based
-     * on equations (26), (27) and (28) in Didonato and Morris (1992).
-     *
-     * @param a First argument.
-     * @param b Second argument.
-     * @return the value of {@code Delta(b) - Delta(a + b)}
-     * @throws OutOfRangeException if {@code a < 0} or {@code a > b}
-     * @throws NumberIsTooSmallException if {@code b < 10}
-     */
+    
     private static double deltaMinusDeltaSum(final double a,
                                              final double b)
         throws OutOfRangeException, NumberIsTooSmallException {
@@ -375,18 +219,7 @@ public class Beta {
         return w * p / b;
     }
 
-    /**
-     * Returns the value of Δ(p) + Δ(q) - Δ(p + q), with p, q ≥ 10. Based on
-     * the <em>NSWC Library of Mathematics Subroutines</em> double precision
-     * implementation, {@code DBCORR}. In
-     * {@code BetaTest.testSumDeltaMinusDeltaSum()}, this private method is
-     * accessed through reflection.
-     *
-     * @param p First argument.
-     * @param q Second argument.
-     * @return the value of {@code Delta(p) + Delta(q) - Delta(p + q)}.
-     * @throws NumberIsTooSmallException if {@code p < 10.0} or {@code q < 10.0}.
-     */
+    
     private static double sumDeltaMinusDeltaSum(final double p,
                                                 final double q) {
 
@@ -408,16 +241,7 @@ public class Beta {
         return z / a + deltaMinusDeltaSum(a, b);
     }
 
-    /**
-     * Returns the value of log B(p, q) for 0 ≤ x ≤ 1 and p, q > 0. Based on the
-     * <em>NSWC Library of Mathematics Subroutines</em> implementation,
-     * {@code DBETLN}.
-     *
-     * @param p First argument.
-     * @param q Second argument.
-     * @return the value of {@code log(Beta(p, q))}, {@code NaN} if
-     * {@code p <= 0} or {@code q <= 0}.
-     */
+    
     public static double logBeta(final double p, final double q) {
         if (Double.isNaN(p) || Double.isNaN(q) || (p <= 0.0) || (q <= 0.0)) {
             return Double.NaN;

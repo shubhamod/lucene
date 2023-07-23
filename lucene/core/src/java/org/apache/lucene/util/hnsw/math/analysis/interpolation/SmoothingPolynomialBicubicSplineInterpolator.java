@@ -28,49 +28,31 @@ import org.apache.lucene.util.hnsw.math.fitting.PolynomialFitter;
 import org.apache.lucene.util.hnsw.math.analysis.polynomials.PolynomialFunction;
 import org.apache.lucene.util.hnsw.math.optim.SimpleVectorValueChecker;
 
-/**
- * Generates a bicubic interpolation function.
- * Prior to generating the interpolating function, the input is smoothed using
- * polynomial fitting.
- *
- * @since 2.2
- * @deprecated To be removed in 4.0 (see MATH-1166).
- */
+
 @Deprecated
 public class SmoothingPolynomialBicubicSplineInterpolator
     extends BicubicSplineInterpolator {
-    /** Fitter for x. */
+    
     private final PolynomialFitter xFitter;
-    /** Degree of the fitting polynomial. */
+    
     private final int xDegree;
-    /** Fitter for y. */
+    
     private final PolynomialFitter yFitter;
-    /** Degree of the fitting polynomial. */
+    
     private final int yDegree;
 
-    /**
-     * Default constructor. The degree of the fitting polynomials is set to 3.
-     */
+    
     public SmoothingPolynomialBicubicSplineInterpolator() {
         this(3);
     }
 
-    /**
-     * @param degree Degree of the polynomial fitting functions.
-     * @exception NotPositiveException if degree is not positive
-     */
+    
     public SmoothingPolynomialBicubicSplineInterpolator(int degree)
         throws NotPositiveException {
         this(degree, degree);
     }
 
-    /**
-     * @param xDegree Degree of the polynomial fitting functions along the
-     * x-dimension.
-     * @param yDegree Degree of the polynomial fitting functions along the
-     * y-dimension.
-     * @exception NotPositiveException if degrees are not positive
-     */
+    
     public SmoothingPolynomialBicubicSplineInterpolator(int xDegree, int yDegree)
         throws NotPositiveException {
         if (xDegree < 0) {
@@ -90,9 +72,7 @@ public class SmoothingPolynomialBicubicSplineInterpolator
         yFitter = new PolynomialFitter(new GaussNewtonOptimizer(false, checker));
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    
     @Override
     public BicubicSplineInterpolatingFunction interpolate(final double[] xval,
                                                           final double[] yval,

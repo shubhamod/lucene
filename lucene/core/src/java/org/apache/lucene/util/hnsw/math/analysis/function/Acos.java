@@ -24,28 +24,20 @@ import org.apache.lucene.util.hnsw.math.analysis.differentiation.DerivativeStruc
 import org.apache.lucene.util.hnsw.math.analysis.differentiation.UnivariateDifferentiableFunction;
 import org.apache.lucene.util.hnsw.math.util.FastMath;
 
-/**
- * Arc-cosine function.
- *
- * @since 3.0
- */
+
 public class Acos implements UnivariateDifferentiableFunction, DifferentiableUnivariateFunction {
-    /** {@inheritDoc} */
+    
     public double value(double x) {
         return FastMath.acos(x);
     }
 
-    /** {@inheritDoc}
-     * @deprecated as of 3.1, replaced by {@link #value(DerivativeStructure)}
-     */
+    
     @Deprecated
     public UnivariateFunction derivative() {
         return FunctionUtils.toDifferentiableUnivariateFunction(this).derivative();
     }
 
-    /** {@inheritDoc}
-     * @since 3.1
-     */
+    
     public DerivativeStructure value(final DerivativeStructure t) {
         return t.acos();
     }

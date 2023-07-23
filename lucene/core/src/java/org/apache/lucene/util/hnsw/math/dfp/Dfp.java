@@ -23,162 +23,88 @@ import org.apache.lucene.util.hnsw.math.RealFieldElement;
 import org.apache.lucene.util.hnsw.math.exception.DimensionMismatchException;
 import org.apache.lucene.util.hnsw.math.util.FastMath;
 
-/**
- *  Decimal floating point library for Java
- *
- *  <p>Another floating point class.  This one is built using radix 10000
- *  which is 10<sup>4</sup>, so its almost decimal.</p>
- *
- *  <p>The design goals here are:
- *  <ol>
- *    <li>Decimal math, or close to it</li>
- *    <li>Settable precision (but no mix between numbers using different settings)</li>
- *    <li>Portability.  Code should be kept as portable as possible.</li>
- *    <li>Performance</li>
- *    <li>Accuracy  - Results should always be +/- 1 ULP for basic
- *         algebraic operation</li>
- *    <li>Comply with IEEE 854-1987 as much as possible.
- *         (See IEEE 854-1987 notes below)</li>
- *  </ol></p>
- *
- *  <p>Trade offs:
- *  <ol>
- *    <li>Memory foot print.  I'm using more memory than necessary to
- *         represent numbers to get better performance.</li>
- *    <li>Digits are bigger, so rounding is a greater loss.  So, if you
- *         really need 12 decimal digits, better use 4 base 10000 digits
- *         there can be one partially filled.</li>
- *  </ol></p>
- *
- *  <p>Numbers are represented  in the following form:
- *  <pre>
- *  n  =  sign &times; mant &times; (radix)<sup>exp</sup>;</p>
- *  </pre>
- *  where sign is &plusmn;1, mantissa represents a fractional number between
- *  zero and one.  mant[0] is the least significant digit.
- *  exp is in the range of -32767 to 32768</p>
- *
- *  <p>IEEE 854-1987  Notes and differences</p>
- *
- *  <p>IEEE 854 requires the radix to be either 2 or 10.  The radix here is
- *  10000, so that requirement is not met, but  it is possible that a
- *  subclassed can be made to make it behave as a radix 10
- *  number.  It is my opinion that if it looks and behaves as a radix
- *  10 number then it is one and that requirement would be met.</p>
- *
- *  <p>The radix of 10000 was chosen because it should be faster to operate
- *  on 4 decimal digits at once instead of one at a time.  Radix 10 behavior
- *  can be realized by adding an additional rounding step to ensure that
- *  the number of decimal digits represented is constant.</p>
- *
- *  <p>The IEEE standard specifically leaves out internal data encoding,
- *  so it is reasonable to conclude that such a subclass of this radix
- *  10000 system is merely an encoding of a radix 10 system.</p>
- *
- *  <p>IEEE 854 also specifies the existence of "sub-normal" numbers.  This
- *  class does not contain any such entities.  The most significant radix
- *  10000 digit is always non-zero.  Instead, we support "gradual underflow"
- *  by raising the underflow flag for numbers less with exponent less than
- *  expMin, but don't flush to zero until the exponent reaches MIN_EXP-digits.
- *  Thus the smallest number we can represent would be:
- *  1E(-(MIN_EXP-digits-1)*4),  eg, for digits=5, MIN_EXP=-32767, that would
- *  be 1e-131092.</p>
- *
- *  <p>IEEE 854 defines that the implied radix point lies just to the right
- *  of the most significant digit and to the left of the remaining digits.
- *  This implementation puts the implied radix point to the left of all
- *  digits including the most significant one.  The most significant digit
- *  here is the one just to the right of the radix point.  This is a fine
- *  detail and is really only a matter of definition.  Any side effects of
- *  this can be rendered invisible by a subclass.</p>
- * @see DfpField
- * @since 2.2
- */
+
 public class Dfp implements RealFieldElement<Dfp> {
 
-    /** The radix, or base of this system.  Set to 10000 */
+    
     public static final int RADIX = 10000;
 
-    /** The minimum exponent before underflow is signaled.  Flush to zero
-     *  occurs at minExp-DIGITS */
+    
     public static final int MIN_EXP = -32767;
 
-    /** The maximum exponent before overflow is signaled and results flushed
-     *  to infinity */
+    
     public static final int MAX_EXP =  32768;
 
-    /** The amount under/overflows are scaled by before going to trap handler */
+    
     public static final int ERR_SCALE = 32760;
 
-    /** Indicator value for normal finite numbers. */
+    
     public static final byte FINITE = 0;
 
-    /** Indicator value for Infinity. */
+    
     public static final byte INFINITE = 1;
 
-    /** Indicator value for signaling NaN. */
+    
     public static final byte SNAN = 2;
 
-    /** Indicator value for quiet NaN. */
+    
     public static final byte QNAN = 3;
 
-    /** String for NaN representation. */
+    
     private static final String NAN_STRING = "NaN";
 
-    /** String for positive infinity representation. */
+    
     private static final String POS_INFINITY_STRING = "Infinity";
 
-    /** String for negative infinity representation. */
+    
     private static final String NEG_INFINITY_STRING = "-Infinity";
 
-    /** Name for traps triggered by addition. */
+    
     private static final String ADD_TRAP = "add";
 
-    /** Name for traps triggered by multiplication. */
+    
     private static final String MULTIPLY_TRAP = "multiply";
 
-    /** Name for traps triggered by division. */
+    
     private static final String DIVIDE_TRAP = "divide";
 
-    /** Name for traps triggered by square root. */
+    
     private static final String SQRT_TRAP = "sqrt";
 
-    /** Name for traps triggered by alignment. */
+    
     private static final String ALIGN_TRAP = "align";
 
-    /** Name for traps triggered by truncation. */
+    
     private static final String TRUNC_TRAP = "trunc";
 
-    /** Name for traps triggered by nextAfter. */
+    
     private static final String NEXT_AFTER_TRAP = "nextAfter";
 
-    /** Name for traps triggered by lessThan. */
+    
     private static final String LESS_THAN_TRAP = "lessThan";
 
-    /** Name for traps triggered by greaterThan. */
+    
     private static final String GREATER_THAN_TRAP = "greaterThan";
 
-    /** Name for traps triggered by newInstance. */
+    
     private static final String NEW_INSTANCE_TRAP = "newInstance";
 
-    /** Mantissa. */
+    
     protected int[] mant;
 
-    /** Sign bit: 1 for positive, -1 for negative. */
+    
     protected byte sign;
 
-    /** Exponent. */
+    
     protected int exp;
 
-    /** Indicator for non-finite / non-number values. */
+    
     protected byte nans;
 
-    /** Factory building similar Dfp's. */
+    
     private final DfpField field;
 
-    /** Makes an instance with a value of zero.
-     * @param field field to which this instance belongs
-     */
+    
     protected Dfp(final DfpField field) {
         mant = new int[field.getRadixDigits()];
         sign = 1;
@@ -187,26 +113,17 @@ public class Dfp implements RealFieldElement<Dfp> {
         this.field = field;
     }
 
-    /** Create an instance from a byte value.
-     * @param field field to which this instance belongs
-     * @param x value to convert to an instance
-     */
+    
     protected Dfp(final DfpField field, byte x) {
         this(field, (long) x);
     }
 
-    /** Create an instance from an int value.
-     * @param field field to which this instance belongs
-     * @param x value to convert to an instance
-     */
+    
     protected Dfp(final DfpField field, int x) {
         this(field, (long) x);
     }
 
-    /** Create an instance from a long value.
-     * @param field field to which this instance belongs
-     * @param x value to convert to an instance
-     */
+    
     protected Dfp(final DfpField field, long x) {
 
         // initialize as if 0
@@ -250,10 +167,7 @@ public class Dfp implements RealFieldElement<Dfp> {
         }
     }
 
-    /** Create an instance from a double value.
-     * @param field field to which this instance belongs
-     * @param x value to convert to an instance
-     */
+    
     protected Dfp(final DfpField field, double x) {
 
         // initialize as if 0
@@ -317,9 +231,7 @@ public class Dfp implements RealFieldElement<Dfp> {
 
     }
 
-    /** Copy constructor.
-     * @param d instance to copy
-     */
+    
     public Dfp(final Dfp d) {
         mant  = d.mant.clone();
         sign  = d.sign;
@@ -328,10 +240,7 @@ public class Dfp implements RealFieldElement<Dfp> {
         field = d.field;
     }
 
-    /** Create an instance from a String representation.
-     * @param field field to which this instance belongs
-     * @param s string representation of the instance
-     */
+    
     protected Dfp(final DfpField field, final String s) {
 
         // initialize as if 0
@@ -533,12 +442,7 @@ public class Dfp implements RealFieldElement<Dfp> {
 
     }
 
-    /** Creates an instance with a non-finite value.
-     * @param field field to which this instance belongs
-     * @param sign sign of the Dfp to create
-     * @param nans code of the value, must be one of {@link #INFINITE},
-     * {@link #SNAN},  {@link #QNAN}
-     */
+    
     protected Dfp(final DfpField field, final byte sign, final byte nans) {
         this.field = field;
         this.mant    = new int[field.getRadixDigits()];
@@ -547,51 +451,32 @@ public class Dfp implements RealFieldElement<Dfp> {
         this.nans    = nans;
     }
 
-    /** Create an instance with a value of 0.
-     * Use this internally in preference to constructors to facilitate subclasses
-     * @return a new instance with a value of 0
-     */
+    
     public Dfp newInstance() {
         return new Dfp(getField());
     }
 
-    /** Create an instance from a byte value.
-     * @param x value to convert to an instance
-     * @return a new instance with value x
-     */
+    
     public Dfp newInstance(final byte x) {
         return new Dfp(getField(), x);
     }
 
-    /** Create an instance from an int value.
-     * @param x value to convert to an instance
-     * @return a new instance with value x
-     */
+    
     public Dfp newInstance(final int x) {
         return new Dfp(getField(), x);
     }
 
-    /** Create an instance from a long value.
-     * @param x value to convert to an instance
-     * @return a new instance with value x
-     */
+    
     public Dfp newInstance(final long x) {
         return new Dfp(getField(), x);
     }
 
-    /** Create an instance from a double value.
-     * @param x value to convert to an instance
-     * @return a new instance with value x
-     */
+    
     public Dfp newInstance(final double x) {
         return new Dfp(getField(), x);
     }
 
-    /** Create an instance by copying an existing one.
-     * Use this internally in preference to constructors to facilitate subclasses.
-     * @param d instance to copy
-     * @return a new instance with the same value as d
-     */
+    
     public Dfp newInstance(final Dfp d) {
 
         // make sure we don't mix number with different precision
@@ -606,66 +491,42 @@ public class Dfp implements RealFieldElement<Dfp> {
 
     }
 
-    /** Create an instance from a String representation.
-     * Use this internally in preference to constructors to facilitate subclasses.
-     * @param s string representation of the instance
-     * @return a new instance parsed from specified string
-     */
+    
     public Dfp newInstance(final String s) {
         return new Dfp(field, s);
     }
 
-    /** Creates an instance with a non-finite value.
-     * @param sig sign of the Dfp to create
-     * @param code code of the value, must be one of {@link #INFINITE},
-     * {@link #SNAN},  {@link #QNAN}
-     * @return a new instance with a non-finite value
-     */
+    
     public Dfp newInstance(final byte sig, final byte code) {
         return field.newDfp(sig, code);
     }
 
-    /** Get the {@link org.apache.lucene.util.hnsw.math.Field Field} (really a {@link DfpField}) to which the instance belongs.
-     * <p>
-     * The field is linked to the number of digits and acts as a factory
-     * for {@link Dfp} instances.
-     * </p>
-     * @return {@link org.apache.lucene.util.hnsw.math.Field Field} (really a {@link DfpField}) to which the instance belongs
-     */
+    
     public DfpField getField() {
         return field;
     }
 
-    /** Get the number of radix digits of the instance.
-     * @return number of radix digits
-     */
+    
     public int getRadixDigits() {
         return field.getRadixDigits();
     }
 
-    /** Get the constant 0.
-     * @return a Dfp with value zero
-     */
+    
     public Dfp getZero() {
         return field.getZero();
     }
 
-    /** Get the constant 1.
-     * @return a Dfp with value one
-     */
+    
     public Dfp getOne() {
         return field.getOne();
     }
 
-    /** Get the constant 2.
-     * @return a Dfp with value two
-     */
+    
     public Dfp getTwo() {
         return field.getTwo();
     }
 
-    /** Shift the mantissa left, and adjust the exponent to compensate.
-     */
+    
     protected void shiftLeft() {
         for (int i = mant.length - 1; i > 0; i--) {
             mant[i] = mant[i-1];
@@ -676,8 +537,7 @@ public class Dfp implements RealFieldElement<Dfp> {
 
     /* Note that shiftRight() does not call round() as that round() itself
      uses shiftRight() */
-    /** Shift the mantissa right, and adjust the exponent to compensate.
-     */
+    
     protected void shiftRight() {
         for (int i = 0; i < mant.length - 1; i++) {
             mant[i] = mant[i+1];
@@ -686,14 +546,7 @@ public class Dfp implements RealFieldElement<Dfp> {
         exp++;
     }
 
-    /** Make our exp equal to the supplied one, this may cause rounding.
-     *  Also causes de-normalized numbers.  These numbers are generally
-     *  dangerous because most routines assume normalized numbers.
-     *  Align doesn't round, so it will return the last digit destroyed
-     *  by shifting right.
-     *  @param e desired exponent
-     *  @return last digit destroyed by shifting right
-     */
+    
     protected int align(int e) {
         int lostdigit = 0;
         boolean inexact = false;
@@ -747,10 +600,7 @@ public class Dfp implements RealFieldElement<Dfp> {
 
     }
 
-    /** Check if instance is less than x.
-     * @param x number to check instance against
-     * @return true if instance is less than x and neither are NaN, false otherwise
-     */
+    
     public boolean lessThan(final Dfp x) {
 
         // make sure we don't mix number with different precision
@@ -772,10 +622,7 @@ public class Dfp implements RealFieldElement<Dfp> {
         return compare(this, x) < 0;
     }
 
-    /** Check if instance is greater than x.
-     * @param x number to check instance against
-     * @return true if instance is greater than x and neither are NaN, false otherwise
-     */
+    
     public boolean greaterThan(final Dfp x) {
 
         // make sure we don't mix number with different precision
@@ -797,9 +644,7 @@ public class Dfp implements RealFieldElement<Dfp> {
         return compare(this, x) > 0;
     }
 
-    /** Check if instance is less than or equal to 0.
-     * @return true if instance is not NaN and less than or equal to 0, false otherwise
-     */
+    
     public boolean negativeOrNull() {
 
         if (isNaN()) {
@@ -812,9 +657,7 @@ public class Dfp implements RealFieldElement<Dfp> {
 
     }
 
-    /** Check if instance is strictly less than 0.
-     * @return true if instance is not NaN and less than or equal to 0, false otherwise
-     */
+    
     public boolean strictlyNegative() {
 
         if (isNaN()) {
@@ -827,9 +670,7 @@ public class Dfp implements RealFieldElement<Dfp> {
 
     }
 
-    /** Check if instance is greater than or equal to 0.
-     * @return true if instance is not NaN and greater than or equal to 0, false otherwise
-     */
+    
     public boolean positiveOrNull() {
 
         if (isNaN()) {
@@ -842,9 +683,7 @@ public class Dfp implements RealFieldElement<Dfp> {
 
     }
 
-    /** Check if instance is strictly greater than 0.
-     * @return true if instance is not NaN and greater than or equal to 0, false otherwise
-     */
+    
     public boolean strictlyPositive() {
 
         if (isNaN()) {
@@ -857,33 +696,24 @@ public class Dfp implements RealFieldElement<Dfp> {
 
     }
 
-    /** Get the absolute value of instance.
-     * @return absolute value of instance
-     * @since 3.2
-     */
+    
     public Dfp abs() {
         Dfp result = newInstance(this);
         result.sign = 1;
         return result;
     }
 
-    /** Check if instance is infinite.
-     * @return true if instance is infinite
-     */
+    
     public boolean isInfinite() {
         return nans == INFINITE;
     }
 
-    /** Check if instance is not a number.
-     * @return true if instance is not a number
-     */
+    
     public boolean isNaN() {
         return (nans == QNAN) || (nans == SNAN);
     }
 
-    /** Check if instance is equal to zero.
-     * @return true if instance is equal to zero
-     */
+    
     public boolean isZero() {
 
         if (isNaN()) {
@@ -896,10 +726,7 @@ public class Dfp implements RealFieldElement<Dfp> {
 
     }
 
-    /** Check if instance is equal to x.
-     * @param other object to check instance against
-     * @return true if instance is equal to x and neither are NaN, false otherwise
-     */
+    
     @Override
     public boolean equals(final Object other) {
 
@@ -916,19 +743,13 @@ public class Dfp implements RealFieldElement<Dfp> {
 
     }
 
-    /**
-     * Gets a hashCode for the instance.
-     * @return a hash code value for this object
-     */
+    
     @Override
     public int hashCode() {
         return 17 + (isZero() ? 0 : (sign << 8)) + (nans << 16) + exp + Arrays.hashCode(mant);
     }
 
-    /** Check if instance is not equal to x.
-     * @param x number to check instance against
-     * @return true if instance is not equal to x and neither are NaN, false otherwise
-     */
+    
     public boolean unequal(final Dfp x) {
         if (isNaN() || x.isNaN() || field.getRadixDigits() != x.field.getRadixDigits()) {
             return false;
@@ -937,12 +758,7 @@ public class Dfp implements RealFieldElement<Dfp> {
         return greaterThan(x) || lessThan(x);
     }
 
-    /** Compare two instances.
-     * @param a first instance in comparison
-     * @param b second instance in comparison
-     * @return -1 if a<b, 1 if a>b and 0 if a==b
-     *  Note this method does not properly handle NaNs or numbers with different precision.
-     */
+    
     private static int compare(final Dfp a, final Dfp b) {
         // Ignore the sign of zero
         if (a.mant[a.mant.length - 1] == 0 && b.mant[b.mant.length - 1] == 0 &&
@@ -997,39 +813,22 @@ public class Dfp implements RealFieldElement<Dfp> {
 
     }
 
-    /** Round to nearest integer using the round-half-even method.
-     *  That is round to nearest integer unless both are equidistant.
-     *  In which case round to the even one.
-     *  @return rounded value
-     * @since 3.2
-     */
+    
     public Dfp rint() {
         return trunc(DfpField.RoundingMode.ROUND_HALF_EVEN);
     }
 
-    /** Round to an integer using the round floor mode.
-     * That is, round toward -Infinity
-     *  @return rounded value
-     * @since 3.2
-     */
+    
     public Dfp floor() {
         return trunc(DfpField.RoundingMode.ROUND_FLOOR);
     }
 
-    /** Round to an integer using the round ceil mode.
-     * That is, round toward +Infinity
-     *  @return rounded value
-     * @since 3.2
-     */
+    
     public Dfp ceil() {
         return trunc(DfpField.RoundingMode.ROUND_CEIL);
     }
 
-    /** Returns the IEEE remainder.
-     * @param d divisor
-     * @return this less n &times; d, where n is the integer closest to this/d
-     * @since 3.2
-     */
+    
     public Dfp remainder(final Dfp d) {
 
         final Dfp result = this.subtract(this.divide(d).rint().multiply(d));
@@ -1043,10 +842,7 @@ public class Dfp implements RealFieldElement<Dfp> {
 
     }
 
-    /** Does the integer conversions with the specified rounding.
-     * @param rmode rounding mode to use
-     * @return truncated value
-     */
+    
     protected Dfp trunc(final DfpField.RoundingMode rmode) {
         boolean changed = false;
 
@@ -1116,7 +912,7 @@ public class Dfp implements RealFieldElement<Dfp> {
                         result = result.add(a);
                     }
 
-                    /** If exactly equal to 1/2 and odd then increment */
+                    
                     if (a.equals(half) && result.exp > 0 && (result.mant[mant.length-result.exp]&1) != 0) {
                         a = newInstance(getOne());
                         a.sign = sign;
@@ -1133,10 +929,7 @@ public class Dfp implements RealFieldElement<Dfp> {
         return result;
     }
 
-    /** Convert this to an integer.
-     * If greater than 2147483647, it returns 2147483647. If less than -2147483648 it returns -2147483648.
-     * @return converted number
-     */
+    
     public int intValue() {
         Dfp rounded;
         int result = 0;
@@ -1162,29 +955,19 @@ public class Dfp implements RealFieldElement<Dfp> {
         return result;
     }
 
-    /** Get the exponent of the greatest power of 10000 that is
-     *  less than or equal to the absolute value of this.  I.E.  if
-     *  this is 10<sup>6</sup> then log10K would return 1.
-     *  @return integer base 10000 logarithm
-     */
+    
     public int log10K() {
         return exp - 1;
     }
 
-    /** Get the specified  power of 10000.
-     * @param e desired power
-     * @return 10000<sup>e</sup>
-     */
+    
     public Dfp power10K(final int e) {
         Dfp d = newInstance(getOne());
         d.exp = e + 1;
         return d;
     }
 
-    /** Get the exponent of the greatest power of 10 that is less than or equal to abs(this).
-     *  @return integer base 10 logarithm
-     * @since 3.2
-     */
+    
     public int intLog10()  {
         if (mant[mant.length-1] > 1000) {
             return exp * 4 - 1;
@@ -1198,10 +981,7 @@ public class Dfp implements RealFieldElement<Dfp> {
         return exp * 4 - 4;
     }
 
-    /** Return the specified  power of 10.
-     * @param e desired power
-     * @return 10<sup>e</sup>
-     */
+    
     public Dfp power10(final int e) {
         Dfp d = newInstance(getOne());
 
@@ -1227,12 +1007,7 @@ public class Dfp implements RealFieldElement<Dfp> {
         return d;
     }
 
-    /** Negate the mantissa of this by computing the complement.
-     *  Leaves the sign bit unchanged, used internally by add.
-     *  Denormalized numbers are handled properly here.
-     *  @param extra ???
-     *  @return ???
-     */
+    
     protected int complement(int extra) {
 
         extra = RADIX-extra;
@@ -1251,10 +1026,7 @@ public class Dfp implements RealFieldElement<Dfp> {
         return extra;
     }
 
-    /** Add x to this.
-     * @param x number to add
-     * @return sum of this and x
-     */
+    
     public Dfp add(final Dfp x) {
 
         // make sure we don't mix number with different precision
@@ -1400,27 +1172,19 @@ public class Dfp implements RealFieldElement<Dfp> {
         return result;
     }
 
-    /** Returns a number that is this number with the sign bit reversed.
-     * @return the opposite of this
-     */
+    
     public Dfp negate() {
         Dfp result = newInstance(this);
         result.sign = (byte) - result.sign;
         return result;
     }
 
-    /** Subtract x from this.
-     * @param x number to subtract
-     * @return difference of this and a
-     */
+    
     public Dfp subtract(final Dfp x) {
         return add(x.negate());
     }
 
-    /** Round this given the next digit n using the current rounding mode.
-     * @param n ???
-     * @return the IEEE flag if an exception occurred
-     */
+    
     protected int round(int n) {
         boolean inc = false;
         switch (field.getRoundingMode()) {
@@ -1496,10 +1260,7 @@ public class Dfp implements RealFieldElement<Dfp> {
 
     }
 
-    /** Multiply this by x.
-     * @param x multiplicand
-     * @return product of this and x
-     */
+    
     public Dfp multiply(final Dfp x) {
 
         // make sure we don't mix number with different precision
@@ -1602,10 +1363,7 @@ public class Dfp implements RealFieldElement<Dfp> {
 
     }
 
-    /** Multiply this by a single digit x.
-     * @param x multiplicand
-     * @return product of this and x
-     */
+    
     public Dfp multiply(final int x) {
         if (x >= 0 && x < RADIX) {
             return multiplyFast(x);
@@ -1614,11 +1372,7 @@ public class Dfp implements RealFieldElement<Dfp> {
         }
     }
 
-    /** Multiply this by a single digit 0&lt;=x&lt;radix.
-     * There are speed advantages in this special case.
-     * @param x multiplicand
-     * @return product of this and x
-     */
+    
     private Dfp multiplyFast(final int x) {
         Dfp result = newInstance(this);
 
@@ -1677,10 +1431,7 @@ public class Dfp implements RealFieldElement<Dfp> {
         return result;
     }
 
-    /** Divide this by divisor.
-     * @param divisor divisor
-     * @return quotient of this by divisor
-     */
+    
     public Dfp divide(Dfp divisor) {
         int dividend[]; // current status of the dividend
         int quotient[]; // quotient
@@ -1891,11 +1642,7 @@ public class Dfp implements RealFieldElement<Dfp> {
         return result;
     }
 
-    /** Divide by a single digit less than radix.
-     *  Special case, so there are speed advantages. 0 &lt;= divisor &lt; radix
-     * @param divisor divisor
-     * @return quotient of this by divisor
-     */
+    
     public Dfp divide(int divisor) {
 
         // Handle special cases
@@ -1956,15 +1703,12 @@ public class Dfp implements RealFieldElement<Dfp> {
 
     }
 
-    /** {@inheritDoc} */
+    
     public Dfp reciprocal() {
         return field.getOne().divide(this);
     }
 
-    /** Compute the square root.
-     * @return square root of the instance
-     * @since 3.2
-     */
+    
     public Dfp sqrt() {
 
         // check for unusual cases
@@ -2058,9 +1802,7 @@ public class Dfp implements RealFieldElement<Dfp> {
 
     }
 
-    /** Get a string representation of the instance.
-     * @return string representation of the instance
-     */
+    
     @Override
     public String toString() {
         if (nans != FINITE) {
@@ -2080,9 +1822,7 @@ public class Dfp implements RealFieldElement<Dfp> {
 
     }
 
-    /** Convert an instance to a string using scientific notation.
-     * @return string representation of the instance in scientific notation
-     */
+    
     protected String dfp2sci() {
         char rawdigits[]    = new char[mant.length * 4];
         char outputbuffer[] = new char[mant.length * 4 + 20];
@@ -2161,9 +1901,7 @@ public class Dfp implements RealFieldElement<Dfp> {
 
     }
 
-    /** Convert an instance to a string using normal notation.
-     * @return string representation of the instance in normal notation
-     */
+    
     protected String dfp2string() {
         char buffer[] = new char[mant.length*4 + 20];
         int p = 1;
@@ -2234,13 +1972,7 @@ public class Dfp implements RealFieldElement<Dfp> {
 
     }
 
-    /** Raises a trap.  This does not set the corresponding flag however.
-     *  @param type the trap type
-     *  @param what - name of routine trap occurred in
-     *  @param oper - input operator to function
-     *  @param result - the result computed prior to the trap
-     *  @return The suggested return value from the trap handler
-     */
+    
     public Dfp dotrap(int type, String what, Dfp oper, Dfp result) {
         Dfp def = result;
 
@@ -2300,45 +2032,24 @@ public class Dfp implements RealFieldElement<Dfp> {
 
     }
 
-    /** Trap handler.  Subclasses may override this to provide trap
-     *  functionality per IEEE 854-1987.
-     *
-     *  @param type  The exception type - e.g. FLAG_OVERFLOW
-     *  @param what  The name of the routine we were in e.g. divide()
-     *  @param oper  An operand to this function if any
-     *  @param def   The default return value if trap not enabled
-     *  @param result    The result that is specified to be delivered per
-     *                   IEEE 854, if any
-     *  @return the value that should be return by the operation triggering the trap
-     */
+    
     protected Dfp trap(int type, String what, Dfp oper, Dfp def, Dfp result) {
         return def;
     }
 
-    /** Returns the type - one of FINITE, INFINITE, SNAN, QNAN.
-     * @return type of the number
-     */
+    
     public int classify() {
         return nans;
     }
 
-    /** Creates an instance that is the same as x except that it has the sign of y.
-     * abs(x) = dfp.copysign(x, dfp.one)
-     * @param x number to get the value from
-     * @param y number to get the sign from
-     * @return a number with the value of x and the sign of y
-     */
+    
     public static Dfp copysign(final Dfp x, final Dfp y) {
         Dfp result = x.newInstance(x);
         result.sign = y.sign;
         return result;
     }
 
-    /** Returns the next number greater than this one in the direction of x.
-     * If this==x then simply returns this.
-     * @param x direction where to look at
-     * @return closest number next to instance in the direction of x
-     */
+    
     public Dfp nextAfter(final Dfp x) {
 
         // make sure we don't mix number with different precision
@@ -2407,10 +2118,7 @@ public class Dfp implements RealFieldElement<Dfp> {
 
     }
 
-    /** Convert the instance into a double.
-     * @return a double approximating the instance
-     * @see #toSplitDouble()
-     */
+    
     public double toDouble() {
 
         if (isInfinite()) {
@@ -2497,10 +2205,7 @@ public class Dfp implements RealFieldElement<Dfp> {
 
     }
 
-    /** Convert the instance into a split double.
-     * @return an array of two doubles which sum represent the instance
-     * @see #toDouble()
-     */
+    
     public double[] toSplitDouble() {
         double split[] = new double[2];
         long mask = 0xffffffffc0000000L;
@@ -2511,58 +2216,42 @@ public class Dfp implements RealFieldElement<Dfp> {
         return split;
     }
 
-    /** {@inheritDoc}
-     * @since 3.2
-     */
+    
     public double getReal() {
         return toDouble();
     }
 
-    /** {@inheritDoc}
-     * @since 3.2
-     */
+    
     public Dfp add(final double a) {
         return add(newInstance(a));
     }
 
-    /** {@inheritDoc}
-     * @since 3.2
-     */
+    
     public Dfp subtract(final double a) {
         return subtract(newInstance(a));
     }
 
-    /** {@inheritDoc}
-     * @since 3.2
-     */
+    
     public Dfp multiply(final double a) {
         return multiply(newInstance(a));
     }
 
-    /** {@inheritDoc}
-     * @since 3.2
-     */
+    
     public Dfp divide(final double a) {
         return divide(newInstance(a));
     }
 
-    /** {@inheritDoc}
-     * @since 3.2
-     */
+    
     public Dfp remainder(final double a) {
         return remainder(newInstance(a));
     }
 
-    /** {@inheritDoc}
-     * @since 3.2
-     */
+    
     public long round() {
         return FastMath.round(toDouble());
     }
 
-    /** {@inheritDoc}
-     * @since 3.2
-     */
+    
     public Dfp signum() {
         if (isNaN() || isZero()) {
             return this;
@@ -2571,9 +2260,7 @@ public class Dfp implements RealFieldElement<Dfp> {
         }
     }
 
-    /** {@inheritDoc}
-     * @since 3.2
-     */
+    
     public Dfp copySign(final Dfp s) {
         if ((sign >= 0 && s.sign >= 0) || (sign < 0 && s.sign < 0)) { // Sign is currently OK
             return this;
@@ -2581,9 +2268,7 @@ public class Dfp implements RealFieldElement<Dfp> {
         return negate(); // flip sign
     }
 
-    /** {@inheritDoc}
-     * @since 3.2
-     */
+    
     public Dfp copySign(final double s) {
         long sb = Double.doubleToLongBits(s);
         if ((sign >= 0 && sb >= 0) || (sign < 0 && sb < 0)) { // Sign is currently OK
@@ -2592,149 +2277,107 @@ public class Dfp implements RealFieldElement<Dfp> {
         return negate(); // flip sign
     }
 
-    /** {@inheritDoc}
-     * @since 3.2
-     */
+    
     public Dfp scalb(final int n) {
         return multiply(DfpMath.pow(getTwo(), n));
     }
 
-    /** {@inheritDoc}
-     * @since 3.2
-     */
+    
     public Dfp hypot(final Dfp y) {
         return multiply(this).add(y.multiply(y)).sqrt();
     }
 
-    /** {@inheritDoc}
-     * @since 3.2
-     */
+    
     public Dfp cbrt() {
         return rootN(3);
     }
 
-    /** {@inheritDoc}
-     * @since 3.2
-     */
+    
     public Dfp rootN(final int n) {
         return (sign >= 0) ?
                DfpMath.pow(this, getOne().divide(n)) :
                DfpMath.pow(negate(), getOne().divide(n)).negate();
     }
 
-    /** {@inheritDoc}
-     * @since 3.2
-     */
+    
     public Dfp pow(final double p) {
         return DfpMath.pow(this, newInstance(p));
     }
 
-    /** {@inheritDoc}
-     * @since 3.2
-     */
+    
     public Dfp pow(final int n) {
         return DfpMath.pow(this, n);
     }
 
-    /** {@inheritDoc}
-     * @since 3.2
-     */
+    
     public Dfp pow(final Dfp e) {
         return DfpMath.pow(this, e);
     }
 
-    /** {@inheritDoc}
-     * @since 3.2
-     */
+    
     public Dfp exp() {
         return DfpMath.exp(this);
     }
 
-    /** {@inheritDoc}
-     * @since 3.2
-     */
+    
     public Dfp expm1() {
         return DfpMath.exp(this).subtract(getOne());
     }
 
-    /** {@inheritDoc}
-     * @since 3.2
-     */
+    
     public Dfp log() {
         return DfpMath.log(this);
     }
 
-    /** {@inheritDoc}
-     * @since 3.2
-     */
+    
     public Dfp log1p() {
         return DfpMath.log(this.add(getOne()));
     }
 
 //  TODO: deactivate this implementation (and return type) in 4.0
-    /** Get the exponent of the greatest power of 10 that is less than or equal to abs(this).
-     *  @return integer base 10 logarithm
-     *  @deprecated as of 3.2, replaced by {@link #intLog10()}, in 4.0 the return type
-     *  will be changed to Dfp
-     */
+    
     @Deprecated
     public int log10()  {
         return intLog10();
     }
 
 //    TODO: activate this implementation (and return type) in 4.0
-//    /** {@inheritDoc}
-//     * @since 3.2
-//     */
+//    
 //    public Dfp log10() {
 //        return DfpMath.log(this).divide(DfpMath.log(newInstance(10)));
 //    }
 
-    /** {@inheritDoc}
-     * @since 3.2
-     */
+    
     public Dfp cos() {
         return DfpMath.cos(this);
     }
 
-    /** {@inheritDoc}
-     * @since 3.2
-     */
+    
     public Dfp sin() {
         return DfpMath.sin(this);
     }
 
-    /** {@inheritDoc}
-     * @since 3.2
-     */
+    
     public Dfp tan() {
         return DfpMath.tan(this);
     }
 
-    /** {@inheritDoc}
-     * @since 3.2
-     */
+    
     public Dfp acos() {
         return DfpMath.acos(this);
     }
 
-    /** {@inheritDoc}
-     * @since 3.2
-     */
+    
     public Dfp asin() {
         return DfpMath.asin(this);
     }
 
-    /** {@inheritDoc}
-     * @since 3.2
-     */
+    
     public Dfp atan() {
         return DfpMath.atan(this);
     }
 
-    /** {@inheritDoc}
-     * @since 3.2
-     */
+    
     public Dfp atan2(final Dfp x)
         throws DimensionMismatchException {
 
@@ -2757,53 +2400,39 @@ public class Dfp implements RealFieldElement<Dfp> {
 
     }
 
-    /** {@inheritDoc}
-     * @since 3.2
-     */
+    
     public Dfp cosh() {
         return DfpMath.exp(this).add(DfpMath.exp(negate())).divide(2);
     }
 
-    /** {@inheritDoc}
-     * @since 3.2
-     */
+    
     public Dfp sinh() {
         return DfpMath.exp(this).subtract(DfpMath.exp(negate())).divide(2);
     }
 
-    /** {@inheritDoc}
-     * @since 3.2
-     */
+    
     public Dfp tanh() {
         final Dfp ePlus  = DfpMath.exp(this);
         final Dfp eMinus = DfpMath.exp(negate());
         return ePlus.subtract(eMinus).divide(ePlus.add(eMinus));
     }
 
-    /** {@inheritDoc}
-     * @since 3.2
-     */
+    
     public Dfp acosh() {
         return multiply(this).subtract(getOne()).sqrt().add(this).log();
     }
 
-    /** {@inheritDoc}
-     * @since 3.2
-     */
+    
     public Dfp asinh() {
         return multiply(this).add(getOne()).sqrt().add(this).log();
     }
 
-    /** {@inheritDoc}
-     * @since 3.2
-     */
+    
     public Dfp atanh() {
         return getOne().add(this).divide(getOne().subtract(this)).log().divide(2);
     }
 
-    /** {@inheritDoc}
-     * @since 3.2
-     */
+    
     public Dfp linearCombination(final Dfp[] a, final Dfp[] b)
         throws DimensionMismatchException {
         if (a.length != b.length) {
@@ -2816,9 +2445,7 @@ public class Dfp implements RealFieldElement<Dfp> {
         return r;
     }
 
-    /** {@inheritDoc}
-     * @since 3.2
-     */
+    
     public Dfp linearCombination(final double[] a, final Dfp[] b)
         throws DimensionMismatchException {
         if (a.length != b.length) {
@@ -2831,49 +2458,37 @@ public class Dfp implements RealFieldElement<Dfp> {
         return r;
     }
 
-    /** {@inheritDoc}
-     * @since 3.2
-     */
+    
     public Dfp linearCombination(final Dfp a1, final Dfp b1, final Dfp a2, final Dfp b2) {
         return a1.multiply(b1).add(a2.multiply(b2));
     }
 
-    /** {@inheritDoc}
-     * @since 3.2
-     */
+    
     public Dfp linearCombination(final double a1, final Dfp b1, final double a2, final Dfp b2) {
         return b1.multiply(a1).add(b2.multiply(a2));
     }
 
-    /** {@inheritDoc}
-     * @since 3.2
-     */
+    
     public Dfp linearCombination(final Dfp a1, final Dfp b1,
                                  final Dfp a2, final Dfp b2,
                                  final Dfp a3, final Dfp b3) {
         return a1.multiply(b1).add(a2.multiply(b2)).add(a3.multiply(b3));
     }
 
-    /** {@inheritDoc}
-     * @since 3.2
-     */
+    
     public Dfp linearCombination(final double a1, final Dfp b1,
                                  final double a2, final Dfp b2,
                                  final double a3, final Dfp b3) {
         return b1.multiply(a1).add(b2.multiply(a2)).add(b3.multiply(a3));
     }
 
-    /** {@inheritDoc}
-     * @since 3.2
-     */
+    
     public Dfp linearCombination(final Dfp a1, final Dfp b1, final Dfp a2, final Dfp b2,
                                  final Dfp a3, final Dfp b3, final Dfp a4, final Dfp b4) {
         return a1.multiply(b1).add(a2.multiply(b2)).add(a3.multiply(b3)).add(a4.multiply(b4));
     }
 
-    /** {@inheritDoc}
-     * @since 3.2
-     */
+    
     public Dfp linearCombination(final double a1, final Dfp b1, final double a2, final Dfp b2,
                                  final double a3, final Dfp b3, final double a4, final Dfp b4) {
         return b1.multiply(a1).add(b2.multiply(a2)).add(b3.multiply(a3)).add(b4.multiply(a4));

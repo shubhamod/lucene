@@ -27,53 +27,21 @@ import org.apache.lucene.util.hnsw.math.random.Well19937c;
 import org.apache.lucene.util.hnsw.math.util.FastMath;
 import org.apache.lucene.util.hnsw.math.util.MathArrays;
 
-/**
- * Implementation of the multivariate normal (Gaussian) distribution.
- *
- * @see <a href="http://en.wikipedia.org/wiki/Multivariate_normal_distribution">
- * Multivariate normal distribution (Wikipedia)</a>
- * @see <a href="http://mathworld.wolfram.com/MultivariateNormalDistribution.html">
- * Multivariate normal distribution (MathWorld)</a>
- *
- * @since 3.1
- */
+
 public class MultivariateNormalDistribution
     extends AbstractMultivariateRealDistribution {
-    /** Vector of means. */
+    
     private final double[] means;
-    /** Covariance matrix. */
+    
     private final RealMatrix covarianceMatrix;
-    /** The matrix inverse of the covariance matrix. */
+    
     private final RealMatrix covarianceMatrixInverse;
-    /** The determinant of the covariance matrix. */
+    
     private final double covarianceMatrixDeterminant;
-    /** Matrix used in computation of samples. */
+    
     private final RealMatrix samplingMatrix;
 
-    /**
-     * Creates a multivariate normal distribution with the given mean vector and
-     * covariance matrix.
-     * <br/>
-     * The number of dimensions is equal to the length of the mean vector
-     * and to the number of rows and columns of the covariance matrix.
-     * It is frequently written as "p" in formulae.
-     * <p>
-     * <b>Note:</b> this constructor will implicitly create an instance of
-     * {@link Well19937c} as random generator to be used for sampling only (see
-     * {@link #sample()} and {@link #sample(int)}). In case no sampling is
-     * needed for the created distribution, it is advised to pass {@code null}
-     * as random generator via the appropriate constructors to avoid the
-     * additional initialisation overhead.
-     *
-     * @param means Vector of means.
-     * @param covariances Covariance matrix.
-     * @throws DimensionMismatchException if the arrays length are
-     * inconsistent.
-     * @throws SingularMatrixException if the eigenvalue decomposition cannot
-     * be performed on the provided covariance matrix.
-     * @throws NonPositiveDefiniteMatrixException if any of the eigenvalues is
-     * negative.
-     */
+    
     public MultivariateNormalDistribution(final double[] means,
                                           final double[][] covariances)
         throws SingularMatrixException,
@@ -82,24 +50,7 @@ public class MultivariateNormalDistribution
         this(new Well19937c(), means, covariances);
     }
 
-    /**
-     * Creates a multivariate normal distribution with the given mean vector and
-     * covariance matrix.
-     * <br/>
-     * The number of dimensions is equal to the length of the mean vector
-     * and to the number of rows and columns of the covariance matrix.
-     * It is frequently written as "p" in formulae.
-     *
-     * @param rng Random Number Generator.
-     * @param means Vector of means.
-     * @param covariances Covariance matrix.
-     * @throws DimensionMismatchException if the arrays length are
-     * inconsistent.
-     * @throws SingularMatrixException if the eigenvalue decomposition cannot
-     * be performed on the provided covariance matrix.
-     * @throws NonPositiveDefiniteMatrixException if any of the eigenvalues is
-     * negative.
-     */
+    
     public MultivariateNormalDistribution(RandomGenerator rng,
                                           final double[] means,
                                           final double[][] covariances)
@@ -161,25 +112,17 @@ public class MultivariateNormalDistribution
         samplingMatrix = covMatEigenvectors.multiply(tmpMatrix);
     }
 
-    /**
-     * Gets the mean vector.
-     *
-     * @return the mean vector.
-     */
+    
     public double[] getMeans() {
         return MathArrays.copyOf(means);
     }
 
-    /**
-     * Gets the covariance matrix.
-     *
-     * @return the covariance matrix.
-     */
+    
     public RealMatrix getCovariances() {
         return covarianceMatrix.copy();
     }
 
-    /** {@inheritDoc} */
+    
     public double density(final double[] vals) throws DimensionMismatchException {
         final int dim = getDimension();
         if (vals.length != dim) {
@@ -191,12 +134,7 @@ public class MultivariateNormalDistribution
             getExponentTerm(vals);
     }
 
-    /**
-     * Gets the square root of each element on the diagonal of the covariance
-     * matrix.
-     *
-     * @return the standard deviations.
-     */
+    
     public double[] getStandardDeviations() {
         final int dim = getDimension();
         final double[] std = new double[dim];
@@ -207,7 +145,7 @@ public class MultivariateNormalDistribution
         return std;
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     public double[] sample() {
         final int dim = getDimension();
@@ -226,12 +164,7 @@ public class MultivariateNormalDistribution
         return vals;
     }
 
-    /**
-     * Computes the term used in the exponent (see definition of the distribution).
-     *
-     * @param values Values at which to compute density.
-     * @return the multiplication factor of density calculations.
-     */
+    
     private double getExponentTerm(final double[] values) {
         final double[] centered = new double[values.length];
         for (int i = 0; i < centered.length; i++) {

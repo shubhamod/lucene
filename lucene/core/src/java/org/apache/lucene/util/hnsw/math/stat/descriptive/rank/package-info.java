@@ -14,7 +14,5 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/**
- * Summary statistics based on ranks.
- */
+
 package org.apache.lucene.util.hnsw.math.stat.descriptive.rank;

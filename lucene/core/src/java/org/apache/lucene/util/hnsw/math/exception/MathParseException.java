@@ -19,23 +19,13 @@ package org.apache.lucene.util.hnsw.math.exception;
 import org.apache.lucene.util.hnsw.math.exception.util.ExceptionContextProvider;
 import org.apache.lucene.util.hnsw.math.exception.util.LocalizedFormats;
 
-/**
- * Class to signal parse failures.
- *
- * @since 2.2
- */
+
 public class MathParseException extends MathIllegalStateException
     implements ExceptionContextProvider {
-    /** Serializable version Id. */
+    
     private static final long serialVersionUID = -6024911025449780478L;
 
-    /**
-     * @param wrong Bad string representation of the object.
-     * @param position Index, in the {@code wrong} string, that caused the
-     * parsing to fail.
-     * @param type Class of the object supposedly represented by the
-     * {@code wrong} string.
-     */
+    
     public MathParseException(String wrong,
                               int position,
                               Class<?> type) {
@@ -43,11 +33,7 @@ public class MathParseException extends MathIllegalStateException
                                 wrong, Integer.valueOf(position), type.getName());
     }
 
-    /**
-     * @param wrong Bad string representation of the object.
-     * @param position Index, in the {@code wrong} string, that caused the
-     * parsing to fail.
-     */
+    
     public MathParseException(String wrong,
                               int position) {
         getContext().addMessage(LocalizedFormats.CANNOT_PARSE,

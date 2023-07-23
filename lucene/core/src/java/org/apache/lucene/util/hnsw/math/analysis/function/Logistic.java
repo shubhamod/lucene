@@ -28,39 +28,22 @@ import org.apache.lucene.util.hnsw.math.exception.NullArgumentException;
 import org.apache.lucene.util.hnsw.math.exception.DimensionMismatchException;
 import org.apache.lucene.util.hnsw.math.util.FastMath;
 
-/**
- * <a href="http://en.wikipedia.org/wiki/Generalised_logistic_function">
- *  Generalised logistic</a> function.
- *
- * @since 3.0
- */
+
 public class Logistic implements UnivariateDifferentiableFunction, DifferentiableUnivariateFunction {
-    /** Lower asymptote. */
+    
     private final double a;
-    /** Upper asymptote. */
+    
     private final double k;
-    /** Growth rate. */
+    
     private final double b;
-    /** Parameter that affects near which asymptote maximum growth occurs. */
+    
     private final double oneOverN;
-    /** Parameter that affects the position of the curve along the ordinate axis. */
+    
     private final double q;
-    /** Abscissa of maximum growth. */
+    
     private final double m;
 
-    /**
-     * @param k If {@code b > 0}, value of the function for x going towards +&infin;.
-     * If {@code b < 0}, value of the function for x going towards -&infin;.
-     * @param m Abscissa of maximum growth.
-     * @param b Growth rate.
-     * @param q Parameter that affects the position of the curve along the
-     * ordinate axis.
-     * @param a If {@code b > 0}, value of the function for x going towards -&infin;.
-     * If {@code b < 0}, value of the function for x going towards +&infin;.
-     * @param n Parameter that affects near which asymptote the maximum
-     * growth occurs.
-     * @throws NotStrictlyPositiveException if {@code n <= 0}.
-     */
+    
     public Logistic(double k,
                     double m,
                     double b,
@@ -80,45 +63,20 @@ public class Logistic implements UnivariateDifferentiableFunction, Differentiabl
         oneOverN = 1 / n;
     }
 
-    /** {@inheritDoc} */
+    
     public double value(double x) {
         return value(m - x, k, b, q, a, oneOverN);
     }
 
-    /** {@inheritDoc}
-     * @deprecated as of 3.1, replaced by {@link #value(DerivativeStructure)}
-     */
+    
     @Deprecated
     public UnivariateFunction derivative() {
         return FunctionUtils.toDifferentiableUnivariateFunction(this).derivative();
     }
 
-    /**
-     * Parametric function where the input array contains the parameters of
-     * the {@link Logistic#Logistic(double,double,double,double,double,double)
-     * logistic function}, ordered as follows:
-     * <ul>
-     *  <li>k</li>
-     *  <li>m</li>
-     *  <li>b</li>
-     *  <li>q</li>
-     *  <li>a</li>
-     *  <li>n</li>
-     * </ul>
-     */
+    
     public static class Parametric implements ParametricUnivariateFunction {
-        /**
-         * Computes the value of the sigmoid at {@code x}.
-         *
-         * @param x Value for which the function must be computed.
-         * @param param Values for {@code k}, {@code m}, {@code b}, {@code q},
-         * {@code a} and  {@code n}.
-         * @return the value of the function.
-         * @throws NullArgumentException if {@code param} is {@code null}.
-         * @throws DimensionMismatchException if the size of {@code param} is
-         * not 6.
-         * @throws NotStrictlyPositiveException if {@code param[5] <= 0}.
-         */
+        
         public double value(double x, double ... param)
             throws NullArgumentException,
                    DimensionMismatchException,
@@ -129,21 +87,7 @@ public class Logistic implements UnivariateDifferentiableFunction, Differentiabl
                                   param[4], 1 / param[5]);
         }
 
-        /**
-         * Computes the value of the gradient at {@code x}.
-         * The components of the gradient vector are the partial
-         * derivatives of the function with respect to each of the
-         * <em>parameters</em>.
-         *
-         * @param x Value at which the gradient must be computed.
-         * @param param Values for {@code k}, {@code m}, {@code b}, {@code q},
-         * {@code a} and  {@code n}.
-         * @return the gradient vector at {@code x}.
-         * @throws NullArgumentException if {@code param} is {@code null}.
-         * @throws DimensionMismatchException if the size of {@code param} is
-         * not 6.
-         * @throws NotStrictlyPositiveException if {@code param[5] <= 0}.
-         */
+        
         public double[] gradient(double x, double ... param)
             throws NullArgumentException,
                    DimensionMismatchException,
@@ -172,18 +116,7 @@ public class Logistic implements UnivariateDifferentiableFunction, Differentiabl
             return new double[] { gk, gm, gb, gq, ga, gn };
         }
 
-        /**
-         * Validates parameters to ensure they are appropriate for the evaluation of
-         * the {@link #value(double,double[])} and {@link #gradient(double,double[])}
-         * methods.
-         *
-         * @param param Values for {@code k}, {@code m}, {@code b}, {@code q},
-         * {@code a} and {@code n}.
-         * @throws NullArgumentException if {@code param} is {@code null}.
-         * @throws DimensionMismatchException if the size of {@code param} is
-         * not 6.
-         * @throws NotStrictlyPositiveException if {@code param[5] <= 0}.
-         */
+        
         private void validateParameters(double[] param)
             throws NullArgumentException,
                    DimensionMismatchException,
@@ -200,15 +133,7 @@ public class Logistic implements UnivariateDifferentiableFunction, Differentiabl
         }
     }
 
-    /**
-     * @param mMinusX {@code m - x}.
-     * @param k {@code k}.
-     * @param b {@code b}.
-     * @param q {@code q}.
-     * @param a {@code a}.
-     * @param oneOverN {@code 1 / n}.
-     * @return the value of the function.
-     */
+    
     private static double value(double mMinusX,
                                 double k,
                                 double b,
@@ -218,9 +143,7 @@ public class Logistic implements UnivariateDifferentiableFunction, Differentiabl
         return a + (k - a) / FastMath.pow(1 + q * FastMath.exp(b * mMinusX), oneOverN);
     }
 
-    /** {@inheritDoc}
-     * @since 3.1
-     */
+    
     public DerivativeStructure value(final DerivativeStructure t) {
         return t.negate().add(m).multiply(b).exp().multiply(q).add(1).pow(oneOverN).reciprocal().multiply(k - a).add(a);
     }

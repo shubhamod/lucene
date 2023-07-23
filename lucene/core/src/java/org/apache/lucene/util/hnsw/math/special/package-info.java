@@ -14,7 +14,5 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/**
- * Implementations of special functions such as Beta and Gamma.
- */
+
 package org.apache.lucene.util.hnsw.math.special;

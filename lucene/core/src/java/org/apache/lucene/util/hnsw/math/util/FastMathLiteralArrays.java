@@ -17,14 +17,9 @@
 
 package org.apache.lucene.util.hnsw.math.util;
 
-/**
- * Utility class for loading tabulated data used by {@link FastMath}.
- *
- */
+
 class FastMathLiteralArrays {
-    /** Exponential evaluated at integer values,
-     * exp(x) =  expIntTableA[x + EXP_INT_TABLE_MAX_INDEX] + expIntTableB[x+EXP_INT_TABLE_MAX_INDEX].
-     */
+    
     private static final double[] EXP_INT_A = new double[] {
         +0.0d,
         Double.NaN,
@@ -1528,9 +1523,7 @@ class FastMathLiteralArrays {
         Double.NaN,
     };
 
-    /** Exponential evaluated at integer values,
-     * exp(x) =  expIntTableA[x + EXP_INT_TABLE_MAX_INDEX] + expIntTableB[x+EXP_INT_TABLE_MAX_INDEX]
-     */
+    
     private static final double[] EXP_INT_B = new double[] {
         +0.0d,
         Double.NaN,
@@ -3035,10 +3028,7 @@ class FastMathLiteralArrays {
     };
 
 
-    /** Exponential over the range of 0 - 1 in increments of 2^-10
-     * exp(x/1024) =  expFracTableA[x] + expFracTableB[x].
-     * 1024 = 2^10
-     */
+    
     private static final double[] EXP_FRAC_A = new double[] {
       +1.0d,
       +1.0009770393371582d,
@@ -4067,9 +4057,7 @@ class FastMathLiteralArrays {
       +2.7182817459106445d,
     };
 
-    /** Exponential over the range of 0 - 1 in increments of 2^-10
-     * exp(x/1024) =  expFracTableA[x] + expFracTableB[x].
-     */
+    
     private static final double[] EXP_FRAC_B = new double[] {
       +0.0d,
       +1.552583321178453E-10d,
@@ -5098,7 +5086,7 @@ class FastMathLiteralArrays {
       +8.254840070367875E-8d,
     };
 
-    /** Extended precision logarithm table over the range 1 - 2 in increments of 2^-10. */
+    
     private static final double[][] LN_MANT = new double[][] {
       {+0.0d,                   +0.0d,                   }, // 0
       {+9.760860120877624E-4d,  -3.903230345984362E-11d, }, // 1
@@ -6127,48 +6115,26 @@ class FastMathLiteralArrays {
     };
 
 
-    /**
-     * Class contains only static methods.
-     */
+    
     private FastMathLiteralArrays() {}
 
-    /**
-     * Load "EXP_INT_A".
-     *
-     * @return a clone of the data array.
-     */
+    
     static double[] loadExpIntA() {
         return EXP_INT_A.clone();
     }
-    /**
-     * Load "EXP_INT_B".
-     *
-     * @return a clone of the data array.
-     */
+    
     static double[] loadExpIntB() {
         return EXP_INT_B.clone();
     }
-    /**
-     * Load "EXP_FRAC_A".
-     *
-     * @return a clone of the data array.
-     */
+    
     static double[] loadExpFracA() {
         return EXP_FRAC_A.clone();
     }
-    /**
-     * Load "EXP_FRAC_B".
-     *
-     * @return a clone of the data array.
-     */
+    
     static double[] loadExpFracB() {
         return EXP_FRAC_B.clone();
     }
-    /**
-     * Load "LN_MANT".
-     *
-     * @return a clone of the data array.
-     */
+    
     static double[][] loadLnMant() {
         return LN_MANT.clone();
     }

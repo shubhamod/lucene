@@ -19,17 +19,10 @@ package org.apache.lucene.util.hnsw.math.stat.interval;
 import org.apache.lucene.util.hnsw.math.distribution.NormalDistribution;
 import org.apache.lucene.util.hnsw.math.util.FastMath;
 
-/**
- * Implements the normal approximation method for creating a binomial proportion confidence interval.
- *
- * @see <a
- *      href="http://en.wikipedia.org/wiki/Binomial_proportion_confidence_interval#Normal_approximation_interval">
- *      Normal approximation interval (Wikipedia)</a>
- * @since 3.3
- */
+
 public class NormalApproximationInterval implements BinomialConfidenceInterval {
 
-    /** {@inheritDoc} */
+    
     public ConfidenceInterval createInterval(int numberOfTrials, int numberOfSuccesses,
                                              double confidenceLevel) {
         IntervalUtils.checkParameters(numberOfTrials, numberOfSuccesses, confidenceLevel);

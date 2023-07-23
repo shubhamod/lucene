@@ -14,9 +14,5 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/**
- *
- *    Fraction number type and fraction number formatting.
- *
- */
+
 package org.apache.lucene.util.hnsw.math.fraction;

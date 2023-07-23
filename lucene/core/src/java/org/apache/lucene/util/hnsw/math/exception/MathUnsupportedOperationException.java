@@ -21,50 +21,37 @@ import org.apache.lucene.util.hnsw.math.exception.util.LocalizedFormats;
 import org.apache.lucene.util.hnsw.math.exception.util.ExceptionContext;
 import org.apache.lucene.util.hnsw.math.exception.util.ExceptionContextProvider;
 
-/**
- * Base class for all unsupported features.
- * It is used for all the exceptions that have the semantics of the standard
- * {@link UnsupportedOperationException}, but must also provide a localized
- * message.
- *
- * @since 2.2
- */
+
 public class MathUnsupportedOperationException extends UnsupportedOperationException
     implements ExceptionContextProvider {
-    /** Serializable version Id. */
+    
     private static final long serialVersionUID = -6024911025449780478L;
-    /** Context. */
+    
     private final ExceptionContext context;
 
-    /**
-     * Default constructor.
-     */
+    
     public MathUnsupportedOperationException() {
         this(LocalizedFormats.UNSUPPORTED_OPERATION);
     }
-    /**
-     * @param pattern Message pattern providing the specific context of
-     * the error.
-     * @param args Arguments.
-     */
+    
     public MathUnsupportedOperationException(Localizable pattern,
                                              Object ... args) {
         context = new ExceptionContext(this);
         context.addMessage(pattern, args);
     }
 
-    /** {@inheritDoc} */
+    
     public ExceptionContext getContext() {
         return context;
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     public String getMessage() {
         return context.getMessage();
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     public String getLocalizedMessage() {
         return context.getLocalizedMessage();

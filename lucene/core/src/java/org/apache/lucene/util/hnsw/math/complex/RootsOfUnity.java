@@ -25,46 +25,28 @@ import org.apache.lucene.util.hnsw.math.exception.ZeroException;
 import org.apache.lucene.util.hnsw.math.exception.util.LocalizedFormats;
 import org.apache.lucene.util.hnsw.math.util.FastMath;
 
-/**
- * A helper class for the computation and caching of the {@code n}-th roots of
- * unity.
- *
- * @since 3.0
- */
+
 public class RootsOfUnity implements Serializable {
 
-    /** Serializable version id. */
+    
     private static final long serialVersionUID = 20120201L;
 
-    /** Number of roots of unity. */
+    
     private int omegaCount;
 
-    /** Real part of the roots. */
+    
     private double[] omegaReal;
 
-    /**
-     * Imaginary part of the {@code n}-th roots of unity, for positive values
-     * of {@code n}. In this array, the roots are stored in counter-clockwise
-     * order.
-     */
+    
     private double[] omegaImaginaryCounterClockwise;
 
-    /**
-     * Imaginary part of the {@code n}-th roots of unity, for negative values
-     * of {@code n}. In this array, the roots are stored in clockwise order.
-     */
+    
     private double[] omegaImaginaryClockwise;
 
-    /**
-     * {@code true} if {@link #computeRoots(int)} was called with a positive
-     * value of its argument {@code n}. In this case, counter-clockwise ordering
-     * of the roots of unity should be used.
-     */
+    
     private boolean isCounterClockWise;
 
-    /**
-     * Build an engine for computing the {@code n}-th roots of unity.
-     */
+    
     public RootsOfUnity() {
 
         omegaCount = 0;
@@ -74,16 +56,7 @@ public class RootsOfUnity implements Serializable {
         isCounterClockWise = true;
     }
 
-    /**
-     * Returns {@code true} if {@link #computeRoots(int)} was called with a
-     * positive value of its argument {@code n}. If {@code true}, then
-     * counter-clockwise ordering of the roots of unity should be used.
-     *
-     * @return {@code true} if the roots of unity are stored in
-     * counter-clockwise order
-     * @throws MathIllegalStateException if no roots of unity have been computed
-     * yet
-     */
+    
     public synchronized boolean isCounterClockWise()
             throws MathIllegalStateException {
 
@@ -94,25 +67,7 @@ public class RootsOfUnity implements Serializable {
         return isCounterClockWise;
     }
 
-    /**
-     * <p>
-     * Computes the {@code n}-th roots of unity. The roots are stored in
-     * {@code omega[]}, such that {@code omega[k] = w ^ k}, where
-     * {@code k = 0, ..., n - 1}, {@code w = exp(2 * pi * i / n)} and
-     * {@code i = sqrt(-1)}.
-     * </p>
-     * <p>
-     * Note that {@code n} can be positive of negative
-     * </p>
-     * <ul>
-     * <li>{@code abs(n)} is always the number of roots of unity.</li>
-     * <li>If {@code n > 0}, then the roots are stored in counter-clockwise order.</li>
-     * <li>If {@code n < 0}, then the roots are stored in clockwise order.</p>
-     * </ul>
-     *
-     * @param n the (signed) number of roots of unity to be computed
-     * @throws ZeroException if {@code n = 0}
-     */
+    
     public synchronized void computeRoots(int n) throws ZeroException {
 
         if (n == 0) {
@@ -149,15 +104,7 @@ public class RootsOfUnity implements Serializable {
         omegaCount = absN;
     }
 
-    /**
-     * Get the real part of the {@code k}-th {@code n}-th root of unity.
-     *
-     * @param k index of the {@code n}-th root of unity
-     * @return real part of the {@code k}-th {@code n}-th root of unity
-     * @throws MathIllegalStateException if no roots of unity have been
-     * computed yet
-     * @throws MathIllegalArgumentException if {@code k} is out of range
-     */
+    
     public synchronized double getReal(int k)
             throws MathIllegalStateException, MathIllegalArgumentException {
 
@@ -176,15 +123,7 @@ public class RootsOfUnity implements Serializable {
         return omegaReal[k];
     }
 
-    /**
-     * Get the imaginary part of the {@code k}-th {@code n}-th root of unity.
-     *
-     * @param k index of the {@code n}-th root of unity
-     * @return imaginary part of the {@code k}-th {@code n}-th root of unity
-     * @throws MathIllegalStateException if no roots of unity have been
-     * computed yet
-     * @throws OutOfRangeException if {@code k} is out of range
-     */
+    
     public synchronized double getImaginary(int k)
             throws MathIllegalStateException, OutOfRangeException {
 
@@ -204,14 +143,7 @@ public class RootsOfUnity implements Serializable {
             omegaImaginaryClockwise[k];
     }
 
-    /**
-     * Returns the number of roots of unity currently stored. If
-     * {@link #computeRoots(int)} was called with {@code n}, then this method
-     * returns {@code abs(n)}. If no roots of unity have been computed yet, this
-     * method returns 0.
-     *
-     * @return the number of roots of unity currently stored
-     */
+    
     public synchronized int getNumberOfRoots() {
         return omegaCount;
     }

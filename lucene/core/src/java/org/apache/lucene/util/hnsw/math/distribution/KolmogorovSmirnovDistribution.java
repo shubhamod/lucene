@@ -33,56 +33,16 @@ import org.apache.lucene.util.hnsw.math.linear.FieldMatrix;
 import org.apache.lucene.util.hnsw.math.linear.RealMatrix;
 import org.apache.lucene.util.hnsw.math.util.FastMath;
 
-/**
- * Implementation of the Kolmogorov-Smirnov distribution.
- *
- * <p>
- * Treats the distribution of the two-sided {@code P(D_n < d)} where
- * {@code D_n = sup_x |G(x) - G_n (x)|} for the theoretical cdf {@code G} and
- * the empirical cdf {@code G_n}.
- * </p>
- * <p>
- * This implementation is based on [1] with certain quick decisions for extreme
- * values given in [2].
- * </p>
- * <p>
- * In short, when wanting to evaluate {@code P(D_n < d)}, the method in [1] is
- * to write {@code d = (k - h) / n} for positive integer {@code k} and
- * {@code 0 <= h < 1}. Then {@code P(D_n < d) = (n! / n^n) * t_kk}, where
- * {@code t_kk} is the {@code (k, k)}'th entry in the special matrix
- * {@code H^n}, i.e. {@code H} to the {@code n}'th power.
- * </p>
- * <p>
- * References:
- * <ul>
- * <li>[1] <a href="http://www.jstatsoft.org/v08/i18/">
- * Evaluating Kolmogorov's Distribution</a> by George Marsaglia, Wai
- * Wan Tsang, and Jingbo Wang</li>
- * <li>[2] <a href="http://www.jstatsoft.org/v39/i11/">
- * Computing the Two-Sided Kolmogorov-Smirnov Distribution</a> by Richard Simard
- * and Pierre L'Ecuyer</li>
- * </ul>
- * Note that [1] contains an error in computing h, refer to
- * <a href="https://issues.apache.org/jira/browse/MATH-437">MATH-437</a> for details.
- * </p>
- *
- * @see <a href="http://en.wikipedia.org/wiki/Kolmogorov-Smirnov_test">
- * Kolmogorov-Smirnov test (Wikipedia)</a>
- * @deprecated to be removed in version 4.0 -
- *  use {@link org.apache.lucene.util.hnsw.math.stat.inference.KolmogorovSmirnovTest}
- */
+
 public class KolmogorovSmirnovDistribution implements Serializable {
 
-    /** Serializable version identifier. */
+    
     private static final long serialVersionUID = -4670676796862967187L;
 
-    /** Number of observations. */
+    
     private int n;
 
-    /**
-     * @param n Number of observations
-     * @throws NotStrictlyPositiveException if {@code n <= 0}
-     */
+    
     public KolmogorovSmirnovDistribution(int n)
         throws NotStrictlyPositiveException {
         if (n <= 0) {
@@ -92,62 +52,17 @@ public class KolmogorovSmirnovDistribution implements Serializable {
         this.n = n;
     }
 
-    /**
-     * Calculates {@code P(D_n < d)} using method described in [1] with quick
-     * decisions for extreme values given in [2] (see above). The result is not
-     * exact as with
-     * {@link KolmogorovSmirnovDistribution#cdfExact(double)} because
-     * calculations are based on {@code double} rather than
-     * {@link org.apache.lucene.util.hnsw.math.fraction.BigFraction}.
-     *
-     * @param d statistic
-     * @return the two-sided probability of {@code P(D_n < d)}
-     * @throws MathArithmeticException if algorithm fails to convert {@code h}
-     * to a {@link org.apache.lucene.util.hnsw.math.fraction.BigFraction} in expressing
-     * {@code d} as {@code (k - h) / m} for integer {@code k, m} and
-     * {@code 0 <= h < 1}.
-     */
+    
     public double cdf(double d) throws MathArithmeticException {
         return this.cdf(d, false);
     }
 
-    /**
-     * Calculates {@code P(D_n < d)} using method described in [1] with quick
-     * decisions for extreme values given in [2] (see above). The result is
-     * exact in the sense that BigFraction/BigReal is used everywhere at the
-     * expense of very slow execution time. Almost never choose this in real
-     * applications unless you are very sure; this is almost solely for
-     * verification purposes. Normally, you would choose
-     * {@link KolmogorovSmirnovDistribution#cdf(double)}
-     *
-     * @param d statistic
-     * @return the two-sided probability of {@code P(D_n < d)}
-     * @throws MathArithmeticException if algorithm fails to convert {@code h}
-     * to a {@link org.apache.lucene.util.hnsw.math.fraction.BigFraction} in expressing
-     * {@code d} as {@code (k - h) / m} for integer {@code k, m} and
-     * {@code 0 <= h < 1}.
-     */
+    
     public double cdfExact(double d) throws MathArithmeticException {
         return this.cdf(d, true);
     }
 
-    /**
-     * Calculates {@code P(D_n < d)} using method described in [1] with quick
-     * decisions for extreme values given in [2] (see above).
-     *
-     * @param d statistic
-     * @param exact whether the probability should be calculated exact using
-     * {@link org.apache.lucene.util.hnsw.math.fraction.BigFraction} everywhere at the
-     * expense of very slow execution time, or if {@code double} should be used
-     * convenient places to gain speed. Almost never choose {@code true} in real
-     * applications unless you are very sure; {@code true} is almost solely for
-     * verification purposes.
-     * @return the two-sided probability of {@code P(D_n < d)}
-     * @throws MathArithmeticException if algorithm fails to convert {@code h}
-     * to a {@link org.apache.lucene.util.hnsw.math.fraction.BigFraction} in expressing
-     * {@code d} as {@code (k - h) / m} for integer {@code k, m} and
-     * {@code 0 <= h < 1}.
-     */
+    
     public double cdf(double d, boolean exact) throws MathArithmeticException {
 
         final double ninv = 1 / ((double) n);
@@ -181,18 +96,7 @@ public class KolmogorovSmirnovDistribution implements Serializable {
         return exact ? exactK(d) : roundedK(d);
     }
 
-    /**
-     * Calculates the exact value of {@code P(D_n < d)} using method described
-     * in [1] and {@link org.apache.lucene.util.hnsw.math.fraction.BigFraction} (see
-     * above).
-     *
-     * @param d statistic
-     * @return the two-sided probability of {@code P(D_n < d)}
-     * @throws MathArithmeticException if algorithm fails to convert {@code h}
-     * to a {@link org.apache.lucene.util.hnsw.math.fraction.BigFraction} in expressing
-     * {@code d} as {@code (k - h) / m} for integer {@code k, m} and
-     * {@code 0 <= h < 1}.
-     */
+    
     private double exactK(double d) throws MathArithmeticException {
 
         final int k = (int) FastMath.ceil(n * d);
@@ -214,17 +118,7 @@ public class KolmogorovSmirnovDistribution implements Serializable {
         return pFrac.bigDecimalValue(20, BigDecimal.ROUND_HALF_UP).doubleValue();
     }
 
-    /**
-     * Calculates {@code P(D_n < d)} using method described in [1] and doubles
-     * (see above).
-     *
-     * @param d statistic
-     * @return the two-sided probability of {@code P(D_n < d)}
-     * @throws MathArithmeticException if algorithm fails to convert {@code h}
-     * to a {@link org.apache.lucene.util.hnsw.math.fraction.BigFraction} in expressing
-     * {@code d} as {@code (k - h) / m} for integer {@code k, m} and
-     * {@code 0 <= h < 1}.
-     */
+    
     private double roundedK(double d) throws MathArithmeticException {
 
         final int k = (int) FastMath.ceil(n * d);
@@ -254,17 +148,7 @@ public class KolmogorovSmirnovDistribution implements Serializable {
         return pFrac;
     }
 
-    /***
-     * Creates {@code H} of size {@code m x m} as described in [1] (see above).
-     *
-     * @param d statistic
-     * @return H matrix
-     * @throws NumberIsTooLargeException if fractional part is greater than 1
-     * @throws FractionConversionException if algorithm fails to convert
-     * {@code h} to a {@link org.apache.lucene.util.hnsw.math.fraction.BigFraction} in
-     * expressing {@code d} as {@code (k - h) / m} for integer {@code k, m} and
-     * {@code 0 <= h < 1}.
-     */
+    
     private FieldMatrix<BigFraction> createH(double d)
             throws NumberIsTooLargeException, FractionConversionException {
 

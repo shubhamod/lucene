@@ -22,61 +22,27 @@ import org.apache.lucene.util.hnsw.math.exception.NullArgumentException;
 import org.apache.lucene.util.hnsw.math.stat.descriptive.AbstractStorelessUnivariateStatistic;
 import org.apache.lucene.util.hnsw.math.util.MathUtils;
 
-/**
- * Computes the first moment (arithmetic mean).  Uses the definitional formula:
- * <p>
- * mean = sum(x_i) / n </p>
- * <p>
- * where <code>n</code> is the number of observations. </p>
- * <p>
- * To limit numeric errors, the value of the statistic is computed using the
- * following recursive updating algorithm: </p>
- * <p>
- * <ol>
- * <li>Initialize <code>m = </code> the first value</li>
- * <li>For each additional value, update using <br>
- *   <code>m = m + (new value - m) / (number of observations)</code></li>
- * </ol></p>
- * <p>
- *  Returns <code>Double.NaN</code> if the dataset is empty. Note that
- *  Double.NaN may also be returned if the input includes NaN and / or infinite
- *  values.</p>
- * <p>
- * <strong>Note that this implementation is not synchronized.</strong> If
- * multiple threads access an instance of this class concurrently, and at least
- * one of the threads invokes the <code>increment()</code> or
- * <code>clear()</code> method, it must be synchronized externally.</p>
- *
- */
+
 class FirstMoment extends AbstractStorelessUnivariateStatistic
     implements Serializable {
 
-    /** Serializable version identifier */
+    
     private static final long serialVersionUID = 6112755307178490473L;
 
 
-    /** Count of values that have been added */
+    
     protected long n;
 
-    /** First moment of values that have been added */
+    
     protected double m1;
 
-    /**
-     * Deviation of most recently added value from previous first moment.
-     * Retained to prevent repeated computation in higher order moments.
-     */
+    
     protected double dev;
 
-    /**
-     * Deviation of most recently added value from previous first moment,
-     * normalized by previous sample size.  Retained to prevent repeated
-     * computation in higher order moments
-     */
+    
     protected double nDev;
 
-    /**
-     * Create a FirstMoment instance
-     */
+    
     FirstMoment() {
         n = 0;
         m1 = Double.NaN;
@@ -84,21 +50,13 @@ class FirstMoment extends AbstractStorelessUnivariateStatistic
         nDev = Double.NaN;
     }
 
-    /**
-     * Copy constructor, creates a new {@code FirstMoment} identical
-     * to the {@code original}
-     *
-     * @param original the {@code FirstMoment} instance to copy
-     * @throws NullArgumentException if original is null
-     */
+    
      FirstMoment(FirstMoment original) throws NullArgumentException {
          super();
          copy(original, this);
      }
 
-    /**
-     * {@inheritDoc}
-     */
+    
      @Override
     public void increment(final double d) {
         if (n == 0) {
@@ -111,9 +69,7 @@ class FirstMoment extends AbstractStorelessUnivariateStatistic
         m1 += nDev;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    
     @Override
     public void clear() {
         m1 = Double.NaN;
@@ -122,24 +78,18 @@ class FirstMoment extends AbstractStorelessUnivariateStatistic
         nDev = Double.NaN;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    
     @Override
     public double getResult() {
         return m1;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    
     public long getN() {
         return n;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    
     @Override
     public FirstMoment copy() {
         FirstMoment result = new FirstMoment();
@@ -148,14 +98,7 @@ class FirstMoment extends AbstractStorelessUnivariateStatistic
         return result;
     }
 
-    /**
-     * Copies source to dest.
-     * <p>Neither source nor dest can be null.</p>
-     *
-     * @param source FirstMoment to copy
-     * @param dest FirstMoment to copy to
-     * @throws NullArgumentException if either source or dest is null
-     */
+    
     public static void copy(FirstMoment source, FirstMoment dest)
         throws NullArgumentException {
         MathUtils.checkNotNull(source);

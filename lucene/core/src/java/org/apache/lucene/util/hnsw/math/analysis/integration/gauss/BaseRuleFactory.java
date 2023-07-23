@@ -23,34 +23,16 @@ import org.apache.lucene.util.hnsw.math.exception.DimensionMismatchException;
 import org.apache.lucene.util.hnsw.math.exception.NotStrictlyPositiveException;
 import org.apache.lucene.util.hnsw.math.exception.util.LocalizedFormats;
 
-/**
- * Base class for rules that determines the integration nodes and their
- * weights.
- * Subclasses must implement the {@link #computeRule(int) computeRule} method.
- *
- * @param <T> Type of the number used to represent the points and weights of
- * the quadrature rules.
- *
- * @since 3.1
- */
+
 public abstract class BaseRuleFactory<T extends Number> {
-    /** List of points and weights, indexed by the order of the rule. */
+    
     private final Map<Integer, Pair<T[], T[]>> pointsAndWeights
         = new TreeMap<Integer, Pair<T[], T[]>>();
-    /** Cache for double-precision rules. */
+    
     private final Map<Integer, Pair<double[], double[]>> pointsAndWeightsDouble
         = new TreeMap<Integer, Pair<double[], double[]>>();
 
-    /**
-     * Gets a copy of the quadrature rule with the given number of integration
-     * points.
-     *
-     * @param numberOfPoints Number of integration points.
-     * @return a copy of the integration rule.
-     * @throws NotStrictlyPositiveException if {@code numberOfPoints < 1}.
-     * @throws DimensionMismatchException if the elements of the rule pair do not
-     * have the same length.
-     */
+    
     public Pair<double[], double[]> getRule(int numberOfPoints)
         throws NotStrictlyPositiveException, DimensionMismatchException {
 
@@ -78,17 +60,7 @@ public abstract class BaseRuleFactory<T extends Number> {
                                             cached.getSecond().clone());
     }
 
-    /**
-     * Gets a rule.
-     * Synchronization ensures that rules will be computed and added to the
-     * cache at most once.
-     * The returned rule is a reference into the cache.
-     *
-     * @param numberOfPoints Order of the rule to be retrieved.
-     * @return the points and weights corresponding to the given order.
-     * @throws DimensionMismatchException if the elements of the rule pair do not
-     * have the same length.
-     */
+    
     protected synchronized Pair<T[], T[]> getRuleInternal(int numberOfPoints)
         throws DimensionMismatchException {
         final Pair<T[], T[]> rule = pointsAndWeights.get(numberOfPoints);
@@ -100,13 +72,7 @@ public abstract class BaseRuleFactory<T extends Number> {
         return rule;
     }
 
-    /**
-     * Stores a rule.
-     *
-     * @param rule Rule to be stored.
-     * @throws DimensionMismatchException if the elements of the pair do not
-     * have the same length.
-     */
+    
     protected void addRule(Pair<T[], T[]> rule) throws DimensionMismatchException {
         if (rule.getFirst().length != rule.getSecond().length) {
             throw new DimensionMismatchException(rule.getFirst().length,
@@ -116,25 +82,11 @@ public abstract class BaseRuleFactory<T extends Number> {
         pointsAndWeights.put(rule.getFirst().length, rule);
     }
 
-    /**
-     * Computes the rule for the given order.
-     *
-     * @param numberOfPoints Order of the rule to be computed.
-     * @return the computed rule.
-     * @throws DimensionMismatchException if the elements of the pair do not
-     * have the same length.
-     */
+    
     protected abstract Pair<T[], T[]> computeRule(int numberOfPoints)
         throws DimensionMismatchException;
 
-    /**
-     * Converts the from the actual {@code Number} type to {@code double}
-     *
-     * @param <T> Type of the number used to represent the points and
-     * weights of the quadrature rules.
-     * @param rule Points and weights.
-     * @return points and weights as {@code double}s.
-     */
+    
     private static <T extends Number> Pair<double[], double[]> convertToDouble(Pair<T[], T[]> rule) {
         final T[] pT = rule.getFirst();
         final T[] wT = rule.getSecond();

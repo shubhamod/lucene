@@ -29,30 +29,12 @@ import org.apache.lucene.util.hnsw.math.ml.distance.DistanceMeasure;
 import org.apache.lucene.util.hnsw.math.ml.neuralnet.twod.NeuronSquareMesh2D;
 import org.apache.lucene.util.hnsw.math.util.Pair;
 
-/**
- * Utilities for network maps.
- *
- * @since 3.3
- */
+
 public class MapUtils {
-    /**
-     * Class contains only static methods.
-     */
+    
     private MapUtils() {}
 
-    /**
-     * Finds the neuron that best matches the given features.
-     *
-     * @param features Data.
-     * @param neurons List of neurons to scan. If the list is empty
-     * {@code null} will be returned.
-     * @param distance Distance function. The neuron's features are
-     * passed as the first argument to {@link DistanceMeasure#compute(double[],double[])}.
-     * @return the neuron whose features are closest to the given data.
-     * @throws org.apache.lucene.util.hnsw.math.exception.DimensionMismatchException
-     * if the size of the input is not compatible with the neurons features
-     * size.
-     */
+    
     public static Neuron findBest(double[] features,
                                   Iterable<Neuron> neurons,
                                   DistanceMeasure distance) {
@@ -69,19 +51,7 @@ public class MapUtils {
         return best;
     }
 
-    /**
-     * Finds the two neurons that best match the given features.
-     *
-     * @param features Data.
-     * @param neurons List of neurons to scan. If the list is empty
-     * {@code null} will be returned.
-     * @param distance Distance function. The neuron's features are
-     * passed as the first argument to {@link DistanceMeasure#compute(double[],double[])}.
-     * @return the two neurons whose features are closest to the given data.
-     * @throws org.apache.lucene.util.hnsw.math.exception.DimensionMismatchException
-     * if the size of the input is not compatible with the neurons features
-     * size.
-     */
+    
     public static Pair<Neuron, Neuron> findBestAndSecondBest(double[] features,
                                                              Iterable<Neuron> neurons,
                                                              DistanceMeasure distance) {
@@ -108,25 +78,7 @@ public class MapUtils {
         return new Pair<Neuron, Neuron>(best[0], best[1]);
     }
 
-    /**
-     * Creates a list of neurons sorted in increased order of the distance
-     * to the given {@code features}.
-     *
-     * @param features Data.
-     * @param neurons List of neurons to scan. If it is empty, an empty array
-     * will be returned.
-     * @param distance Distance function.
-     * @return the neurons, sorted in increasing order of distance in data
-     * space.
-     * @throws org.apache.lucene.util.hnsw.math.exception.DimensionMismatchException
-     * if the size of the input is not compatible with the neurons features
-     * size.
-     *
-     * @see #findBest(double[],Iterable,DistanceMeasure)
-     * @see #findBestAndSecondBest(double[],Iterable,DistanceMeasure)
-     *
-     * @since 3.6
-     */
+    
     public static Neuron[] sort(double[] features,
                                 Iterable<Neuron> neurons,
                                 DistanceMeasure distance) {
@@ -148,15 +100,7 @@ public class MapUtils {
         return sorted;
     }
 
-    /**
-     * Computes the <a href="http://en.wikipedia.org/wiki/U-Matrix">
-     *  U-matrix</a> of a two-dimensional map.
-     *
-     * @param map Network.
-     * @param distance Function to use for computing the average
-     * distance from a neuron to its neighbours.
-     * @return the matrix of average distances.
-     */
+    
     public static double[][] computeU(NeuronSquareMesh2D map,
                                       DistanceMeasure distance) {
         final int numRows = map.getNumberOfRows();
@@ -185,14 +129,7 @@ public class MapUtils {
         return uMatrix;
     }
 
-    /**
-     * Computes the "hit" histogram of a two-dimensional map.
-     *
-     * @param data Feature vectors.
-     * @param map Network.
-     * @param distance Function to use for determining the best matching unit.
-     * @return the number of hits for each neuron in the map.
-     */
+    
     public static int[][] computeHitHistogram(Iterable<double[]> data,
                                               NeuronSquareMesh2D map,
                                               DistanceMeasure distance) {
@@ -229,17 +166,7 @@ public class MapUtils {
         return histo;
     }
 
-    /**
-     * Computes the quantization error.
-     * The quantization error is the average distance between a feature vector
-     * and its "best matching unit" (closest neuron).
-     *
-     * @param data Feature vectors.
-     * @param neurons List of neurons to scan.
-     * @param distance Distance function.
-     * @return the error.
-     * @throws NoDataException if {@code data} is empty.
-     */
+    
     public static double computeQuantizationError(Iterable<double[]> data,
                                                   Iterable<Neuron> neurons,
                                                   DistanceMeasure distance) {
@@ -257,17 +184,7 @@ public class MapUtils {
         return d / count;
     }
 
-    /**
-     * Computes the topographic error.
-     * The topographic error is the proportion of data for which first and
-     * second best matching units are not adjacent in the map.
-     *
-     * @param data Feature vectors.
-     * @param net Network.
-     * @param distance Distance function.
-     * @return the error.
-     * @throws NoDataException if {@code data} is empty.
-     */
+    
     public static double computeTopographicError(Iterable<double[]> data,
                                                  Network net,
                                                  DistanceMeasure distance) {
@@ -290,34 +207,29 @@ public class MapUtils {
         return ((double) notAdjacentCount) / count;
     }
 
-    /**
-     * Helper data structure holding a (Neuron, double) pair.
-     */
+    
     private static class PairNeuronDouble {
-        /** Comparator. */
+        
         static final Comparator<PairNeuronDouble> COMPARATOR
             = new Comparator<PairNeuronDouble>() {
-            /** {@inheritDoc} */
+            
             public int compare(PairNeuronDouble o1,
                                PairNeuronDouble o2) {
                 return Double.compare(o1.value, o2.value);
             }
         };
-        /** Key. */
+        
         private final Neuron neuron;
-        /** Value. */
+        
         private final double value;
 
-        /**
-         * @param neuron Neuron.
-         * @param value Value.
-         */
+        
         PairNeuronDouble(Neuron neuron, double value) {
             this.neuron = neuron;
             this.value = value;
         }
 
-        /** @return the neuron. */
+        
         public Neuron getNeuron() {
             return neuron;
         }

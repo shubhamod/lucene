@@ -20,61 +20,29 @@ import org.apache.lucene.util.hnsw.math.exception.DimensionMismatchException;
 import org.apache.lucene.util.hnsw.math.exception.NumberIsTooSmallException;
 import org.apache.lucene.util.hnsw.math.exception.NumberIsTooLargeException;
 
-/**
- * Base class for implementing optimizers for multivariate functions.
- * It contains the boiler-plate code for initial guess and bounds
- * specifications.
- * <em>It is not a "user" class.</em>
- *
- * @param <PAIR> Type of the point/value pair returned by the optimization
- * algorithm.
- *
- * @since 3.1
- */
+
 public abstract class BaseMultivariateOptimizer<PAIR>
     extends BaseOptimizer<PAIR> {
-    /** Initial guess. */
+    
     private double[] start;
-    /** Lower bounds. */
+    
     private double[] lowerBound;
-    /** Upper bounds. */
+    
     private double[] upperBound;
 
-    /**
-     * @param checker Convergence checker.
-     */
+    
     protected BaseMultivariateOptimizer(ConvergenceChecker<PAIR> checker) {
         super(checker);
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @param optData Optimization data. In addition to those documented in
-     * {@link BaseOptimizer#parseOptimizationData(OptimizationData[]) BaseOptimizer},
-     * this method will register the following data:
-     * <ul>
-     *  <li>{@link InitialGuess}</li>
-     *  <li>{@link SimpleBounds}</li>
-     * </ul>
-     * @return {@inheritDoc}
-     */
+    
     @Override
     public PAIR optimize(OptimizationData... optData) {
         // Perform optimization.
         return super.optimize(optData);
     }
 
-    /**
-     * Scans the list of (required and optional) optimization data that
-     * characterize the problem.
-     *
-     * @param optData Optimization data. The following data will be looked for:
-     * <ul>
-     *  <li>{@link InitialGuess}</li>
-     *  <li>{@link SimpleBounds}</li>
-     * </ul>
-     */
+    
     @Override
     protected void parseOptimizationData(OptimizationData... optData) {
         // Allow base class to register its own data.
@@ -99,30 +67,20 @@ public abstract class BaseMultivariateOptimizer<PAIR>
         checkParameters();
     }
 
-    /**
-     * Gets the initial guess.
-     *
-     * @return the initial guess, or {@code null} if not set.
-     */
+    
     public double[] getStartPoint() {
         return start == null ? null : start.clone();
     }
-    /**
-     * @return the lower bounds, or {@code null} if not set.
-     */
+    
     public double[] getLowerBound() {
         return lowerBound == null ? null : lowerBound.clone();
     }
-    /**
-     * @return the upper bounds, or {@code null} if not set.
-     */
+    
     public double[] getUpperBound() {
         return upperBound == null ? null : upperBound.clone();
     }
 
-    /**
-     * Check parameters consistency.
-     */
+    
     private void checkParameters() {
         if (start != null) {
             final int dim = start.length;

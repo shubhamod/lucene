@@ -24,50 +24,18 @@ import org.apache.lucene.util.hnsw.math.exception.NonMonotonicSequenceException;
 import org.apache.lucene.util.hnsw.math.exception.NumberIsTooSmallException;
 import org.apache.lucene.util.hnsw.math.exception.util.LocalizedFormats;
 
-/**
- * Implements the representation of a real polynomial function in
- * <a href="http://mathworld.wolfram.com/LagrangeInterpolatingPolynomial.html">
- * Lagrange Form</a>. For reference, see <b>Introduction to Numerical
- * Analysis</b>, ISBN 038795452X, chapter 2.
- * <p>
- * The approximated function should be smooth enough for Lagrange polynomial
- * to work well. Otherwise, consider using splines instead.</p>
- *
- * @since 1.2
- */
+
 public class PolynomialFunctionLagrangeForm implements UnivariateFunction {
-    /**
-     * The coefficients of the polynomial, ordered by degree -- i.e.
-     * coefficients[0] is the constant term and coefficients[n] is the
-     * coefficient of x^n where n is the degree of the polynomial.
-     */
+    
     private double coefficients[];
-    /**
-     * Interpolating points (abscissas).
-     */
+    
     private final double x[];
-    /**
-     * Function values at interpolating points.
-     */
+    
     private final double y[];
-    /**
-     * Whether the polynomial coefficients are available.
-     */
+    
     private boolean coefficientsComputed;
 
-    /**
-     * Construct a Lagrange polynomial with the given abscissas and function
-     * values. The order of interpolating points are not important.
-     * <p>
-     * The constructor makes copy of the input arrays and assigns them.</p>
-     *
-     * @param x interpolating points
-     * @param y function values at interpolating points
-     * @throws DimensionMismatchException if the array lengths are different.
-     * @throws NumberIsTooSmallException if the number of points is less than 2.
-     * @throws NonMonotonicSequenceException
-     * if two abscissae have the same value.
-     */
+    
     public PolynomialFunctionLagrangeForm(double x[], double y[])
         throws DimensionMismatchException, NumberIsTooSmallException, NonMonotonicSequenceException {
         this.x = new double[x.length];
@@ -83,67 +51,31 @@ public class PolynomialFunctionLagrangeForm implements UnivariateFunction {
         }
     }
 
-    /**
-     * Calculate the function value at the given point.
-     *
-     * @param z Point at which the function value is to be computed.
-     * @return the function value.
-     * @throws DimensionMismatchException if {@code x} and {@code y} have
-     * different lengths.
-     * @throws NonMonotonicSequenceException
-     * if {@code x} is not sorted in strictly increasing order.
-     * @throws NumberIsTooSmallException if the size of {@code x} is less
-     * than 2.
-     */
+    
     public double value(double z) {
         return evaluateInternal(x, y, z);
     }
 
-    /**
-     * Returns the degree of the polynomial.
-     *
-     * @return the degree of the polynomial
-     */
+    
     public int degree() {
         return x.length - 1;
     }
 
-    /**
-     * Returns a copy of the interpolating points array.
-     * <p>
-     * Changes made to the returned copy will not affect the polynomial.</p>
-     *
-     * @return a fresh copy of the interpolating points array
-     */
+    
     public double[] getInterpolatingPoints() {
         double[] out = new double[x.length];
         System.arraycopy(x, 0, out, 0, x.length);
         return out;
     }
 
-    /**
-     * Returns a copy of the interpolating values array.
-     * <p>
-     * Changes made to the returned copy will not affect the polynomial.</p>
-     *
-     * @return a fresh copy of the interpolating values array
-     */
+    
     public double[] getInterpolatingValues() {
         double[] out = new double[y.length];
         System.arraycopy(y, 0, out, 0, y.length);
         return out;
     }
 
-    /**
-     * Returns a copy of the coefficients array.
-     * <p>
-     * Changes made to the returned copy will not affect the polynomial.</p>
-     * <p>
-     * Note that coefficients computation can be ill-conditioned. Use with caution
-     * and only when it is necessary.</p>
-     *
-     * @return a fresh copy of the coefficients array
-     */
+    
     public double[] getCoefficients() {
         if (!coefficientsComputed) {
             computeCoefficients();
@@ -153,22 +85,7 @@ public class PolynomialFunctionLagrangeForm implements UnivariateFunction {
         return out;
     }
 
-    /**
-     * Evaluate the Lagrange polynomial using
-     * <a href="http://mathworld.wolfram.com/NevillesAlgorithm.html">
-     * Neville's Algorithm</a>. It takes O(n^2) time.
-     *
-     * @param x Interpolating points array.
-     * @param y Interpolating values array.
-     * @param z Point at which the function value is to be computed.
-     * @return the function value.
-     * @throws DimensionMismatchException if {@code x} and {@code y} have
-     * different lengths.
-     * @throws NonMonotonicSequenceException
-     * if {@code x} is not sorted in strictly increasing order.
-     * @throws NumberIsTooSmallException if the size of {@code x} is less
-     * than 2.
-     */
+    
     public static double evaluate(double x[], double y[], double z)
         throws DimensionMismatchException, NumberIsTooSmallException, NonMonotonicSequenceException {
         if (verifyInterpolationArray(x, y, false)) {
@@ -187,22 +104,7 @@ public class PolynomialFunctionLagrangeForm implements UnivariateFunction {
         return evaluateInternal(xNew, yNew, z);
     }
 
-    /**
-     * Evaluate the Lagrange polynomial using
-     * <a href="http://mathworld.wolfram.com/NevillesAlgorithm.html">
-     * Neville's Algorithm</a>. It takes O(n^2) time.
-     *
-     * @param x Interpolating points array.
-     * @param y Interpolating values array.
-     * @param z Point at which the function value is to be computed.
-     * @return the function value.
-     * @throws DimensionMismatchException if {@code x} and {@code y} have
-     * different lengths.
-     * @throws NonMonotonicSequenceException
-     * if {@code x} is not sorted in strictly increasing order.
-     * @throws NumberIsTooSmallException if the size of {@code x} is less
-     * than 2.
-     */
+    
     private static double evaluateInternal(double x[], double y[], double z) {
         int nearest = 0;
         final int n = x.length;
@@ -246,12 +148,7 @@ public class PolynomialFunctionLagrangeForm implements UnivariateFunction {
         return value;
     }
 
-    /**
-     * Calculate the coefficients of Lagrange polynomial from the
-     * interpolation data. It takes O(n^2) time.
-     * Note that this computation can be ill-conditioned: Use with caution
-     * and only when it is necessary.
-     */
+    
     protected void computeCoefficients() {
         final int n = degree() + 1;
         coefficients = new double[n];
@@ -294,24 +191,7 @@ public class PolynomialFunctionLagrangeForm implements UnivariateFunction {
         coefficientsComputed = true;
     }
 
-    /**
-     * Check that the interpolation arrays are valid.
-     * The arrays features checked by this method are that both arrays have the
-     * same length and this length is at least 2.
-     *
-     * @param x Interpolating points array.
-     * @param y Interpolating values array.
-     * @param abort Whether to throw an exception if {@code x} is not sorted.
-     * @throws DimensionMismatchException if the array lengths are different.
-     * @throws NumberIsTooSmallException if the number of points is less than 2.
-     * @throws NonMonotonicSequenceException
-     * if {@code x} is not sorted in strictly increasing order and {@code abort}
-     * is {@code true}.
-     * @return {@code false} if the {@code x} is not sorted in increasing order,
-     * {@code true} otherwise.
-     * @see #evaluate(double[], double[], double)
-     * @see #computeCoefficients()
-     */
+    
     public static boolean verifyInterpolationArray(double x[], double y[], boolean abort)
         throws DimensionMismatchException, NumberIsTooSmallException, NonMonotonicSequenceException {
         if (x.length != y.length) {

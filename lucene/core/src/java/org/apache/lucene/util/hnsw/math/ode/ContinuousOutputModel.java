@@ -29,87 +29,30 @@ import org.apache.lucene.util.hnsw.math.ode.sampling.StepHandler;
 import org.apache.lucene.util.hnsw.math.ode.sampling.StepInterpolator;
 import org.apache.lucene.util.hnsw.math.util.FastMath;
 
-/**
- * This class stores all information provided by an ODE integrator
- * during the integration process and build a continuous model of the
- * solution from this.
- *
- * <p>This class act as a step handler from the integrator point of
- * view. It is called iteratively during the integration process and
- * stores a copy of all steps information in a sorted collection for
- * later use. Once the integration process is over, the user can use
- * the {@link #setInterpolatedTime setInterpolatedTime} and {@link
- * #getInterpolatedState getInterpolatedState} to retrieve this
- * information at any time. It is important to wait for the
- * integration to be over before attempting to call {@link
- * #setInterpolatedTime setInterpolatedTime} because some internal
- * variables are set only once the last step has been handled.</p>
- *
- * <p>This is useful for example if the main loop of the user
- * application should remain independent from the integration process
- * or if one needs to mimic the behaviour of an analytical model
- * despite a numerical model is used (i.e. one needs the ability to
- * get the model value at any time or to navigate through the
- * data).</p>
- *
- * <p>If problem modeling is done with several separate
- * integration phases for contiguous intervals, the same
- * ContinuousOutputModel can be used as step handler for all
- * integration phases as long as they are performed in order and in
- * the same direction. As an example, one can extrapolate the
- * trajectory of a satellite with one model (i.e. one set of
- * differential equations) up to the beginning of a maneuver, use
- * another more complex model including thrusters modeling and
- * accurate attitude control during the maneuver, and revert to the
- * first model after the end of the maneuver. If the same continuous
- * output model handles the steps of all integration phases, the user
- * do not need to bother when the maneuver begins or ends, he has all
- * the data available in a transparent manner.</p>
- *
- * <p>An important feature of this class is that it implements the
- * <code>Serializable</code> interface. This means that the result of
- * an integration can be serialized and reused later (if stored into a
- * persistent medium like a filesystem or a database) or elsewhere (if
- * sent to another application). Only the result of the integration is
- * stored, there is no reference to the integrated problem by
- * itself.</p>
- *
- * <p>One should be aware that the amount of data stored in a
- * ContinuousOutputModel instance can be important if the state vector
- * is large, if the integration interval is long or if the steps are
- * small (which can result from small tolerance settings in {@link
- * org.apache.lucene.util.hnsw.math.ode.nonstiff.AdaptiveStepsizeIntegrator adaptive
- * step size integrators}).</p>
- *
- * @see StepHandler
- * @see StepInterpolator
- * @since 1.2
- */
+
 
 public class ContinuousOutputModel
   implements StepHandler, Serializable {
 
-    /** Serializable version identifier */
+    
     private static final long serialVersionUID = -1417964919405031606L;
 
-    /** Initial integration time. */
+    
     private double initialTime;
 
-    /** Final integration time. */
+    
     private double finalTime;
 
-    /** Integration direction indicator. */
+    
     private boolean forward;
 
-    /** Current interpolator index. */
+    
     private int index;
 
-    /** Steps table. */
+    
     private List<StepInterpolator> steps;
 
-  /** Simple constructor.
-   * Build an empty continuous output model.
-   */
+  
   public ContinuousOutputModel() {
     steps = new ArrayList<StepInterpolator>();
     initialTime = Double.NaN;
@@ -118,14 +61,7 @@ public class ContinuousOutputModel
     index       = 0;
   }
 
-  /** Append another model at the end of the instance.
-   * @param model model to add at the end of the instance
-   * @exception MathIllegalArgumentException if the model to append is not
-   * compatible with the instance (dimension of the state vector,
-   * propagation direction, hole between the dates)
-   * @exception MaxCountExceededException if the number of functions evaluations is exceeded
-   * during step finalization
-   */
+  
   public void append(final ContinuousOutputModel model)
     throws MathIllegalArgumentException, MaxCountExceededException {
 
@@ -168,7 +104,7 @@ public class ContinuousOutputModel
 
   }
 
-  /** {@inheritDoc} */
+  
   public void init(double t0, double[] y0, double t) {
     initialTime = Double.NaN;
     finalTime   = Double.NaN;
@@ -177,14 +113,7 @@ public class ContinuousOutputModel
     steps.clear();
   }
 
-  /** Handle the last accepted step.
-   * A copy of the information provided by the last step is stored in
-   * the instance for later use.
-   * @param interpolator interpolator for the last accepted step.
-   * @param isLast true if the step is the last one
-   * @exception MaxCountExceededException if the number of functions evaluations is exceeded
-   * during step finalization
-   */
+  
   public void handleStep(final StepInterpolator interpolator, final boolean isLast)
       throws MaxCountExceededException {
 
@@ -202,51 +131,22 @@ public class ContinuousOutputModel
 
   }
 
-  /**
-   * Get the initial integration time.
-   * @return initial integration time
-   */
+  
   public double getInitialTime() {
     return initialTime;
   }
 
-  /**
-   * Get the final integration time.
-   * @return final integration time
-   */
+  
   public double getFinalTime() {
     return finalTime;
   }
 
-  /**
-   * Get the time of the interpolated point.
-   * If {@link #setInterpolatedTime} has not been called, it returns
-   * the final integration time.
-   * @return interpolation point time
-   */
+  
   public double getInterpolatedTime() {
     return steps.get(index).getInterpolatedTime();
   }
 
-  /** Set the time of the interpolated point.
-   * <p>This method should <strong>not</strong> be called before the
-   * integration is over because some internal variables are set only
-   * once the last step has been handled.</p>
-   * <p>Setting the time outside of the integration interval is now
-   * allowed, but should be used with care since the accuracy of the
-   * interpolator will probably be very poor far from this interval.
-   * This allowance has been added to simplify implementation of search
-   * algorithms near the interval endpoints.</p>
-   * <p>Note that each time this method is called, the internal arrays
-   * returned in {@link #getInterpolatedState()}, {@link
-   * #getInterpolatedDerivatives()} and {@link #getInterpolatedSecondaryState(int)}
-   * <em>will</em> be overwritten. So if their content must be preserved
-   * across several calls, user must copy them.</p>
-   * @param time time of the interpolated point
-   * @see #getInterpolatedState()
-   * @see #getInterpolatedDerivatives()
-   * @see #getInterpolatedSecondaryState(int)
-   */
+  
   public void setInterpolatedTime(final double time) {
 
       // initialize the search with the complete steps table
@@ -335,92 +235,29 @@ public class ContinuousOutputModel
 
   }
 
-  /**
-   * Get the state vector of the interpolated point.
-   * <p>The returned vector is a reference to a reused array, so
-   * it should not be modified and it should be copied if it needs
-   * to be preserved across several calls to the associated
-   * {@link #setInterpolatedTime(double)} method.</p>
-   * @return state vector at time {@link #getInterpolatedTime}
-   * @exception MaxCountExceededException if the number of functions evaluations is exceeded
-   * @see #setInterpolatedTime(double)
-   * @see #getInterpolatedDerivatives()
-   * @see #getInterpolatedSecondaryState(int)
-   * @see #getInterpolatedSecondaryDerivatives(int)
-   */
+  
   public double[] getInterpolatedState() throws MaxCountExceededException {
     return steps.get(index).getInterpolatedState();
   }
 
-  /**
-   * Get the derivatives of the state vector of the interpolated point.
-   * <p>The returned vector is a reference to a reused array, so
-   * it should not be modified and it should be copied if it needs
-   * to be preserved across several calls to the associated
-   * {@link #setInterpolatedTime(double)} method.</p>
-   * @return derivatives of the state vector at time {@link #getInterpolatedTime}
-   * @exception MaxCountExceededException if the number of functions evaluations is exceeded
-   * @see #setInterpolatedTime(double)
-   * @see #getInterpolatedState()
-   * @see #getInterpolatedSecondaryState(int)
-   * @see #getInterpolatedSecondaryDerivatives(int)
-   * @since 3.4
-   */
+  
   public double[] getInterpolatedDerivatives() throws MaxCountExceededException {
     return steps.get(index).getInterpolatedDerivatives();
   }
 
-  /** Get the interpolated secondary state corresponding to the secondary equations.
-   * <p>The returned vector is a reference to a reused array, so
-   * it should not be modified and it should be copied if it needs
-   * to be preserved across several calls to the associated
-   * {@link #setInterpolatedTime(double)} method.</p>
-   * @param secondaryStateIndex index of the secondary set, as returned by {@link
-   * org.apache.lucene.util.hnsw.math.ode.ExpandableStatefulODE#addSecondaryEquations(
-   * org.apache.lucene.util.hnsw.math.ode.SecondaryEquations)
-   * ExpandableStatefulODE.addSecondaryEquations(SecondaryEquations)}
-   * @return interpolated secondary state at the current interpolation date
-   * @see #setInterpolatedTime(double)
-   * @see #getInterpolatedState()
-   * @see #getInterpolatedDerivatives()
-   * @see #getInterpolatedSecondaryDerivatives(int)
-   * @since 3.2
-   * @exception MaxCountExceededException if the number of functions evaluations is exceeded
-   */
+  
   public double[] getInterpolatedSecondaryState(final int secondaryStateIndex)
     throws MaxCountExceededException {
     return steps.get(index).getInterpolatedSecondaryState(secondaryStateIndex);
   }
 
-  /** Get the interpolated secondary derivatives corresponding to the secondary equations.
-   * <p>The returned vector is a reference to a reused array, so
-   * it should not be modified and it should be copied if it needs
-   * to be preserved across several calls to the associated
-   * {@link #setInterpolatedTime(double)} method.</p>
-   * @param secondaryStateIndex index of the secondary set, as returned by {@link
-   * org.apache.lucene.util.hnsw.math.ode.ExpandableStatefulODE#addSecondaryEquations(
-   * org.apache.lucene.util.hnsw.math.ode.SecondaryEquations)
-   * ExpandableStatefulODE.addSecondaryEquations(SecondaryEquations)}
-   * @return interpolated secondary derivatives at the current interpolation date
-   * @see #setInterpolatedTime(double)
-   * @see #getInterpolatedState()
-   * @see #getInterpolatedDerivatives()
-   * @see #getInterpolatedSecondaryState(int)
-   * @since 3.4
-   * @exception MaxCountExceededException if the number of functions evaluations is exceeded
-   */
+  
   public double[] getInterpolatedSecondaryDerivatives(final int secondaryStateIndex)
     throws MaxCountExceededException {
     return steps.get(index).getInterpolatedSecondaryDerivatives(secondaryStateIndex);
   }
 
-  /** Compare a step interval and a double.
-   * @param time point to locate
-   * @param interval step interval
-   * @return -1 if the double is before the interval, 0 if it is in
-   * the interval, and +1 if it is after the interval, according to
-   * the interval direction
-   */
+  
   private int locatePoint(final double time, final StepInterpolator interval) {
     if (forward) {
       if (time < interval.getPreviousTime()) {

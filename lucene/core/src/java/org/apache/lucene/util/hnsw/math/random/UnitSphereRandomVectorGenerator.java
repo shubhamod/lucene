@@ -20,43 +20,27 @@ package org.apache.lucene.util.hnsw.math.random;
 import org.apache.lucene.util.hnsw.math.util.FastMath;
 
 
-/**
- * Generate random vectors isotropically located on the surface of a sphere.
- *
- * @since 2.1
- */
+
 
 public class UnitSphereRandomVectorGenerator
     implements RandomVectorGenerator {
-    /**
-     * RNG used for generating the individual components of the vectors.
-     */
+    
     private final RandomGenerator rand;
-    /**
-     * Space dimension.
-     */
+    
     private final int dimension;
 
-    /**
-     * @param dimension Space dimension.
-     * @param rand RNG for the individual components of the vectors.
-     */
+    
     public UnitSphereRandomVectorGenerator(final int dimension,
                                            final RandomGenerator rand) {
         this.dimension = dimension;
         this.rand = rand;
     }
-    /**
-     * Create an object that will use a default RNG ({@link MersenneTwister}),
-     * in order to generate the individual components.
-     *
-     * @param dimension Space dimension.
-     */
+    
     public UnitSphereRandomVectorGenerator(final int dimension) {
         this(dimension, new MersenneTwister());
     }
 
-    /** {@inheritDoc} */
+    
     public double[] nextVector() {
         final double[] v = new double[dimension];
 

@@ -24,34 +24,15 @@ import org.apache.lucene.util.hnsw.math.ode.FieldEquationsMapper;
 import org.apache.lucene.util.hnsw.math.ode.FieldODEStateAndDerivative;
 import org.apache.lucene.util.hnsw.math.util.MathArrays;
 
-/**
- * This class represents an interpolator over the last step during an
- * ODE integration for the 8(5,3) Dormand-Prince integrator.
- *
- * @see DormandPrince853FieldIntegrator
- *
- * @param <T> the type of the field elements
- * @since 3.6
- */
+
 
 class DormandPrince853FieldStepInterpolator<T extends RealFieldElement<T>>
     extends RungeKuttaFieldStepInterpolator<T> {
 
-    /** Interpolation weights.
-     * (beware that only the non-null values are in the table)
-     */
+    
     private final T[][] d;
 
-    /** Simple constructor.
-     * @param field field to which the time and state vector elements belong
-     * @param forward integration direction indicator
-     * @param yDotK slopes at the intermediate points
-     * @param globalPreviousState start of the global step
-     * @param globalCurrentState end of the global step
-     * @param softPreviousState start of the restricted step
-     * @param softCurrentState end of the restricted step
-     * @param mapper equations mapper for the all equations
-     */
+    
     DormandPrince853FieldStepInterpolator(final Field<T> field, final boolean forward,
                                           final T[][] yDotK,
                                           final FieldODEStateAndDerivative<T> globalPreviousState,
@@ -187,7 +168,7 @@ class DormandPrince853FieldStepInterpolator<T extends RealFieldElement<T>>
 
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     protected DormandPrince853FieldStepInterpolator<T> create(final Field<T> newField, final boolean newForward, final T[][] newYDotK,
                                                                final FieldODEStateAndDerivative<T> newGlobalPreviousState,
@@ -201,17 +182,12 @@ class DormandPrince853FieldStepInterpolator<T extends RealFieldElement<T>>
                                                             newMapper);
     }
 
-    /** Create a fraction.
-     * @param field field to which the elements belong
-     * @param p numerator
-     * @param q denominator
-     * @return p/q computed in the instance field
-     */
+    
     private T fraction(final Field<T> field, final double p, final double q) {
         return field.getZero().add(p).divide(q);
     }
 
-    /** {@inheritDoc} */
+    
     @SuppressWarnings("unchecked")
     @Override
     protected FieldODEStateAndDerivative<T> computeInterpolatedStateAndDerivatives(final FieldEquationsMapper<T> mapper,

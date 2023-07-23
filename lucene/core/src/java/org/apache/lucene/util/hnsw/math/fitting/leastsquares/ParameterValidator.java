@@ -18,17 +18,8 @@ package org.apache.lucene.util.hnsw.math.fitting.leastsquares;
 
 import org.apache.lucene.util.hnsw.math.linear.RealVector;
 
-/**
- * Interface for validating a set of model parameters.
- *
- * @since 3.4
- */
+
 public interface ParameterValidator {
-    /**
-     * Validates the set of parameters.
-     *
-     * @param params Input parameters.
-     * @return the validated values.
-     */
+    
     RealVector validate(RealVector params);
 }

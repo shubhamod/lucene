@@ -25,92 +25,37 @@ import org.apache.lucene.util.hnsw.math.special.Gamma;
 import org.apache.lucene.util.hnsw.math.util.FastMath;
 import org.apache.lucene.util.hnsw.math.util.Precision;
 
-/**
- * Implements the Beta distribution.
- *
- * @see <a href="http://en.wikipedia.org/wiki/Beta_distribution">Beta distribution</a>
- * @since 2.0 (changed to concrete class in 3.0)
- */
+
 public class BetaDistribution extends AbstractRealDistribution {
-    /**
-     * Default inverse cumulative probability accuracy.
-     * @since 2.1
-     */
+    
     public static final double DEFAULT_INVERSE_ABSOLUTE_ACCURACY = 1e-9;
-    /** Serializable version identifier. */
+    
     private static final long serialVersionUID = -1221965979403477668L;
-    /** First shape parameter. */
+    
     private final double alpha;
-    /** Second shape parameter. */
+    
     private final double beta;
-    /** Normalizing factor used in density computations.
-     * updated whenever alpha or beta are changed.
-     */
+    
     private double z;
-    /** Inverse cumulative probability accuracy. */
+    
     private final double solverAbsoluteAccuracy;
 
-    /**
-     * Build a new instance.
-     * <p>
-     * <b>Note:</b> this constructor will implicitly create an instance of
-     * {@link Well19937c} as random generator to be used for sampling only (see
-     * {@link #sample()} and {@link #sample(int)}). In case no sampling is
-     * needed for the created distribution, it is advised to pass {@code null}
-     * as random generator via the appropriate constructors to avoid the
-     * additional initialisation overhead.
-     *
-     * @param alpha First shape parameter (must be positive).
-     * @param beta Second shape parameter (must be positive).
-     */
+    
     public BetaDistribution(double alpha, double beta) {
         this(alpha, beta, DEFAULT_INVERSE_ABSOLUTE_ACCURACY);
     }
 
-    /**
-     * Build a new instance.
-     * <p>
-     * <b>Note:</b> this constructor will implicitly create an instance of
-     * {@link Well19937c} as random generator to be used for sampling only (see
-     * {@link #sample()} and {@link #sample(int)}). In case no sampling is
-     * needed for the created distribution, it is advised to pass {@code null}
-     * as random generator via the appropriate constructors to avoid the
-     * additional initialisation overhead.
-     *
-     * @param alpha First shape parameter (must be positive).
-     * @param beta Second shape parameter (must be positive).
-     * @param inverseCumAccuracy Maximum absolute error in inverse
-     * cumulative probability estimates (defaults to
-     * {@link #DEFAULT_INVERSE_ABSOLUTE_ACCURACY}).
-     * @since 2.1
-     */
+    
     public BetaDistribution(double alpha, double beta, double inverseCumAccuracy) {
         this(new Well19937c(), alpha, beta, inverseCumAccuracy);
     }
 
-    /**
-     * Creates a &beta; distribution.
-     *
-     * @param rng Random number generator.
-     * @param alpha First shape parameter (must be positive).
-     * @param beta Second shape parameter (must be positive).
-     * @since 3.3
-     */
+    
     public BetaDistribution(RandomGenerator rng, double alpha, double beta) {
         this(rng, alpha, beta, DEFAULT_INVERSE_ABSOLUTE_ACCURACY);
     }
 
-    /**
-     * Creates a &beta; distribution.
-     *
-     * @param rng Random number generator.
-     * @param alpha First shape parameter (must be positive).
-     * @param beta Second shape parameter (must be positive).
-     * @param inverseCumAccuracy Maximum absolute error in inverse
-     * cumulative probability estimates (defaults to
-     * {@link #DEFAULT_INVERSE_ABSOLUTE_ACCURACY}).
-     * @since 3.1
-     */
+    
     public BetaDistribution(RandomGenerator rng,
                             double alpha,
                             double beta,
@@ -123,32 +68,24 @@ public class BetaDistribution extends AbstractRealDistribution {
         solverAbsoluteAccuracy = inverseCumAccuracy;
     }
 
-    /**
-     * Access the first shape parameter, {@code alpha}.
-     *
-     * @return the first shape parameter.
-     */
+    
     public double getAlpha() {
         return alpha;
     }
 
-    /**
-     * Access the second shape parameter, {@code beta}.
-     *
-     * @return the second shape parameter.
-     */
+    
     public double getBeta() {
         return beta;
     }
 
-    /** Recompute the normalization factor. */
+    
     private void recomputeZ() {
         if (Double.isNaN(z)) {
             z = Gamma.logGamma(alpha) + Gamma.logGamma(beta) - Gamma.logGamma(alpha + beta);
         }
     }
 
-    /** {@inheritDoc} */
+    
     public double density(double x) {
         final double logDensity = logDensity(x);
         return logDensity == Double.NEGATIVE_INFINITY ? 0 : FastMath.exp(logDensity);
@@ -177,7 +114,7 @@ public class BetaDistribution extends AbstractRealDistribution {
         }
     }
 
-    /** {@inheritDoc} */
+    
     public double cumulativeProbability(double x)  {
         if (x <= 0) {
             return 0;
@@ -188,36 +125,19 @@ public class BetaDistribution extends AbstractRealDistribution {
         }
     }
 
-    /**
-     * Return the absolute accuracy setting of the solver used to estimate
-     * inverse cumulative probabilities.
-     *
-     * @return the solver absolute accuracy.
-     * @since 2.1
-     */
+    
     @Override
     protected double getSolverAbsoluteAccuracy() {
         return solverAbsoluteAccuracy;
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * For first shape parameter {@code alpha} and second shape parameter
-     * {@code beta}, the mean is {@code alpha / (alpha + beta)}.
-     */
+    
     public double getNumericalMean() {
         final double a = getAlpha();
         return a / (a + getBeta());
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * For first shape parameter {@code alpha} and second shape parameter
-     * {@code beta}, the variance is
-     * {@code (alpha * beta) / [(alpha + beta)^2 * (alpha + beta + 1)]}.
-     */
+    
     public double getNumericalVariance() {
         final double a = getAlpha();
         final double b = getBeta();
@@ -225,80 +145,42 @@ public class BetaDistribution extends AbstractRealDistribution {
         return (a * b) / ((alphabetasum * alphabetasum) * (alphabetasum + 1));
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * The lower bound of the support is always 0 no matter the parameters.
-     *
-     * @return lower bound of the support (always 0)
-     */
+    
     public double getSupportLowerBound() {
         return 0;
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * The upper bound of the support is always 1 no matter the parameters.
-     *
-     * @return upper bound of the support (always 1)
-     */
+    
     public double getSupportUpperBound() {
         return 1;
     }
 
-    /** {@inheritDoc} */
+    
     public boolean isSupportLowerBoundInclusive() {
         return false;
     }
 
-    /** {@inheritDoc} */
+    
     public boolean isSupportUpperBoundInclusive() {
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * The support of this distribution is connected.
-     *
-     * @return {@code true}
-     */
+    
     public boolean isSupportConnected() {
         return true;
     }
 
 
-    /** {@inheritDoc}
-    * <p>
-    * Sampling is performed using Cheng algorithms:
-    * </p>
-    * <p>
-    * R. C. H. Cheng, "Generating beta variates with nonintegral shape parameters.".
-    *                 Communications of the ACM, 21, 317â€“322, 1978.
-    * </p>
-    */
+    
     @Override
     public double sample() {
         return ChengBetaSampler.sample(random, alpha, beta);
     }
 
-    /** Utility class implementing Cheng's algorithms for beta distribution sampling.
-     * <p>
-     * R. C. H. Cheng, "Generating beta variates with nonintegral shape parameters.".
-     *                 Communications of the ACM, 21, 317â€“322, 1978.
-     * </p>
-     * @since 3.6
-     */
+    
     private static final class ChengBetaSampler {
 
-        /**
-         * Returns one sample using Cheng's sampling algorithm.
-         * @param random random generator to use
-         * @param alpha distribution first shape parameter
-         * @param beta distribution second shape parameter
-         * @return sampled value
-         */
+        
         static double sample(RandomGenerator random, final double alpha, final double beta) {
             final double a = FastMath.min(alpha, beta);
             final double b = FastMath.max(alpha, beta);
@@ -310,14 +192,7 @@ public class BetaDistribution extends AbstractRealDistribution {
             }
         }
 
-        /**
-         * Returns one sample using Cheng's BB algorithm, when both &alpha; and &beta; are greater than 1.
-         * @param random random generator to use
-         * @param a0 distribution first shape parameter (&alpha;)
-         * @param a min(&alpha;, &beta;) where &alpha;, &beta; are the two distribution shape parameters
-         * @param b max(&alpha;, &beta;) where &alpha;, &beta; are the two distribution shape parameters
-         * @return sampled value
-         */
+        
         private static double algorithmBB(RandomGenerator random,
                                           final double a0,
                                           final double a,
@@ -351,14 +226,7 @@ public class BetaDistribution extends AbstractRealDistribution {
             return Precision.equals(a, a0) ? w / (b + w) : b / (b + w);
         }
 
-        /**
-         * Returns one sample using Cheng's BC algorithm, when at least one of &alpha; and &beta; is smaller than 1.
-         * @param random random generator to use
-         * @param a0 distribution first shape parameter (&alpha;)
-         * @param a max(&alpha;, &beta;) where &alpha;, &beta; are the two distribution shape parameters
-         * @param b min(&alpha;, &beta;) where &alpha;, &beta; are the two distribution shape parameters
-         * @return sampled value
-         */
+        
         private static double algorithmBC(RandomGenerator random,
                                           final double a0,
                                           final double a,

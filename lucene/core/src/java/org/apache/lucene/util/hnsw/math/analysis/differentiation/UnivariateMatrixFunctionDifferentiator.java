@@ -18,16 +18,10 @@ package org.apache.lucene.util.hnsw.math.analysis.differentiation;
 
 import org.apache.lucene.util.hnsw.math.analysis.UnivariateMatrixFunction;
 
-/** Interface defining the function differentiation operation.
- * @since 3.1
- */
+
 public interface UnivariateMatrixFunctionDifferentiator {
 
-    /** Create an implementation of a {@link UnivariateDifferentiableMatrixFunction
-     * differential} from a regular {@link UnivariateMatrixFunction matrix function}.
-     * @param function function to differentiate
-     * @return differential function
-     */
+    
     UnivariateDifferentiableMatrixFunction differentiate(UnivariateMatrixFunction function);
 
 }

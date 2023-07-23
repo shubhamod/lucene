@@ -19,17 +19,10 @@ package org.apache.lucene.util.hnsw.math.stat.interval;
 import org.apache.lucene.util.hnsw.math.distribution.NormalDistribution;
 import org.apache.lucene.util.hnsw.math.util.FastMath;
 
-/**
- * Implements the Agresti-Coull method for creating a binomial proportion confidence interval.
- *
- * @see <a
- *      href="http://en.wikipedia.org/wiki/Binomial_proportion_confidence_interval#Agresti-Coull_Interval">
- *      Agresti-Coull interval (Wikipedia)</a>
- * @since 3.3
- */
+
 public class AgrestiCoullInterval implements BinomialConfidenceInterval {
 
-    /** {@inheritDoc} */
+    
     public ConfidenceInterval createInterval(int numberOfTrials, int numberOfSuccesses, double confidenceLevel) {
         IntervalUtils.checkParameters(numberOfTrials, numberOfSuccesses, confidenceLevel);
         final double alpha = (1.0 - confidenceLevel) / 2;

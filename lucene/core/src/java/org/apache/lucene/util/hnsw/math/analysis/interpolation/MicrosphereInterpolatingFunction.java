@@ -30,77 +30,45 @@ import org.apache.lucene.util.hnsw.math.linear.RealVector;
 import org.apache.lucene.util.hnsw.math.random.UnitSphereRandomVectorGenerator;
 import org.apache.lucene.util.hnsw.math.util.FastMath;
 
-/**
- * Interpolating function that implements the
- * <a href="http://www.dudziak.com/microsphere.php">Microsphere Projection</a>.
- *
- * @deprecated Code will be removed in 4.0.  Use {@link InterpolatingMicrosphere}
- * and {@link MicrosphereProjectionInterpolator} instead.
- */
+
 @Deprecated
 public class MicrosphereInterpolatingFunction
     implements MultivariateFunction {
-    /**
-     * Space dimension.
-     */
+    
     private final int dimension;
-    /**
-     * Internal accounting data for the interpolation algorithm.
-     * Each element of the list corresponds to one surface element of
-     * the microsphere.
-     */
+    
     private final List<MicrosphereSurfaceElement> microsphere;
-    /**
-     * Exponent used in the power law that computes the weights of the
-     * sample data.
-     */
+    
     private final double brightnessExponent;
-    /**
-     * Sample data.
-     */
+    
     private final Map<RealVector, Double> samples;
 
-    /**
-     * Class for storing the accounting data needed to perform the
-     * microsphere projection.
-     */
+    
     private static class MicrosphereSurfaceElement {
-        /** Normal vector characterizing a surface element. */
+        
         private final RealVector normal;
-        /** Illumination received from the brightest sample. */
+        
         private double brightestIllumination;
-        /** Brightest sample. */
+        
         private Map.Entry<RealVector, Double> brightestSample;
 
-        /**
-         * @param n Normal vector characterizing a surface element
-         * of the microsphere.
-         */
+        
         MicrosphereSurfaceElement(double[] n) {
             normal = new ArrayRealVector(n);
         }
 
-        /**
-         * Return the normal vector.
-         * @return the normal vector
-         */
+        
         RealVector normal() {
             return normal;
         }
 
-        /**
-         * Reset "illumination" and "sampleIndex".
-         */
+        
         void reset() {
             brightestIllumination = 0;
             brightestSample = null;
         }
 
-        /**
-         * Store the illumination and index of the brightest sample.
-         * @param illuminationFromSample illumination received from sample
-         * @param sample current sample illuminating the element
-         */
+        
         void store(final double illuminationFromSample,
                    final Map.Entry<RealVector, Double> sample) {
             if (illuminationFromSample > this.brightestIllumination) {
@@ -109,42 +77,18 @@ public class MicrosphereInterpolatingFunction
             }
         }
 
-        /**
-         * Get the illumination of the element.
-         * @return the illumination.
-         */
+        
         double illumination() {
             return brightestIllumination;
         }
 
-        /**
-         * Get the sample illuminating the element the most.
-         * @return the sample.
-         */
+        
         Map.Entry<RealVector, Double> sample() {
             return brightestSample;
         }
     }
 
-    /**
-     * @param xval Arguments for the interpolation points.
-     * {@code xval[i][0]} is the first component of interpolation point
-     * {@code i}, {@code xval[i][1]} is the second component, and so on
-     * until {@code xval[i][d-1]}, the last component of that interpolation
-     * point (where {@code dimension} is thus the dimension of the sampled
-     * space).
-     * @param yval Values for the interpolation points.
-     * @param brightnessExponent Brightness dimming factor.
-     * @param microsphereElements Number of surface elements of the
-     * microsphere.
-     * @param rand Unit vector generator for creating the microsphere.
-     * @throws DimensionMismatchException if the lengths of {@code yval} and
-     * {@code xval} (equal to {@code n}, the number of interpolation points)
-     * do not match, or the the arrays {@code xval[0]} ... {@code xval[n]},
-     * have lengths different from {@code dimension}.
-     * @throws NoDataException if there an array has zero-length.
-     * @throws NullArgumentException if an argument is {@code null}.
-     */
+    
     public MicrosphereInterpolatingFunction(double[][] xval,
                                             double[] yval,
                                             int brightnessExponent,
@@ -192,11 +136,7 @@ public class MicrosphereInterpolatingFunction
         }
     }
 
-    /**
-     * @param point Interpolation point.
-     * @return the interpolated value.
-     * @throws DimensionMismatchException if point dimension does not math sample
-     */
+    
     public double value(double[] point) throws DimensionMismatchException {
         final RealVector p = new ArrayRealVector(point);
 
@@ -240,13 +180,7 @@ public class MicrosphereInterpolatingFunction
         return value / totalWeight;
     }
 
-    /**
-     * Compute the cosine of the angle between 2 vectors.
-     *
-     * @param v Vector.
-     * @param w Vector.
-     * @return the cosine of the angle between {@code v} and {@code w}.
-     */
+    
     private double cosAngle(final RealVector v, final RealVector w) {
         return v.dotProduct(w) / (v.getNorm() * w.getNorm());
     }

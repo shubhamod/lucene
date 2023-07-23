@@ -24,28 +24,19 @@ import java.util.Map;
 import org.apache.lucene.util.hnsw.math.exception.DimensionMismatchException;
 import org.apache.lucene.util.hnsw.math.exception.MaxCountExceededException;
 
-/** Wrapper class to compute Jacobian matrices by finite differences for ODE
- *  which do not compute them by themselves.
- *
- * @since 3.0
- */
+
 class ParameterJacobianWrapper implements ParameterJacobianProvider {
 
-    /** Main ODE set. */
+    
     private final FirstOrderDifferentialEquations fode;
 
-    /** Raw ODE without Jacobian computation skill to be wrapped into a ParameterJacobianProvider. */
+    
     private final ParameterizedODE pode;
 
-    /** Steps for finite difference computation of the Jacobian df/dp w.r.t. parameters. */
+    
     private final Map<String, Double> hParam;
 
-    /** Wrap a {@link ParameterizedODE} into a {@link ParameterJacobianProvider}.
-     * @param fode main first order differential equations set
-     * @param pode secondary problem, without parameter Jacobian computation skill
-     * @param paramsAndSteps parameters and steps to compute the Jacobians df/dp
-     * @see JacobianMatrices#setParameterStep(String, double)
-     */
+    
     ParameterJacobianWrapper(final FirstOrderDifferentialEquations fode,
                              final ParameterizedODE pode,
                              final ParameterConfiguration[] paramsAndSteps) {
@@ -62,17 +53,17 @@ class ParameterJacobianWrapper implements ParameterJacobianProvider {
         }
     }
 
-    /** {@inheritDoc} */
+    
     public Collection<String> getParametersNames() {
         return pode.getParametersNames();
     }
 
-    /** {@inheritDoc} */
+    
     public boolean isSupported(String name) {
         return pode.isSupported(name);
     }
 
-    /** {@inheritDoc} */
+    
     public void computeParameterJacobian(double t, double[] y, double[] yDot,
                                          String paramName, double[] dFdP)
         throws DimensionMismatchException, MaxCountExceededException {

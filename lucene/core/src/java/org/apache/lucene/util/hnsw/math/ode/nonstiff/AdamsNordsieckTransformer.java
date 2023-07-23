@@ -32,122 +32,20 @@ import org.apache.lucene.util.hnsw.math.linear.MatrixUtils;
 import org.apache.lucene.util.hnsw.math.linear.QRDecomposition;
 import org.apache.lucene.util.hnsw.math.linear.RealMatrix;
 
-/** Transformer to Nordsieck vectors for Adams integrators.
- * <p>This class is used by {@link AdamsBashforthIntegrator Adams-Bashforth} and
- * {@link AdamsMoultonIntegrator Adams-Moulton} integrators to convert between
- * classical representation with several previous first derivatives and Nordsieck
- * representation with higher order scaled derivatives.</p>
- *
- * <p>We define scaled derivatives s<sub>i</sub>(n) at step n as:
- * <pre>
- * s<sub>1</sub>(n) = h y'<sub>n</sub> for first derivative
- * s<sub>2</sub>(n) = h<sup>2</sup>/2 y''<sub>n</sub> for second derivative
- * s<sub>3</sub>(n) = h<sup>3</sup>/6 y'''<sub>n</sub> for third derivative
- * ...
- * s<sub>k</sub>(n) = h<sup>k</sup>/k! y<sup>(k)</sup><sub>n</sub> for k<sup>th</sup> derivative
- * </pre></p>
- *
- * <p>With the previous definition, the classical representation of multistep methods
- * uses first derivatives only, i.e. it handles y<sub>n</sub>, s<sub>1</sub>(n) and
- * q<sub>n</sub> where q<sub>n</sub> is defined as:
- * <pre>
- *   q<sub>n</sub> = [ s<sub>1</sub>(n-1) s<sub>1</sub>(n-2) ... s<sub>1</sub>(n-(k-1)) ]<sup>T</sup>
- * </pre>
- * (we omit the k index in the notation for clarity).</p>
- *
- * <p>Another possible representation uses the Nordsieck vector with
- * higher degrees scaled derivatives all taken at the same step, i.e it handles y<sub>n</sub>,
- * s<sub>1</sub>(n) and r<sub>n</sub>) where r<sub>n</sub> is defined as:
- * <pre>
- * r<sub>n</sub> = [ s<sub>2</sub>(n), s<sub>3</sub>(n) ... s<sub>k</sub>(n) ]<sup>T</sup>
- * </pre>
- * (here again we omit the k index in the notation for clarity)
- * </p>
- *
- * <p>Taylor series formulas show that for any index offset i, s<sub>1</sub>(n-i) can be
- * computed from s<sub>1</sub>(n), s<sub>2</sub>(n) ... s<sub>k</sub>(n), the formula being exact
- * for degree k polynomials.
- * <pre>
- * s<sub>1</sub>(n-i) = s<sub>1</sub>(n) + &sum;<sub>j&gt;0</sub> (j+1) (-i)<sup>j</sup> s<sub>j+1</sub>(n)
- * </pre>
- * The previous formula can be used with several values for i to compute the transform between
- * classical representation and Nordsieck vector at step end. The transform between r<sub>n</sub>
- * and q<sub>n</sub> resulting from the Taylor series formulas above is:
- * <pre>
- * q<sub>n</sub> = s<sub>1</sub>(n) u + P r<sub>n</sub>
- * </pre>
- * where u is the [ 1 1 ... 1 ]<sup>T</sup> vector and P is the (k-1)&times;(k-1) matrix built
- * with the (j+1) (-i)<sup>j</sup> terms with i being the row number starting from 1 and j being
- * the column number starting from 1:
- * <pre>
- *        [  -2   3   -4    5  ... ]
- *        [  -4  12  -32   80  ... ]
- *   P =  [  -6  27 -108  405  ... ]
- *        [  -8  48 -256 1280  ... ]
- *        [          ...           ]
- * </pre></p>
- *
- * <p>Changing -i into +i in the formula above can be used to compute a similar transform between
- * classical representation and Nordsieck vector at step start. The resulting matrix is simply
- * the absolute value of matrix P.</p>
- *
- * <p>For {@link AdamsBashforthIntegrator Adams-Bashforth} method, the Nordsieck vector
- * at step n+1 is computed from the Nordsieck vector at step n as follows:
- * <ul>
- *   <li>y<sub>n+1</sub> = y<sub>n</sub> + s<sub>1</sub>(n) + u<sup>T</sup> r<sub>n</sub></li>
- *   <li>s<sub>1</sub>(n+1) = h f(t<sub>n+1</sub>, y<sub>n+1</sub>)</li>
- *   <li>r<sub>n+1</sub> = (s<sub>1</sub>(n) - s<sub>1</sub>(n+1)) P<sup>-1</sup> u + P<sup>-1</sup> A P r<sub>n</sub></li>
- * </ul>
- * where A is a rows shifting matrix (the lower left part is an identity matrix):
- * <pre>
- *        [ 0 0   ...  0 0 | 0 ]
- *        [ ---------------+---]
- *        [ 1 0   ...  0 0 | 0 ]
- *    A = [ 0 1   ...  0 0 | 0 ]
- *        [       ...      | 0 ]
- *        [ 0 0   ...  1 0 | 0 ]
- *        [ 0 0   ...  0 1 | 0 ]
- * </pre></p>
- *
- * <p>For {@link AdamsMoultonIntegrator Adams-Moulton} method, the predicted Nordsieck vector
- * at step n+1 is computed from the Nordsieck vector at step n as follows:
- * <ul>
- *   <li>Y<sub>n+1</sub> = y<sub>n</sub> + s<sub>1</sub>(n) + u<sup>T</sup> r<sub>n</sub></li>
- *   <li>S<sub>1</sub>(n+1) = h f(t<sub>n+1</sub>, Y<sub>n+1</sub>)</li>
- *   <li>R<sub>n+1</sub> = (s<sub>1</sub>(n) - s<sub>1</sub>(n+1)) P<sup>-1</sup> u + P<sup>-1</sup> A P r<sub>n</sub></li>
- * </ul>
- * From this predicted vector, the corrected vector is computed as follows:
- * <ul>
- *   <li>y<sub>n+1</sub> = y<sub>n</sub> + S<sub>1</sub>(n+1) + [ -1 +1 -1 +1 ... &plusmn;1 ] r<sub>n+1</sub></li>
- *   <li>s<sub>1</sub>(n+1) = h f(t<sub>n+1</sub>, y<sub>n+1</sub>)</li>
- *   <li>r<sub>n+1</sub> = R<sub>n+1</sub> + (s<sub>1</sub>(n+1) - S<sub>1</sub>(n+1)) P<sup>-1</sup> u</li>
- * </ul>
- * where the upper case Y<sub>n+1</sub>, S<sub>1</sub>(n+1) and R<sub>n+1</sub> represent the
- * predicted states whereas the lower case y<sub>n+1</sub>, s<sub>n+1</sub> and r<sub>n+1</sub>
- * represent the corrected states.</p>
- *
- * <p>We observe that both methods use similar update formulas. In both cases a P<sup>-1</sup>u
- * vector and a P<sup>-1</sup> A P matrix are used that do not depend on the state,
- * they only depend on k. This class handles these transformations.</p>
- *
- * @since 2.0
- */
+
 public class AdamsNordsieckTransformer {
 
-    /** Cache for already computed coefficients. */
+    
     private static final Map<Integer, AdamsNordsieckTransformer> CACHE =
         new HashMap<Integer, AdamsNordsieckTransformer>();
 
-    /** Update matrix for the higher order derivatives h<sup>2</sup>/2 y'', h<sup>3</sup>/6 y''' ... */
+    
     private final Array2DRowRealMatrix update;
 
-    /** Update coefficients of the higher order derivatives wrt y'. */
+    
     private final double[] c1;
 
-    /** Simple constructor.
-     * @param n number of steps of the multistep method
-     * (excluding the one being computed)
-     */
+    
     private AdamsNordsieckTransformer(final int n) {
 
         final int rows = n - 1;
@@ -183,11 +81,7 @@ public class AdamsNordsieckTransformer {
 
     }
 
-    /** Get the Nordsieck transformer for a given number of steps.
-     * @param nSteps number of steps of the multistep method
-     * (excluding the one being computed)
-     * @return Nordsieck transformer for the specified number of steps
-     */
+    
     public static AdamsNordsieckTransformer getInstance(final int nSteps) {
         synchronized(CACHE) {
             AdamsNordsieckTransformer t = CACHE.get(nSteps);
@@ -199,31 +93,13 @@ public class AdamsNordsieckTransformer {
         }
     }
 
-    /** Get the number of steps of the method
-     * (excluding the one being computed).
-     * @return number of steps of the method
-     * (excluding the one being computed)
-     * @deprecated as of 3.6, this method is not used anymore
-     */
+    
     @Deprecated
     public int getNSteps() {
         return c1.length;
     }
 
-    /** Build the P matrix.
-     * <p>The P matrix general terms are shifted (j+1) (-i)<sup>j</sup> terms
-     * with i being the row number starting from 1 and j being the column
-     * number starting from 1:
-     * <pre>
-     *        [  -2   3   -4    5  ... ]
-     *        [  -4  12  -32   80  ... ]
-     *   P =  [  -6  27 -108  405  ... ]
-     *        [  -8  48 -256 1280  ... ]
-     *        [          ...           ]
-     * </pre></p>
-     * @param rows number of rows of the matrix
-     * @return P matrix
-     */
+    
     private FieldMatrix<BigFraction> buildP(final int rows) {
 
         final BigFraction[][] pData = new BigFraction[rows][rows];
@@ -243,14 +119,7 @@ public class AdamsNordsieckTransformer {
 
     }
 
-    /** Initialize the high order scaled derivatives at step start.
-     * @param h step size to use for scaling
-     * @param t first steps times
-     * @param y first steps states
-     * @param yDot first steps derivatives
-     * @return Nordieck vector at start of first step (h<sup>2</sup>/2 y''<sub>n</sub>,
-     * h<sup>3</sup>/6 y'''<sub>n</sub> ... h<sup>k</sup>/k! y<sup>(k)</sup><sub>n</sub>)
-     */
+    
 
     public Array2DRowRealMatrix initializeHighOrderDerivatives(final double h, final double[] t,
                                                                final double[][] y,
@@ -317,34 +186,12 @@ public class AdamsNordsieckTransformer {
 
     }
 
-    /** Update the high order scaled derivatives for Adams integrators (phase 1).
-     * <p>The complete update of high order derivatives has a form similar to:
-     * <pre>
-     * r<sub>n+1</sub> = (s<sub>1</sub>(n) - s<sub>1</sub>(n+1)) P<sup>-1</sup> u + P<sup>-1</sup> A P r<sub>n</sub>
-     * </pre>
-     * this method computes the P<sup>-1</sup> A P r<sub>n</sub> part.</p>
-     * @param highOrder high order scaled derivatives
-     * (h<sup>2</sup>/2 y'', ... h<sup>k</sup>/k! y(k))
-     * @return updated high order derivatives
-     * @see #updateHighOrderDerivativesPhase2(double[], double[], Array2DRowRealMatrix)
-     */
+    
     public Array2DRowRealMatrix updateHighOrderDerivativesPhase1(final Array2DRowRealMatrix highOrder) {
         return update.multiply(highOrder);
     }
 
-    /** Update the high order scaled derivatives Adams integrators (phase 2).
-     * <p>The complete update of high order derivatives has a form similar to:
-     * <pre>
-     * r<sub>n+1</sub> = (s<sub>1</sub>(n) - s<sub>1</sub>(n+1)) P<sup>-1</sup> u + P<sup>-1</sup> A P r<sub>n</sub>
-     * </pre>
-     * this method computes the (s<sub>1</sub>(n) - s<sub>1</sub>(n+1)) P<sup>-1</sup> u part.</p>
-     * <p>Phase 1 of the update must already have been performed.</p>
-     * @param start first order scaled derivatives at step start
-     * @param end first order scaled derivatives at step end
-     * @param highOrder high order scaled derivatives, will be modified
-     * (h<sup>2</sup>/2 y'', ... h<sup>k</sup>/k! y(k))
-     * @see #updateHighOrderDerivativesPhase1(Array2DRowRealMatrix)
-     */
+    
     public void updateHighOrderDerivativesPhase2(final double[] start,
                                                  final double[] end,
                                                  final Array2DRowRealMatrix highOrder) {

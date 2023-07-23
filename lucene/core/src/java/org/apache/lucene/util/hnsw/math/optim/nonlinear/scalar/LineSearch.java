@@ -26,66 +26,22 @@ import org.apache.lucene.util.hnsw.math.optim.univariate.UnivariateObjectiveFunc
 import org.apache.lucene.util.hnsw.math.analysis.UnivariateFunction;
 import org.apache.lucene.util.hnsw.math.optim.MaxEval;
 
-/**
- * Class for finding the minimum of the objective function along a given
- * direction.
- *
- * @since 3.3
- */
+
 public class LineSearch {
-    /**
-     * Value that will pass the precondition check for {@link BrentOptimizer}
-     * but will not pass the convergence check, so that the custom checker
-     * will always decide when to stop the line search.
-     */
+    
     private static final double REL_TOL_UNUSED = 1e-15;
-    /**
-     * Value that will pass the precondition check for {@link BrentOptimizer}
-     * but will not pass the convergence check, so that the custom checker
-     * will always decide when to stop the line search.
-     */
+    
     private static final double ABS_TOL_UNUSED = Double.MIN_VALUE;
-    /**
-     * Optimizer used for line search.
-     */
+    
     private final UnivariateOptimizer lineOptimizer;
-    /**
-     * Automatic bracketing.
-     */
+    
     private final BracketFinder bracket = new BracketFinder();
-    /**
-     * Extent of the initial interval used to find an interval that
-     * brackets the optimum.
-     */
+    
     private final double initialBracketingRange;
-    /**
-     * Optimizer on behalf of which the line search must be performed.
-     */
+    
     private final MultivariateOptimizer mainOptimizer;
 
-    /**
-     * The {@code BrentOptimizer} default stopping criterion uses the
-     * tolerances to check the domain (point) values, not the function
-     * values.
-     * The {@code relativeTolerance} and {@code absoluteTolerance}
-     * arguments are thus passed to a {@link SimpleUnivariateValueChecker
-     * custom checker} that will use the function values.
-     *
-     * @param optimizer Optimizer on behalf of which the line search
-     * be performed.
-     * Its {@link MultivariateOptimizer#computeObjectiveValue(double[])
-     * computeObjectiveValue} method will be called by the
-     * {@link #search(double[],double[]) search} method.
-     * @param relativeTolerance Search will stop when the function relative
-     * difference between successive iterations is below this value.
-     * @param absoluteTolerance Search will stop when the function absolute
-     * difference between successive iterations is below this value.
-     * @param initialBracketingRange Extent of the initial interval used to
-     * find an interval that brackets the optimum.
-     * If the optimized function varies a lot in the vicinity of the optimum,
-     * it may be necessary to provide a value lower than the distance between
-     * successive local minima.
-     */
+    
     public LineSearch(MultivariateOptimizer optimizer,
                       double relativeTolerance,
                       double absoluteTolerance,
@@ -98,21 +54,12 @@ public class LineSearch {
         this.initialBracketingRange = initialBracketingRange;
     }
 
-    /**
-     * Finds the number {@code alpha} that optimizes
-     * {@code f(startPoint + alpha * direction)}.
-     *
-     * @param startPoint Starting point.
-     * @param direction Search direction.
-     * @return the optimum.
-     * @throws org.apache.lucene.util.hnsw.math.exception.TooManyEvaluationsException
-     * if the number of evaluations is exceeded.
-     */
+    
     public UnivariatePointValuePair search(final double[] startPoint,
                                            final double[] direction) {
         final int n = startPoint.length;
         final UnivariateFunction f = new UnivariateFunction() {
-                /** {@inheritDoc} */
+                
                 public double value(double alpha) {
                     final double[] x = new double[n];
                     for (int i = 0; i < n; i++) {

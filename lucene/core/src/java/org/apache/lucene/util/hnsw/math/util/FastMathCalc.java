@@ -20,18 +20,13 @@ import java.io.PrintStream;
 
 import org.apache.lucene.util.hnsw.math.exception.DimensionMismatchException;
 
-/** Class used to compute the classical functions tables.
- * @since 3.0
- */
+
 class FastMathCalc {
 
-    /**
-     * 0x40000000 - used to split a double into two parts, both with the low order bits cleared.
-     * Equivalent to 2^30.
-     */
+    
     private static final long HEX_40000000 = 0x40000000L; // 1073741824L
 
-    /** Factorial table, for Taylor series expansions. 0!, 1!, 2!, ... 19! */
+    
     private static final double FACT[] = new double[]
         {
         +1.0d,                        // 0
@@ -56,7 +51,7 @@ class FastMathCalc {
         +121645100408832000.0d,       // 19
         };
 
-    /** Coefficients for slowLog. */
+    
     private static final double LN_SPLIT_COEF[][] = {
         {2.0, 0.0},
         {0.6666666269302368, 3.9736429850260626E-8},
@@ -76,27 +71,17 @@ class FastMathCalc {
         {0.14982303977012634, 1.225743062930824E-8},
     };
 
-    /** Table start declaration. */
+    
     private static final String TABLE_START_DECL = "    {";
 
-    /** Table end declaration. */
+    
     private static final String TABLE_END_DECL   = "    };";
 
-    /**
-     * Private Constructor.
-     */
+    
     private FastMathCalc() {
     }
 
-    /** Build the sine and cosine tables.
-     * @param SINE_TABLE_A table of the most significant part of the sines
-     * @param SINE_TABLE_B table of the least significant part of the sines
-     * @param COSINE_TABLE_A table of the most significant part of the cosines
-     * @param COSINE_TABLE_B table of the most significant part of the cosines
-     * @param SINE_TABLE_LEN length of the tables
-     * @param TANGENT_TABLE_A table of the most significant part of the tangents
-     * @param TANGENT_TABLE_B table of the most significant part of the tangents
-     */
+    
     @SuppressWarnings("unused")
     private static void buildSinCosTables(double[] SINE_TABLE_A, double[] SINE_TABLE_B,
                                           double[] COSINE_TABLE_A, double[] COSINE_TABLE_B,
@@ -194,14 +179,7 @@ class FastMathCalc {
 
     }
 
-    /**
-     *  For x between 0 and pi/4 compute cosine using Talor series
-     *  cos(x) = 1 - x^2/2! + x^4/4! ...
-     * @param x number from which cosine is requested
-     * @param result placeholder where to put the result in extended precision
-     * (may be null)
-     * @return cos(x)
-     */
+    
     static double slowCos(final double x, final double result[]) {
 
         final double xs[] = new double[2];
@@ -239,14 +217,7 @@ class FastMathCalc {
         return ys[0] + ys[1];
     }
 
-    /**
-     * For x between 0 and pi/4 compute sine using Taylor expansion:
-     * sin(x) = x - x^3/3! + x^5/5! - x^7/7! ...
-     * @param x number from which sine is requested
-     * @param result placeholder where to put the result in extended precision
-     * (may be null)
-     * @return sin(x)
-     */
+    
     static double slowSin(final double x, final double result[]) {
         final double xs[] = new double[2];
         final double ys[] = new double[2];
@@ -284,13 +255,7 @@ class FastMathCalc {
     }
 
 
-    /**
-     *  For x between 0 and 1, returns exp(x), uses extended precision
-     *  @param x argument of exponential
-     *  @param result placeholder where to place exp(x) split in two terms
-     *  for extra precision (i.e. exp(x) = result[0] + result[1]
-     *  @return exp(x)
-     */
+    
     static double slowexp(final double x, final double result[]) {
         final double xs[] = new double[2];
         final double ys[] = new double[2];
@@ -320,11 +285,7 @@ class FastMathCalc {
         return ys[0] + ys[1];
     }
 
-    /** Compute split[0], split[1] such that their sum is equal to d,
-     * and split[0] has its 30 least significant bits as zero.
-     * @param d number to split
-     * @param split placeholder where to place the result
-     */
+    
     private static void split(final double d, final double split[]) {
         if (d < 8e298 && d > -8e298) {
             final double a = d * HEX_40000000;
@@ -337,10 +298,7 @@ class FastMathCalc {
         }
     }
 
-    /** Recompute a split.
-     * @param a input/out array containing the split, changed
-     * on output
-     */
+    
     private static void resplit(final double a[]) {
         final double c = a[0] + a[1];
         final double d = -(c - a[0] - a[1]);
@@ -356,11 +314,7 @@ class FastMathCalc {
         }
     }
 
-    /** Multiply two numbers in split form.
-     * @param a first term of multiplication
-     * @param b second term of multiplication
-     * @param ans placeholder where to put the result
-     */
+    
     private static void splitMult(double a[], double b[], double ans[]) {
         ans[0] = a[0] * b[0];
         ans[1] = a[0] * b[1] + a[1] * b[0] + a[1] * b[1];
@@ -369,11 +323,7 @@ class FastMathCalc {
         resplit(ans);
     }
 
-    /** Add two numbers in split form.
-     * @param a first term of addition
-     * @param b second term of addition
-     * @param ans placeholder where to put the result
-     */
+    
     private static void splitAdd(final double a[], final double b[], final double ans[]) {
         ans[0] = a[0] + b[0];
         ans[1] = a[1] + b[1];
@@ -381,24 +331,7 @@ class FastMathCalc {
         resplit(ans);
     }
 
-    /** Compute the reciprocal of in.  Use the following algorithm.
-     *  in = c + d.
-     *  want to find x + y such that x+y = 1/(c+d) and x is much
-     *  larger than y and x has several zero bits on the right.
-     *
-     *  Set b = 1/(2^22),  a = 1 - b.  Thus (a+b) = 1.
-     *  Use following identity to compute (a+b)/(c+d)
-     *
-     *  (a+b)/(c+d)  =   a/c   +    (bc - ad) / (c^2 + cd)
-     *  set x = a/c  and y = (bc - ad) / (c^2 + cd)
-     *  This will be close to the right answer, but there will be
-     *  some rounding in the calculation of X.  So by carefully
-     *  computing 1 - (c+d)(x+y) we can compute an error and
-     *  add that back in.   This is done carefully so that terms
-     *  of similar size are subtracted first.
-     *  @param in initial number, in split form
-     *  @param result placeholder where to put the result
-     */
+    
     static void splitReciprocal(final double in[], final double result[]) {
         final double b = 1.0/4194304.0;
         final double a = 1.0 - b;
@@ -429,11 +362,7 @@ class FastMathCalc {
         }
     }
 
-    /** Compute (a[0] + a[1]) * (b[0] + b[1]) in extended precision.
-     * @param a first term of the multiplication
-     * @param b second term of the multiplication
-     * @param result placeholder where to put the result
-     */
+    
     private static void quadMult(final double a[], final double b[], final double result[]) {
         final double xs[] = new double[2];
         final double ys[] = new double[2];
@@ -483,11 +412,7 @@ class FastMathCalc {
         result[0] = tmp;
     }
 
-    /** Compute exp(p) for a integer p in extended precision.
-     * @param p integer whose exponential is requested
-     * @param result placeholder where to put the result in extended precision
-     * @return exp(p) in standard precision (equal to result[0] + result[1])
-     */
+    
     static double expint(int p, final double result[]) {
         //double x = M_E;
         final double xs[] = new double[2];
@@ -527,25 +452,7 @@ class FastMathCalc {
 
         return ys[0] + ys[1];
     }
-    /** xi in the range of [1, 2].
-     *                                3        5        7
-     *      x+1           /          x        x        x          \
-     *  ln ----- =   2 *  |  x  +   ----  +  ----  +  ---- + ...  |
-     *      1-x           \          3        5        7          /
-     *
-     * So, compute a Remez approximation of the following function
-     *
-     *  ln ((sqrt(x)+1)/(1-sqrt(x)))  /  x
-     *
-     * This will be an even function with only positive coefficents.
-     * x is in the range [0 - 1/3].
-     *
-     * Transform xi for input to the above function by setting
-     * x = (xi-1)/(xi+1).   Input to the polynomial is x^2, then
-     * the result is multiplied by x.
-     * @param xi number from which log is requested
-     * @return log(xi)
-     */
+    
     static double[] slowLog(double xi) {
         double x[] = new double[2];
         double x2[] = new double[2];
@@ -591,13 +498,7 @@ class FastMathCalc {
     }
 
 
-    /**
-     * Print an array.
-     * @param out text output stream where output should be printed
-     * @param name array name
-     * @param expectedLen expected length of the array
-     * @param array2d array data
-     */
+    
     static void printarray(PrintStream out, String name, int expectedLen, double[][] array2d) {
         out.println(name);
         checkLen(expectedLen, array2d.length);
@@ -613,13 +514,7 @@ class FastMathCalc {
         out.println(TABLE_END_DECL);
     }
 
-    /**
-     * Print an array.
-     * @param out text output stream where output should be printed
-     * @param name array name
-     * @param expectedLen expected length of the array
-     * @param array array data
-     */
+    
     static void printarray(PrintStream out, String name, int expectedLen, double[] array) {
         out.println(name + "=");
         checkLen(expectedLen, array.length);
@@ -630,10 +525,7 @@ class FastMathCalc {
         out.println(TABLE_END_DECL);
     }
 
-    /** Format a double.
-     * @param d double number to format
-     * @return formatted number
-     */
+    
     static String format(double d) {
         if (d != d) {
             return "Double.NaN,";
@@ -642,12 +534,7 @@ class FastMathCalc {
         }
     }
 
-    /**
-     * Check two lengths are equal.
-     * @param expectedLen expected length
-     * @param actual actual length
-     * @exception DimensionMismatchException if the two lengths are not equal
-     */
+    
     private static void checkLen(int expectedLen, int actual)
         throws DimensionMismatchException {
         if (expectedLen != actual) {

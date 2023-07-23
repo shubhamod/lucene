@@ -19,13 +19,9 @@ package org.apache.lucene.util.hnsw.math.analysis.function;
 
 import org.apache.lucene.util.hnsw.math.analysis.BivariateFunction;
 
-/**
- * Add the two operands.
- *
- * @since 3.0
- */
+
 public class Add implements BivariateFunction {
-    /** {@inheritDoc} */
+    
     public double value(double x, double y) {
         return x + y;
     }

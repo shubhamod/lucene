@@ -14,12 +14,5 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/**
- *
- * <p>
- * This package provides classes to solve non-stiff Ordinary Differential Equations problems.
- * </p>
- *
- *
- */
+
 package org.apache.lucene.util.hnsw.math.ode.nonstiff;

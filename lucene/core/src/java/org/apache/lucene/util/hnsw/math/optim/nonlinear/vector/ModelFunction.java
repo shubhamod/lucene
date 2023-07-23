@@ -19,32 +19,18 @@ package org.apache.lucene.util.hnsw.math.optim.nonlinear.vector;
 import org.apache.lucene.util.hnsw.math.analysis.MultivariateVectorFunction;
 import org.apache.lucene.util.hnsw.math.optim.OptimizationData;
 
-/**
- * Model (vector) function to be optimized.
- *
- * @since 3.1
- * @deprecated All classes and interfaces in this package are deprecated.
- * The optimizers that were provided here were moved to the
- * {@link org.apache.lucene.util.hnsw.math.fitting.leastsquares} package
- * (cf. MATH-1008).
- */
+
 @Deprecated
 public class ModelFunction implements OptimizationData {
-    /** Function to be optimized. */
+    
     private final MultivariateVectorFunction model;
 
-    /**
-     * @param m Model function to be optimized.
-     */
+    
     public ModelFunction(MultivariateVectorFunction m) {
         model = m;
     }
 
-    /**
-     * Gets the model function to be optimized.
-     *
-     * @return the model function.
-     */
+    
     public MultivariateVectorFunction getModelFunction() {
         return model;
     }

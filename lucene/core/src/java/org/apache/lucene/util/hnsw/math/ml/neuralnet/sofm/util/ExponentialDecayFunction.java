@@ -21,36 +21,14 @@ import org.apache.lucene.util.hnsw.math.exception.NotStrictlyPositiveException;
 import org.apache.lucene.util.hnsw.math.exception.NumberIsTooLargeException;
 import org.apache.lucene.util.hnsw.math.util.FastMath;
 
-/**
- * Exponential decay function: <code>a e<sup>-x / b</sup></code>,
- * where {@code x} is the (integer) independent variable.
- * <br/>
- * Class is immutable.
- *
- * @since 3.3
- */
+
 public class ExponentialDecayFunction {
-    /** Factor {@code a}. */
+    
     private final double a;
-    /** Factor {@code 1 / b}. */
+    
     private final double oneOverB;
 
-    /**
-     * Creates an instance. It will be such that
-     * <ul>
-     *  <li>{@code a = initValue}</li>
-     *  <li>{@code b = -numCall / ln(valueAtNumCall / initValue)}</li>
-     * </ul>
-     *
-     * @param initValue Initial value, i.e. {@link #value(long) value(0)}.
-     * @param valueAtNumCall Value of the function at {@code numCall}.
-     * @param numCall Argument for which the function returns
-     * {@code valueAtNumCall}.
-     * @throws NotStrictlyPositiveException if {@code initValue <= 0}.
-     * @throws NotStrictlyPositiveException if {@code valueAtNumCall <= 0}.
-     * @throws NumberIsTooLargeException if {@code valueAtNumCall >= initValue}.
-     * @throws NotStrictlyPositiveException if {@code numCall <= 0}.
-     */
+    
     public ExponentialDecayFunction(double initValue,
                                     double valueAtNumCall,
                                     long numCall) {
@@ -71,12 +49,7 @@ public class ExponentialDecayFunction {
         oneOverB = -FastMath.log(valueAtNumCall / initValue) / numCall;
     }
 
-    /**
-     * Computes <code>a e<sup>-numCall / b</sup></code>.
-     *
-     * @param numCall Current step of the training task.
-     * @return the value of the function at {@code numCall}.
-     */
+    
     public double value(long numCall) {
         return a * FastMath.exp(-numCall * oneOverB);
     }

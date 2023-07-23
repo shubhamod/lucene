@@ -14,10 +14,5 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/**
- *
- *     Complex number type and implementations of complex transcendental
- *     functions.
- *
- */
+
 package org.apache.lucene.util.hnsw.math.complex;

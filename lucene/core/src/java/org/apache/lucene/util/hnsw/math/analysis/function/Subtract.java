@@ -19,13 +19,9 @@ package org.apache.lucene.util.hnsw.math.analysis.function;
 
 import org.apache.lucene.util.hnsw.math.analysis.BivariateFunction;
 
-/**
- * Subtract the second operand from the first.
- *
- * @since 3.0
- */
+
 public class Subtract implements BivariateFunction {
-    /** {@inheritDoc} */
+    
     public double value(double x, double y) {
         return x - y;
     }

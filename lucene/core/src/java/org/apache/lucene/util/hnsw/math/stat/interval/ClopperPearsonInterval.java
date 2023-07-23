@@ -18,17 +18,10 @@ package org.apache.lucene.util.hnsw.math.stat.interval;
 
 import org.apache.lucene.util.hnsw.math.distribution.FDistribution;
 
-/**
- * Implements the Clopper-Pearson method for creating a binomial proportion confidence interval.
- *
- * @see <a
- *      href="http://en.wikipedia.org/wiki/Binomial_proportion_confidence_interval#Clopper-Pearson_interval">
- *      Clopper-Pearson interval (Wikipedia)</a>
- * @since 3.3
- */
+
 public class ClopperPearsonInterval implements BinomialConfidenceInterval {
 
-    /** {@inheritDoc} */
+    
     public ConfidenceInterval createInterval(int numberOfTrials, int numberOfSuccesses,
                                              double confidenceLevel) {
         IntervalUtils.checkParameters(numberOfTrials, numberOfSuccesses, confidenceLevel);

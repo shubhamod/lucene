@@ -19,32 +19,18 @@ package org.apache.lucene.util.hnsw.math.optim.nonlinear.vector;
 import org.apache.lucene.util.hnsw.math.analysis.MultivariateMatrixFunction;
 import org.apache.lucene.util.hnsw.math.optim.OptimizationData;
 
-/**
- * Jacobian of the model (vector) function to be optimized.
- *
- * @since 3.1
- * @deprecated All classes and interfaces in this package are deprecated.
- * The optimizers that were provided here were moved to the
- * {@link org.apache.lucene.util.hnsw.math.fitting.leastsquares} package
- * (cf. MATH-1008).
- */
+
 @Deprecated
 public class ModelFunctionJacobian implements OptimizationData {
-    /** Function to be optimized. */
+    
     private final MultivariateMatrixFunction jacobian;
 
-    /**
-     * @param j Jacobian of the model function to be optimized.
-     */
+    
     public ModelFunctionJacobian(MultivariateMatrixFunction j) {
         jacobian = j;
     }
 
-    /**
-     * Gets the Jacobian of the model function to be optimized.
-     *
-     * @return the model function Jacobian.
-     */
+    
     public MultivariateMatrixFunction getModelFunctionJacobian() {
         return jacobian;
     }

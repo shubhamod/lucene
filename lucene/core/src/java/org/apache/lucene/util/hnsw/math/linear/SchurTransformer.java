@@ -22,49 +22,26 @@ import org.apache.lucene.util.hnsw.math.exception.util.LocalizedFormats;
 import org.apache.lucene.util.hnsw.math.util.FastMath;
 import org.apache.lucene.util.hnsw.math.util.Precision;
 
-/**
- * Class transforming a general real matrix to Schur form.
- * <p>A m &times; m matrix A can be written as the product of three matrices: A = P
- * &times; T &times; P<sup>T</sup> with P an orthogonal matrix and T an quasi-triangular
- * matrix. Both P and T are m &times; m matrices.</p>
- * <p>Transformation to Schur form is often not a goal by itself, but it is an
- * intermediate step in more general decomposition algorithms like
- * {@link EigenDecomposition eigen decomposition}. This class is therefore
- * intended for internal use by the library and is not public. As a consequence
- * of this explicitly limited scope, many methods directly returns references to
- * internal arrays, not copies.</p>
- * <p>This class is based on the method hqr2 in class EigenvalueDecomposition
- * from the <a href="http://math.nist.gov/javanumerics/jama/">JAMA</a> library.</p>
- *
- * @see <a href="http://mathworld.wolfram.com/SchurDecomposition.html">Schur Decomposition - MathWorld</a>
- * @see <a href="http://en.wikipedia.org/wiki/Schur_decomposition">Schur Decomposition - Wikipedia</a>
- * @see <a href="http://en.wikipedia.org/wiki/Householder_transformation">Householder Transformations</a>
- * @since 3.1
- */
+
 class SchurTransformer {
-    /** Maximum allowed iterations for convergence of the transformation. */
+    
     private static final int MAX_ITERATIONS = 100;
 
-    /** P matrix. */
+    
     private final double matrixP[][];
-    /** T matrix. */
+    
     private final double matrixT[][];
-    /** Cached value of P. */
+    
     private RealMatrix cachedP;
-    /** Cached value of T. */
+    
     private RealMatrix cachedT;
-    /** Cached value of PT. */
+    
     private RealMatrix cachedPt;
 
-    /** Epsilon criteria taken from JAMA code (originally was 2^-52). */
+    
     private final double epsilon = Precision.EPSILON;
 
-    /**
-     * Build the transformation to Schur form of a general real matrix.
-     *
-     * @param matrix matrix to transform
-     * @throws NonSquareMatrixException if the matrix is not square
-     */
+    
     SchurTransformer(final RealMatrix matrix) {
         if (!matrix.isSquare()) {
             throw new NonSquareMatrixException(matrix.getRowDimension(),
@@ -82,12 +59,7 @@ class SchurTransformer {
         transform();
     }
 
-    /**
-     * Returns the matrix P of the transform.
-     * <p>P is an orthogonal matrix, i.e. its inverse is also its transpose.</p>
-     *
-     * @return the P matrix
-     */
+    
     public RealMatrix getP() {
         if (cachedP == null) {
             cachedP = MatrixUtils.createRealMatrix(matrixP);
@@ -95,12 +67,7 @@ class SchurTransformer {
         return cachedP;
     }
 
-    /**
-     * Returns the transpose of the matrix P of the transform.
-     * <p>P is an orthogonal matrix, i.e. its inverse is also its transpose.</p>
-     *
-     * @return the transpose of the P matrix
-     */
+    
     public RealMatrix getPT() {
         if (cachedPt == null) {
             cachedPt = getP().transpose();
@@ -110,11 +77,7 @@ class SchurTransformer {
         return cachedPt;
     }
 
-    /**
-     * Returns the quasi-triangular Schur matrix T of the transform.
-     *
-     * @return the T matrix
-     */
+    
     public RealMatrix getT() {
         if (cachedT == null) {
             cachedT = MatrixUtils.createRealMatrix(matrixT);
@@ -124,10 +87,7 @@ class SchurTransformer {
         return cachedT;
     }
 
-    /**
-     * Transform original matrix to Schur form.
-     * @throws MaxCountExceededException if the transformation does not converge
-     */
+    
     private void transform() {
         final int n = matrixT.length;
 
@@ -215,11 +175,7 @@ class SchurTransformer {
         }
     }
 
-    /**
-     * Computes the L1 norm of the (quasi-)triangular matrix T.
-     *
-     * @return the L1 norm of matrix T
-     */
+    
     private double getNorm() {
         double norm = 0.0;
         for (int i = 0; i < matrixT.length; i++) {
@@ -231,13 +187,7 @@ class SchurTransformer {
         return norm;
     }
 
-    /**
-     * Find the first small sub-diagonal element and returns its index.
-     *
-     * @param startIdx the starting index for the search
-     * @param norm the L1 norm of the matrix
-     * @return the index of the first small sub-diagonal element
-     */
+    
     private int findSmallSubDiagonalElement(final int startIdx, final double norm) {
         int l = startIdx;
         while (l > 0) {
@@ -253,14 +203,7 @@ class SchurTransformer {
         return l;
     }
 
-    /**
-     * Compute the shift for the current iteration.
-     *
-     * @param l the index of the small sub-diagonal element
-     * @param idx the current eigenvalue index
-     * @param iteration the current iteration
-     * @param shift holder for shift information
-     */
+    
     private void computeShift(final int l, final int idx, final int iteration, final ShiftInfo shift) {
         // Form shift
         shift.x = matrixT[idx][idx];
@@ -301,15 +244,7 @@ class SchurTransformer {
         }
     }
 
-    /**
-     * Initialize the householder vectors for the QR step.
-     *
-     * @param il the index of the small sub-diagonal element
-     * @param iu the current eigenvalue index
-     * @param shift shift information holder
-     * @param hVec the initial houseHolder vector
-     * @return the start index for the QR step
-     */
+    
     private int initQRStep(int il, final int iu, final ShiftInfo shift, double[] hVec) {
         // Look for two consecutive small sub-diagonal elements
         int im = iu - 2;
@@ -339,15 +274,7 @@ class SchurTransformer {
         return im;
     }
 
-    /**
-     * Perform a double QR step involving rows l:idx and columns m:n
-     *
-     * @param il the index of the small sub-diagonal element
-     * @param im the start index for the QR step
-     * @param iu the current eigenvalue index
-     * @param shift shift information holder
-     * @param hVec the initial houseHolder vector
-     */
+    
     private void performDoubleQRStep(final int il, final int im, final int iu,
                                      final ShiftInfo shift, final double[] hVec) {
 
@@ -432,20 +359,17 @@ class SchurTransformer {
         }
     }
 
-    /**
-     * Internal data structure holding the current shift information.
-     * Contains variable names as present in the original JAMA code.
-     */
+    
     private static class ShiftInfo {
         // CHECKSTYLE: stop all
 
-        /** x shift info */
+        
         double x;
-        /** y shift info */
+        
         double y;
-        /** w shift info */
+        
         double w;
-        /** Indicates an exceptional shift. */
+        
         double exShift;
 
         // CHECKSTYLE: resume all

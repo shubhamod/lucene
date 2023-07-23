@@ -19,17 +19,10 @@ package org.apache.lucene.util.hnsw.math.stat.interval;
 import org.apache.lucene.util.hnsw.math.distribution.NormalDistribution;
 import org.apache.lucene.util.hnsw.math.util.FastMath;
 
-/**
- * Implements the Wilson score method for creating a binomial proportion confidence interval.
- *
- * @see <a
- *      href="http://en.wikipedia.org/wiki/Binomial_proportion_confidence_interval#Wilson_score_interval">
- *      Wilson score interval (Wikipedia)</a>
- * @since 3.3
- */
+
 public class WilsonScoreInterval implements BinomialConfidenceInterval {
 
-    /** {@inheritDoc} */
+    
     public ConfidenceInterval createInterval(int numberOfTrials, int numberOfSuccesses, double confidenceLevel) {
         IntervalUtils.checkParameters(numberOfTrials, numberOfSuccesses, confidenceLevel);
         final double alpha = (1.0 - confidenceLevel) / 2;

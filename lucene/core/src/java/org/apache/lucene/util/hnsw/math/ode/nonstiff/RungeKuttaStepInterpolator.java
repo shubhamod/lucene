@@ -25,60 +25,28 @@ import org.apache.lucene.util.hnsw.math.ode.AbstractIntegrator;
 import org.apache.lucene.util.hnsw.math.ode.EquationsMapper;
 import org.apache.lucene.util.hnsw.math.ode.sampling.AbstractStepInterpolator;
 
-/** This class represents an interpolator over the last step during an
- * ODE integration for Runge-Kutta and embedded Runge-Kutta integrators.
- *
- * @see RungeKuttaIntegrator
- * @see EmbeddedRungeKuttaIntegrator
- *
- * @since 1.2
- */
+
 
 abstract class RungeKuttaStepInterpolator
   extends AbstractStepInterpolator {
 
-    /** Previous state. */
+    
     protected double[] previousState;
 
-    /** Slopes at the intermediate points */
+    
     protected double[][] yDotK;
 
-    /** Reference to the integrator. */
+    
     protected AbstractIntegrator integrator;
 
-  /** Simple constructor.
-   * This constructor builds an instance that is not usable yet, the
-   * {@link #reinitialize} method should be called before using the
-   * instance in order to initialize the internal arrays. This
-   * constructor is used only in order to delay the initialization in
-   * some cases. The {@link RungeKuttaIntegrator} and {@link
-   * EmbeddedRungeKuttaIntegrator} classes use the prototyping design
-   * pattern to create the step interpolators by cloning an
-   * uninitialized model and latter initializing the copy.
-   */
+  
   protected RungeKuttaStepInterpolator() {
     previousState = null;
     yDotK         = null;
     integrator    = null;
   }
 
-  /** Copy constructor.
-
-  * <p>The copied interpolator should have been finalized before the
-  * copy, otherwise the copy will not be able to perform correctly any
-  * interpolation and will throw a {@link NullPointerException}
-  * later. Since we don't want this constructor to throw the
-  * exceptions finalization may involve and since we don't want this
-  * method to modify the state of the copied interpolator,
-  * finalization is <strong>not</strong> done automatically, it
-  * remains under user control.</p>
-
-  * <p>The copy is a deep copy: its arrays are separated from the
-  * original arrays of the instance.</p>
-
-  * @param interpolator interpolator to copy from.
-
-  */
+  
   RungeKuttaStepInterpolator(final RungeKuttaStepInterpolator interpolator) {
 
     super(interpolator);
@@ -103,29 +71,7 @@ abstract class RungeKuttaStepInterpolator
 
   }
 
-  /** Reinitialize the instance
-   * <p>Some Runge-Kutta integrators need fewer functions evaluations
-   * than their counterpart step interpolators. So the interpolator
-   * should perform the last evaluations they need by themselves. The
-   * {@link RungeKuttaIntegrator RungeKuttaIntegrator} and {@link
-   * EmbeddedRungeKuttaIntegrator EmbeddedRungeKuttaIntegrator}
-   * abstract classes call this method in order to let the step
-   * interpolator perform the evaluations it needs. These evaluations
-   * will be performed during the call to <code>doFinalize</code> if
-   * any, i.e. only if the step handler either calls the {@link
-   * AbstractStepInterpolator#finalizeStep finalizeStep} method or the
-   * {@link AbstractStepInterpolator#getInterpolatedState
-   * getInterpolatedState} method (for an interpolator which needs a
-   * finalization) or if it clones the step interpolator.</p>
-   * @param rkIntegrator integrator being used
-   * @param y reference to the integrator array holding the state at
-   * the end of the step
-   * @param yDotArray reference to the integrator array holding all the
-   * intermediate slopes
-   * @param forward integration direction indicator
-   * @param primaryMapper equations mapper for the primary equations set
-   * @param secondaryMappers equations mappers for the secondary equations sets
-   */
+  
   public void reinitialize(final AbstractIntegrator rkIntegrator,
                            final double[] y, final double[][] yDotArray, final boolean forward,
                            final EquationsMapper primaryMapper,
@@ -136,14 +82,14 @@ abstract class RungeKuttaStepInterpolator
     this.integrator = rkIntegrator;
   }
 
-  /** {@inheritDoc} */
+  
   @Override
   public void shift() {
     previousState = currentState.clone();
     super.shift();
   }
 
-  /** {@inheritDoc} */
+  
   @Override
   public void writeExternal(final ObjectOutput out)
     throws IOException {
@@ -169,7 +115,7 @@ abstract class RungeKuttaStepInterpolator
 
   }
 
-  /** {@inheritDoc} */
+  
   @Override
   public void readExternal(final ObjectInput in)
     throws IOException, ClassNotFoundException {

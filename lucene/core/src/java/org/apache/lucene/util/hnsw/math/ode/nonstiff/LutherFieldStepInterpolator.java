@@ -22,74 +22,54 @@ import org.apache.lucene.util.hnsw.math.RealFieldElement;
 import org.apache.lucene.util.hnsw.math.ode.FieldEquationsMapper;
 import org.apache.lucene.util.hnsw.math.ode.FieldODEStateAndDerivative;
 
-/**
- * This class represents an interpolator over the last step during an
- * ODE integration for the 6th order Luther integrator.
- *
- * <p>This interpolator computes dense output inside the last
- * step computed. The interpolation equation is consistent with the
- * integration scheme.</p>
- *
- * @see LutherFieldIntegrator
- * @param <T> the type of the field elements
- * @since 3.6
- */
+
 
 class LutherFieldStepInterpolator<T extends RealFieldElement<T>>
     extends RungeKuttaFieldStepInterpolator<T> {
 
-    /** -49 - 49 q. */
+    
     private final T c5a;
 
-    /** 392 + 287 q. */
+    
     private final T c5b;
 
-    /** -637 - 357 q. */
+    
     private final T c5c;
 
-    /** 833 + 343 q. */
+    
     private final T c5d;
 
-    /** -49 + 49 q. */
+    
     private final T c6a;
 
-    /** -392 - 287 q. */
+    
     private final T c6b;
 
-    /** -637 + 357 q. */
+    
     private final T c6c;
 
-    /** 833 - 343 q. */
+    
     private final T c6d;
 
-    /** 49 + 49 q. */
+    
     private final T d5a;
 
-    /** -1372 - 847 q. */
+    
     private final T d5b;
 
-    /** 2254 + 1029 q */
+    
     private final T d5c;
 
-    /** 49 - 49 q. */
+    
     private final T d6a;
 
-    /** -1372 + 847 q. */
+    
     private final T d6b;
 
-    /** 2254 - 1029 q */
+    
     private final T d6c;
 
-    /** Simple constructor.
-     * @param field field to which the time and state vector elements belong
-     * @param forward integration direction indicator
-     * @param yDotK slopes at the intermediate points
-     * @param globalPreviousState start of the global step
-     * @param globalCurrentState end of the global step
-     * @param softPreviousState start of the restricted step
-     * @param softCurrentState end of the restricted step
-     * @param mapper equations mapper for the all equations
-     */
+    
     LutherFieldStepInterpolator(final Field<T> field, final boolean forward,
                                 final T[][] yDotK,
                                 final FieldODEStateAndDerivative<T> globalPreviousState,
@@ -117,7 +97,7 @@ class LutherFieldStepInterpolator<T extends RealFieldElement<T>>
         d6c = q.multiply(-1029).add( 2254);
     }
 
-    /** {@inheritDoc} */
+    
     @Override
     protected LutherFieldStepInterpolator<T> create(final Field<T> newField, final boolean newForward, final T[][] newYDotK,
                                                     final FieldODEStateAndDerivative<T> newGlobalPreviousState,
@@ -131,7 +111,7 @@ class LutherFieldStepInterpolator<T extends RealFieldElement<T>>
                                                   newMapper);
     }
 
-    /** {@inheritDoc} */
+    
     @SuppressWarnings("unchecked")
     @Override
     protected FieldODEStateAndDerivative<T> computeInterpolatedStateAndDerivatives(final FieldEquationsMapper<T> mapper,

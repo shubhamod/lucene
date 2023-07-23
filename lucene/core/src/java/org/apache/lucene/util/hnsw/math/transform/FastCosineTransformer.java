@@ -26,67 +26,21 @@ import org.apache.lucene.util.hnsw.math.exception.util.LocalizedFormats;
 import org.apache.lucene.util.hnsw.math.util.ArithmeticUtils;
 import org.apache.lucene.util.hnsw.math.util.FastMath;
 
-/**
- * Implements the Fast Cosine Transform for transformation of one-dimensional
- * real data sets. For reference, see James S. Walker, <em>Fast Fourier
- * Transforms</em>, chapter 3 (ISBN 0849371635).
- * <p>
- * There are several variants of the discrete cosine transform. The present
- * implementation corresponds to DCT-I, with various normalization conventions,
- * which are specified by the parameter {@link DctNormalization}.
- * <p>
- * DCT-I is equivalent to DFT of an <em>even extension</em> of the data series.
- * More precisely, if x<sub>0</sub>, &hellip;, x<sub>N-1</sub> is the data set
- * to be cosine transformed, the extended data set
- * x<sub>0</sub><sup>&#35;</sup>, &hellip;, x<sub>2N-3</sub><sup>&#35;</sup>
- * is defined as follows
- * <ul>
- * <li>x<sub>k</sub><sup>&#35;</sup> = x<sub>k</sub> if 0 &le; k &lt; N,</li>
- * <li>x<sub>k</sub><sup>&#35;</sup> = x<sub>2N-2-k</sub>
- * if N &le; k &lt; 2N - 2.</li>
- * </ul>
- * <p>
- * Then, the standard DCT-I y<sub>0</sub>, &hellip;, y<sub>N-1</sub> of the real
- * data set x<sub>0</sub>, &hellip;, x<sub>N-1</sub> is equal to <em>half</em>
- * of the N first elements of the DFT of the extended data set
- * x<sub>0</sub><sup>&#35;</sup>, &hellip;, x<sub>2N-3</sub><sup>&#35;</sup>
- * <br/>
- * y<sub>n</sub> = (1 / 2) &sum;<sub>k=0</sub><sup>2N-3</sup>
- * x<sub>k</sub><sup>&#35;</sup> exp[-2&pi;i nk / (2N - 2)]
- * &nbsp;&nbsp;&nbsp;&nbsp;k = 0, &hellip;, N-1.
- * <p>
- * The present implementation of the discrete cosine transform as a fast cosine
- * transform requires the length of the data set to be a power of two plus one
- * (N&nbsp;=&nbsp;2<sup>n</sup>&nbsp;+&nbsp;1). Besides, it implicitly assumes
- * that the sampled function is even.
- *
- * @since 1.2
- */
+
 public class FastCosineTransformer implements RealTransformer, Serializable {
 
-    /** Serializable version identifier. */
+    
     static final long serialVersionUID = 20120212L;
 
-    /** The type of DCT to be performed. */
+    
     private final DctNormalization normalization;
 
-    /**
-     * Creates a new instance of this class, with various normalization
-     * conventions.
-     *
-     * @param normalization the type of normalization to be applied to the
-     * transformed data
-     */
+    
     public FastCosineTransformer(final DctNormalization normalization) {
         this.normalization = normalization;
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @throws MathIllegalArgumentException if the length of the data array is
-     * not a power of two plus one
-     */
+    
     public double[] transform(final double[] f, final TransformType type)
       throws MathIllegalArgumentException {
         if (type == TransformType.FORWARD) {
@@ -106,16 +60,7 @@ public class FastCosineTransformer implements RealTransformer, Serializable {
         return TransformUtils.scaleArray(fct(f), s1);
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @throws org.apache.lucene.util.hnsw.math.exception.NonMonotonicSequenceException
-     * if the lower bound is greater than, or equal to the upper bound
-     * @throws org.apache.lucene.util.hnsw.math.exception.NotStrictlyPositiveException
-     * if the number of sample points is negative
-     * @throws MathIllegalArgumentException if the number of sample points is
-     * not a power of two plus one
-     */
+    
     public double[] transform(final UnivariateFunction f,
         final double min, final double max, final int n,
         final TransformType type) throws MathIllegalArgumentException {
@@ -124,14 +69,7 @@ public class FastCosineTransformer implements RealTransformer, Serializable {
         return transform(data, type);
     }
 
-    /**
-     * Perform the FCT algorithm (including inverse).
-     *
-     * @param f the real data array to be transformed
-     * @return the real transformed array
-     * @throws MathIllegalArgumentException if the length of the data array is
-     * not a power of two plus one
-     */
+    
     protected double[] fct(double[] f)
         throws MathIllegalArgumentException {
 

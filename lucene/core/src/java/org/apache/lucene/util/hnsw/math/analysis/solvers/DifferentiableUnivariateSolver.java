@@ -19,12 +19,7 @@ package org.apache.lucene.util.hnsw.math.analysis.solvers;
 import org.apache.lucene.util.hnsw.math.analysis.DifferentiableUnivariateFunction;
 
 
-/**
- * Interface for (univariate real) rootfinding algorithms.
- * Implementations will search for only one zero in the given interval.
- *
- * @deprecated as of 3.1, replaced by {@link UnivariateDifferentiableSolver}
- */
+
 @Deprecated
 public interface DifferentiableUnivariateSolver
     extends BaseUnivariateSolver<DifferentiableUnivariateFunction> {}

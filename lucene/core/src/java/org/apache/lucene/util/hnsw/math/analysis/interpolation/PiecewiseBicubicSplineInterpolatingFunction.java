@@ -27,40 +27,19 @@ import org.apache.lucene.util.hnsw.math.exception.OutOfRangeException;
 import org.apache.lucene.util.hnsw.math.exception.NonMonotonicSequenceException;
 import org.apache.lucene.util.hnsw.math.util.MathArrays;
 
-/**
- * Function that implements the
- * <a href="http://www.paulinternet.nl/?page=bicubic">bicubic spline</a>
- * interpolation.
- * This implementation currently uses {@link AkimaSplineInterpolator} as the
- * underlying one-dimensional interpolator, which requires 5 sample points;
- * insufficient data will raise an exception when the
- * {@link #value(double,double) value} method is called.
- *
- * @since 3.4
- */
+
 public class PiecewiseBicubicSplineInterpolatingFunction
     implements BivariateFunction {
-    /** The minimum number of points that are needed to compute the function. */
+    
     private static final int MIN_NUM_POINTS = 5;
-    /** Samples x-coordinates */
+    
     private final double[] xval;
-    /** Samples y-coordinates */
+    
     private final double[] yval;
-    /** Set of cubic splines patching the whole data grid */
+    
     private final double[][] fval;
 
-    /**
-     * @param x Sample values of the x-coordinate, in increasing order.
-     * @param y Sample values of the y-coordinate, in increasing order.
-     * @param f Values of the function on every grid point. the expected number
-     *        of elements.
-     * @throws NonMonotonicSequenceException if {@code x} or {@code y} are not
-     *         strictly increasing.
-     * @throws NullArgumentException if any of the arguments are null
-     * @throws NoDataException if any of the arrays has zero length.
-     * @throws DimensionMismatchException if the length of x and y don't match the row, column
-     *         height of f
-     */
+    
     public PiecewiseBicubicSplineInterpolatingFunction(double[] x,
                                                        double[] y,
                                                        double[][] f)
@@ -108,9 +87,7 @@ public class PiecewiseBicubicSplineInterpolatingFunction
         fval = f.clone();
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    
     public double value(double x,
                         double y)
         throws OutOfRangeException {
@@ -145,14 +122,7 @@ public class PiecewiseBicubicSplineInterpolatingFunction
         return returnValue;
     }
 
-    /**
-     * Indicates whether a point is within the interpolation range.
-     *
-     * @param x First coordinate.
-     * @param y Second coordinate.
-     * @return {@code true} if (x, y) is a valid point.
-     * @since 3.3
-     */
+    
     public boolean isValidPoint(double x,
                                 double y) {
         if (x < xval[0] ||
@@ -165,17 +135,7 @@ public class PiecewiseBicubicSplineInterpolatingFunction
         }
     }
 
-    /**
-     * @param c Coordinate.
-     * @param val Coordinate samples.
-     * @param offset how far back from found value to offset for querying
-     * @param count total number of elements forward from beginning that will be
-     *        queried
-     * @return the index in {@code val} corresponding to the interval containing
-     *         {@code c}.
-     * @throws OutOfRangeException if {@code c} is out of the range defined by
-     *         the boundary values of {@code val}.
-     */
+    
     private int searchIndex(double c,
                             double[] val,
                             int offset,

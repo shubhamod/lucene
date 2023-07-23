@@ -23,59 +23,37 @@ import org.apache.lucene.util.hnsw.math.ml.neuralnet.Neuron;
 import org.apache.lucene.util.hnsw.math.ml.neuralnet.twod.NeuronSquareMesh2D;
 import org.apache.lucene.util.hnsw.math.exception.MathIllegalStateException;
 
-/**
- * Helper class to find the grid coordinates of a neuron.
- * @since 3.6
- */
+
 public class LocationFinder {
-    /** Identifier to location mapping. */
+    
     private final Map<Long, Location> locations = new HashMap<Long, Location>();
 
-    /**
-     * Container holding a (row, column) pair.
-     */
+    
     public static class Location {
-        /** Row index. */
+        
         private final int row;
-        /** Column index. */
+        
         private final int column;
 
-        /**
-         * @param row Row index.
-         * @param column Column index.
-         */
+        
         public Location(int row,
                         int column) {
             this.row = row;
             this.column = column;
         }
 
-        /**
-         * @return the row index.
-         */
+        
         public int getRow() {
             return row;
         }
 
-        /**
-         * @return the column index.
-         */
+        
         public int getColumn() {
             return column;
         }
     }
 
-    /**
-     * Builds a finder to retrieve the locations of neurons that
-     * belong to the given {@code map}.
-     *
-     * @param map Map.
-     *
-     * @throws MathIllegalStateException if the network contains non-unique
-     * identifiers.  This indicates an inconsistent state due to a bug in
-     * the construction code of the underlying
-     * {@link org.apache.lucene.util.hnsw.math.ml.neuralnet.Network network}.
-     */
+    
     public LocationFinder(NeuronSquareMesh2D map) {
         final int nR = map.getNumberOfRows();
         final int nC = map.getNumberOfColumns();
@@ -91,14 +69,7 @@ public class LocationFinder {
         }
     }
 
-    /**
-     * Retrieves a neuron's grid coordinates.
-     *
-     * @param n Neuron.
-     * @return the (row, column) coordinates of {@code n}, or {@code null}
-     * if no such neuron belongs to the {@link #LocationFinder(NeuronSquareMesh2D)
-     * map used to build this instance}.
-     */
+    
     public Location getLocation(Neuron n) {
         return locations.get(n.getIdentifier());
     }

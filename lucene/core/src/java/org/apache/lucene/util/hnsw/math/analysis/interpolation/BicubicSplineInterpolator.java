@@ -24,44 +24,24 @@ import org.apache.lucene.util.hnsw.math.exception.NonMonotonicSequenceException;
 import org.apache.lucene.util.hnsw.math.exception.NumberIsTooSmallException;
 import org.apache.lucene.util.hnsw.math.util.MathArrays;
 
-/**
- * Generates a bicubic interpolating function. Due to numerical accuracy issues this should not
- * be used.
- *
- * @since 2.2
- * @deprecated as of 3.4 replaced by {@link org.apache.lucene.util.hnsw.math.analysis.interpolation.PiecewiseBicubicSplineInterpolator}
- */
+
 @Deprecated
 public class BicubicSplineInterpolator
     implements BivariateGridInterpolator {
-    /** Whether to initialize internal data used to compute the analytical
-        derivatives of the splines. */
+    
     private final boolean initializeDerivatives;
 
-    /**
-     * Default constructor.
-     * The argument {@link #BicubicSplineInterpolator(boolean) initializeDerivatives}
-     * is set to {@code false}.
-     */
+    
     public BicubicSplineInterpolator() {
         this(false);
     }
 
-    /**
-     * Creates an interpolator.
-     *
-     * @param initializeDerivatives Whether to initialize the internal data
-     * needed for calling any of the methods that compute the partial derivatives
-     * of the {@link BicubicSplineInterpolatingFunction function} returned from
-     * the call to {@link #interpolate(double[],double[],double[][]) interpolate}.
-     */
+    
     public BicubicSplineInterpolator(boolean initializeDerivatives) {
         this.initializeDerivatives = initializeDerivatives;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    
     public BicubicSplineInterpolatingFunction interpolate(final double[] xval,
                                                           final double[] yval,
                                                           final double[][] fval)
@@ -149,26 +129,12 @@ public class BicubicSplineInterpolator
                                                       initializeDerivatives);
     }
 
-    /**
-     * Computes the next index of an array, clipping if necessary.
-     * It is assumed (but not checked) that {@code i >= 0}.
-     *
-     * @param i Index.
-     * @param max Upper limit of the array.
-     * @return the next index.
-     */
+    
     private int nextIndex(int i, int max) {
         final int index = i + 1;
         return index < max ? index : index - 1;
     }
-    /**
-     * Computes the previous index of an array, clipping if necessary.
-     * It is assumed (but not checked) that {@code i} is smaller than the size
-     * of the array.
-     *
-     * @param i Index.
-     * @return the previous index.
-     */
+    
     private int previousIndex(int i) {
         final int index = i - 1;
         return index >= 0 ? index : 0;

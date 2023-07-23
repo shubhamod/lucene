@@ -14,9 +14,5 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/**
- *
- *     Implementations of transform methods, including Fast Fourier transforms.
- *
- */
+
 package org.apache.lucene.util.hnsw.math.transform;

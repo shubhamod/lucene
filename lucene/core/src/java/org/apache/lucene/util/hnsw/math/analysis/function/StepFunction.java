@@ -26,38 +26,14 @@ import org.apache.lucene.util.hnsw.math.exception.NonMonotonicSequenceException;
 import org.apache.lucene.util.hnsw.math.exception.NullArgumentException;
 import org.apache.lucene.util.hnsw.math.util.MathArrays;
 
-/**
- * <a href="http://en.wikipedia.org/wiki/Step_function">
- *  Step function</a>.
- *
- * @since 3.0
- */
+
 public class StepFunction implements UnivariateFunction {
-    /** Abscissae. */
+    
     private final double[] abscissa;
-    /** Ordinates. */
+    
     private final double[] ordinate;
 
-    /**
-     * Builds a step function from a list of arguments and the corresponding
-     * values. Specifically, returns the function h(x) defined by <pre><code>
-     * h(x) = y[0] for all x &lt; x[1]
-     *        y[1] for x[1] &le; x &lt; x[2]
-     *        ...
-     *        y[y.length - 1] for x &ge; x[x.length - 1]
-     * </code></pre>
-     * The value of {@code x[0]} is ignored, but it must be strictly less than
-     * {@code x[1]}.
-     *
-     * @param x Domain values where the function changes value.
-     * @param y Values of the function.
-     * @throws NonMonotonicSequenceException
-     * if the {@code x} array is not sorted in strictly increasing order.
-     * @throws NullArgumentException if {@code x} or {@code y} are {@code null}.
-     * @throws NoDataException if {@code x} or {@code y} are zero-length.
-     * @throws DimensionMismatchException if {@code x} and {@code y} do not
-     * have the same length.
-     */
+    
     public StepFunction(double[] x,
                         double[] y)
         throws NullArgumentException, NoDataException,
@@ -79,7 +55,7 @@ public class StepFunction implements UnivariateFunction {
         ordinate = MathArrays.copyOf(y);
     }
 
-    /** {@inheritDoc} */
+    
     public double value(double x) {
         int index = Arrays.binarySearch(abscissa, x);
         double fx = 0;
