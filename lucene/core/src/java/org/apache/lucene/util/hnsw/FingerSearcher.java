@@ -6,7 +6,9 @@ import org.apache.lucene.util.hnsw.math.stat.correlation.PearsonsCorrelation;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 
 import static org.apache.lucene.search.DocIdSetIterator.NO_MORE_DOCS;
@@ -17,13 +19,14 @@ public class FingerSearcher<T> {
     private final HnswGraph hnswGraph;
     private final RealMatrix lshBasis;
     private final int lshDimensions;
+    private final Map<Integer, RealVector>[] neighorResiduals; // d_res for each node -> neighbor
 
     public FingerSearcher(HnswGraph hnswGraph, RandomAccessVectorValues<T> values, VectorEncoding encoding) {
         this.hnswGraph = hnswGraph;
         this.values = values;
         this.vectorEncoding = encoding;
         this.lshDimensions = values.dimension() <= 768 ? 64 : 128;
-
+        this.neighorResiduals = new Map[hnswGraph.size()];
         // Compute the training data and the LSH basis.
         List<RealVector> trainingData = null;
         try {
@@ -40,6 +43,7 @@ public class FingerSearcher<T> {
 
         // for each node, create a training residual with each of its neighbors
         for (int node = 0; node < hnswGraph.size(); node++) {
+            var residuals = new HashMap<Integer, RealVector>();
             RealVector c = valuesMatrix.getRowVector(node);
             hnswGraph.seek(0, node);
             int neighbor;
@@ -109,27 +113,56 @@ public class FingerSearcher<T> {
     }
 
     public Function<Integer, Float> distanceFunction(T query) {
+        // The first FINGER insight is that we can compute the distance D = q.d
+        // as qp.dp + qr.dr, where qp and dp are the projections of the query vector and the data
+        // (neighbor) vector onto the node vector c, and qr and dr are the residuals of that projection.
+        // (I am using x.y to indicate dot product of x and y.)
+        //
+        // This is valuable because we can express the first term as easily-cached and easily-computed
+        // operations, compared to calculating the full n-dimensional dot product of q and d.
+        // qp.dp = (qp.c / c.c) * c . (dp.c / c.c) * c
+        //       = (qp.c * dp.c) / (c.c)^2
+        // qp.c is the projection of q onto c, which we compute once at the start of the query.
+        // dp.c is the projection of d onto c, which we compute once for each neighbor and cache.
+        // c.c is the norm of c, which we compute once for each node and cache.
+        //
+        // The second term is the dot product of the residuals.  There is no way to avoid computing
+        // this, BUT the second FINGER insight is that we can approximate this term using LSH with
+        // very little loss of precision.
         RealVector queryVector = toRealVector(query);
 
+        float projected =
         // Project the query vector into the LSH space
         RealVector queryProjection = lshBasis.operate(queryVector);
         float qpSquared = normSq(queryProjection);
 
         // Function that computes the distance between the query vector and other vectors in the LHS space
         return ordinal -> {
-            T genericVector = null;
+            RealVector v = null;
             try {
-                genericVector = values.vectorValue(ordinal);
+                v = toRealVector(values.vectorValue(ordinal));
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-            RealVector v = toRealVector(genericVector);
 
-            RealVector vProjection = lshBasis.operate(v);
-            float vpSquared = normSq(vProjection);
+            // Get d_res for this neighbor
+            RealVector dRes = neighorResiduals[ordinal].get(ordinal);
 
-            // Compute the cosine similarity in the LSH space
-            return qpSquared + vpSquared - 2 * (float) queryProjection.dotProduct(vProjection);
+            // Compute q_res
+            RealVector qRes = queryVector.subtract(queryProjection);
+
+            // Compute LSH hash for d_res and q_res
+            byte[] dLSH = lshBasis.operate(dRes).map(v -> v > 0 ? 1 : 0);
+            byte[] qLSH = lshBasis.operate(qRes).map(v -> v > 0 ? 1 : 0);
+
+            // Estimate angle between q_res and d_res
+            float estAngle = lshApproxAngle(qLSH, dLSH);
+
+            // Compute approximate q_res^T d_res term
+            float qdTerm = normSq(qRes) * normSq(dRes) * estAngle;
+
+            // Combine with other terms
+            return qProjDiffTerm + qdTerm;
         };
     }
 

@@ -20,7 +20,7 @@ package org.apache.lucene.util.hnsw;
 import static org.apache.lucene.search.DocIdSetIterator.NO_MORE_DOCS;
 
 import java.io.IOException;
-import java.util.function.Function;
+import java.util.function.BiFunction;
 
 import org.apache.lucene.index.VectorEncoding;
 import org.apache.lucene.index.VectorSimilarityFunction;
@@ -319,14 +319,11 @@ public class HnswGraphSearcher<T> {
           Bits acceptOrds,
           int visitedLimit)
           throws IOException {
-    Function<Integer, Float> df = new Function<>() {
-      @Override
-      public Float apply(Integer ordinal) {
-        try {
-          return HnswGraphSearcher.this.compare(query, vectors, ordinal);
-        } catch (IOException e) {
-          throw new RuntimeException(e);
-        }
+    BiFunction<Integer, Integer, Float> df = (ordinal, neighbor) -> {
+      try {
+        return HnswGraphSearcher.this.compare(query, vectors, ordinal);
+      } catch (IOException e) {
+        throw new RuntimeException(e);
       }
     };
     searchLevel(results, topK, level, eps, df, graph, acceptOrds, visitedLimit);
@@ -343,7 +340,7 @@ public class HnswGraphSearcher<T> {
       int topK,
       int level,
       final int[] eps,
-      Function<Integer, Float> distanceFunction,
+      BiFunction<Integer, Integer, Float> distanceFunction,
       HnswGraph graph,
       Bits acceptOrds,
       int visitedLimit)
@@ -360,6 +357,8 @@ public class HnswGraphSearcher<T> {
           results.markIncomplete();
           break;
         }
+        // TODO this is potentially a significant amount of redundant work, we have already computed scores
+        // for each of these nodes except the very first
         float score = distanceFunction.apply(ep);
         numVisited++;
         candidates.add(ep, score);
