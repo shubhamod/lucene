@@ -16,13 +16,13 @@ public class FingerSearcher<T> {
     private final VectorEncoding vectorEncoding;
     private final HnswGraph hnswGraph;
     private final RealMatrix lshBasis;
-    private final int r;
+    private final int lshDimensions;
 
     public FingerSearcher(HnswGraph hnswGraph, RandomAccessVectorValues<T> values, VectorEncoding encoding) {
         this.hnswGraph = hnswGraph;
         this.values = values;
         this.vectorEncoding = encoding;
-        this.r = values.dimension() < 768 ? 64 : 128;
+        this.lshDimensions = values.dimension() <= 768 ? 64 : 128;
 
         // Compute the training data and the LSH basis.
         List<RealVector> trainingData = null;
@@ -35,8 +35,33 @@ public class FingerSearcher<T> {
     }
 
     private List<RealVector> computeTrainingData() throws IOException {
-        int numNodes = hnswGraph.size();
-        List<RealVector> trainingData = new ArrayList<>(numNodes);
+        List<RealVector> trainingData = new ArrayList<>(hnswGraph.size());
+        RealMatrix valuesMatrix = valuesToMatrix();
+
+        // for each node, create a training residual with each of its neighbors
+        for (int node = 0; node < hnswGraph.size(); node++) {
+            RealVector c = valuesMatrix.getRowVector(node);
+            hnswGraph.seek(0, node);
+            int neighbor;
+            while ((neighbor = hnswGraph.nextNeighbor()) != NO_MORE_DOCS) {
+                RealVector d = valuesMatrix.getRowVector(neighbor);
+
+                // Compute the residual vector.
+                double[] projection = c.toArray();
+                double scale = d.dotProduct(c) / c.dotProduct(c);
+                for (int i = 0; i < projection.length; i++) {
+                    projection[i] *= scale;
+                }
+                RealVector d_proj = new ArrayRealVector(projection);
+                RealVector d_res = d.subtract(d_proj);
+
+                trainingData.add(d_res);
+            }
+        }
+        return trainingData;
+    }
+
+    private RealMatrix valuesToMatrix() throws IOException {
         RealMatrix valuesMatrix = new Array2DRowRealMatrix(values.size(), values.dimension());
 
         for (int i = 0; i < values.size(); i++) {
@@ -62,27 +87,7 @@ public class FingerSearcher<T> {
 
             valuesMatrix.setRowVector(i, new ArrayRealVector(doubleVector));
         }
-
-        for (int node = 0; node < numNodes; node++) {
-            RealVector c = valuesMatrix.getRowVector(node);
-            hnswGraph.seek(0, node);
-            int neighbor;
-            while ((neighbor = hnswGraph.nextNeighbor()) != NO_MORE_DOCS) {
-                RealVector d = valuesMatrix.getRowVector(neighbor);
-
-                // Compute the residual vector.
-                double[] projection = c.toArray();
-                double scale = d.dotProduct(c) / c.dotProduct(c);
-                for (int i = 0; i < projection.length; i++) {
-                    projection[i] *= scale;
-                }
-                RealVector d_proj = new ArrayRealVector(projection);
-                RealVector d_res = d.subtract(d_proj);
-
-                trainingData.add(d_res);
-            }
-        }
-        return trainingData;
+        return valuesMatrix;
     }
 
     private RealMatrix computeLshBasis(List<RealVector> trainingData) {
@@ -118,14 +123,14 @@ public class FingerSearcher<T> {
         EigenDecomposition eig = new EigenDecomposition(covarianceMatrix);
 
         // The LSH basis is given by the eigenvectors corresponding to the r largest eigenvalues.
-        return eig.getV().getSubMatrix(0, r-1, 0, values.dimension()-1).transpose();
+        return eig.getV().getSubMatrix(0, lshDimensions -1, 0, values.dimension()-1).transpose();
     }
 
     private float normSq(RealVector v) {
         return (float) v.dotProduct(v);
     }
 
-    public Function<T, Float> distanceFunction(T query) {
+    public Function<Integer, Float> distanceFunction(T query) {
         // Project the query vector into the LSH space
         RealVector queryVector;
         if (vectorEncoding == VectorEncoding.BYTE) {
@@ -145,31 +150,37 @@ public class FingerSearcher<T> {
         }
 
         RealVector queryProjection = lshBasis.operate(queryVector);
-        float queryProjectionLengthSquared = normSq(queryProjection);
+        float qpSquared = normSq(queryProjection);
 
         // Function that computes the distance between the query vector and other vectors in the LHS space
-        return otherVector -> {
-            RealVector otherVectorInLSHSpace;
+        return ordinal -> {
+            T genericVector = null;
+            try {
+                genericVector = values.vectorValue(ordinal);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            RealVector v;
             if (vectorEncoding == VectorEncoding.BYTE) {
-                byte[] byteArray = (byte[]) otherVector;
-                otherVectorInLSHSpace = new ArrayRealVector(byteArray.length);
+                byte[] byteArray = (byte[]) genericVector;
+                v = new ArrayRealVector(byteArray.length);
                 for (int j = 0; j < byteArray.length; j++) {
-                    otherVectorInLSHSpace.setEntry(j, byteArray[j]);
+                    v.setEntry(j, byteArray[j]);
                 }
             } else {
                 assert vectorEncoding == VectorEncoding.FLOAT32;
-                float[] floatArray = (float[]) otherVector;
-                otherVectorInLSHSpace = new ArrayRealVector(floatArray.length);
+                float[] floatArray = (float[]) genericVector;
+                v = new ArrayRealVector(floatArray.length);
                 for (int j = 0; j < floatArray.length; j++) {
-                    otherVectorInLSHSpace.setEntry(j, floatArray[j]);
+                    v.setEntry(j, floatArray[j]);
                 }
             }
 
-            RealVector otherProjection = lshBasis.operate(otherVectorInLSHSpace);
-            float opSquared = normSq(otherProjection);
+            RealVector vProjection = lshBasis.operate(v);
+            float vpSquared = normSq(vProjection);
 
             // Compute the cosine similarity in the LSH space
-            return queryProjectionLengthSquared + opSquared - 2 * (float) queryProjection.dotProduct(otherProjection);
+            return qpSquared + vpSquared - 2 * (float) queryProjection.dotProduct(vProjection);
         };
     }
 }
