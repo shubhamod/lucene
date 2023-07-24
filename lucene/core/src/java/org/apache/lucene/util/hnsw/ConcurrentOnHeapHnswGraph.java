@@ -273,7 +273,7 @@ public final class ConcurrentOnHeapHnswGraph extends HnswGraph implements Accoun
    * are allowed to change, so you could potentially get different top K results from the same query
    * if concurrent updates are in progress.)
    */
-  private class ConcurrentHnswGraphView extends HnswGraph {
+  class ConcurrentHnswGraphView extends HnswGraph {
     // It is tempting, but incorrect, to try to provide "adequate" isolation by
     // (1) keeping a bitset of complete nodes and giving that to the searcher as nodes to
     // accept -- but we need to keep incomplete nodes out of the search path entirely,

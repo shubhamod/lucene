@@ -998,6 +998,74 @@ abstract class HnswGraphTestCase<T> extends LuceneTestCase {
     assertTrue("overlap=" + overlap, overlap > 0.9);
   }
 
+  @SuppressWarnings("unchecked")
+  private void testFingerInternal(int lhsBasis, int size, int dim, int topK) throws IOException, ExecutionException, InterruptedException {
+    similarityFunction = VectorSimilarityFunction.DOT_PRODUCT;
+    AbstractMockVectorValues<T> vectors = vectorValues(size, dim);
+    int buildThreads = 24;
+    var es = Executors.newFixedThreadPool(
+        buildThreads, new NamedThreadFactory("Concurrent HNSW builder"));
+
+    // todo disable keeping extra connections for the raw version
+    var builder = ConcurrentHnswGraphBuilder.create(vectors, VectorEncoding.FLOAT32, VectorSimilarityFunction.DOT_PRODUCT, 16, 100);
+    var rawHnsw = builder.buildAsync(vectors.copy(), es, buildThreads).get();
+
+    builder = ConcurrentHnswGraphBuilder.create(vectors, VectorEncoding.FLOAT32, VectorSimilarityFunction.DOT_PRODUCT, 16, 100);
+    var fingerHnsw = builder.buildAsync(vectors.copy(), es, buildThreads).get();
+
+    es.shutdown();
+    Bits acceptOrds = random().nextBoolean() ? null : createRandomAcceptOrds(0, size);
+
+    HnswSearcher<T> rawSearcher = new HnswSearcher.Builder<>(rawHnsw.getView(), vectors, getVectorEncoding(), similarityFunction).build();
+    FingerMetadata<T> fm = new FingerMetadata<>(fingerHnsw.getView(), vectors, getVectorEncoding(), similarityFunction, lhsBasis);
+    HnswSearcher<T> fingerSearcher = new HnswSearcher.Builder<>(fingerHnsw.getView(), vectors, getVectorEncoding(), similarityFunction).withFinger(fm).build();
+
+    int rawOverlap = 0;
+    int fingerOverlap = 0;
+    for (int i = 0; i < 100; i++) {
+      T query = randomVector(dim);
+      NeighborQueue rawResults = rawSearcher.search(query, 100, acceptOrds, Integer.MAX_VALUE);
+      NeighborQueue fingerResults = fingerSearcher.search(query, 100, acceptOrds, Integer.MAX_VALUE);
+
+      NeighborQueue expected = new NeighborQueue(topK, false);
+      for (int j = 0; j < size; j++) {
+        if (vectors.vectorValue(j) != null && (acceptOrds == null || acceptOrds.get(j))) {
+          if (getVectorEncoding() == VectorEncoding.BYTE) {
+            assert query instanceof byte[];
+            expected.add(
+                j, similarityFunction.compare((byte[]) query, (byte[]) vectors.vectorValue(j)));
+          } else {
+            assert query instanceof float[];
+            expected.add(
+                j, similarityFunction.compare((float[]) query, (float[]) vectors.vectorValue(j)));
+          }
+          if (expected.size() > topK) {
+            expected.pop();
+          }
+        }
+      }
+      rawOverlap += computeOverlap(rawResults.nodes(), expected.nodes());
+      fingerOverlap += computeOverlap(fingerResults.nodes(), expected.nodes());
+    }
+
+    assert fingerOverlap >= 0.99 * rawOverlap : "fingerOverlap=" + fingerOverlap + " rawOverlap=" + rawOverlap;
+  }
+
+  @SuppressWarnings("unchecked")
+  public void testFingerSmall() throws IOException, ExecutionException, InterruptedException {
+    testFingerInternal(16, atLeast(100), atLeast(20), 5);
+  }
+
+  @SuppressWarnings("unchecked")
+  public void testFingerMid() throws IOException, ExecutionException, InterruptedException {
+    testFingerInternal(32, atLeast(10_000), atLeast(50), atLeast(10));
+  }
+
+  @SuppressWarnings("unchecked")
+  public void testFingerLarge() throws IOException, ExecutionException, InterruptedException {
+    testFingerInternal(64, 100_000, 128, atLeast(50));
+  }
+
   /* test thread-safety of searching OnHeapHnswGraph */
   @SuppressWarnings("unchecked")
   public void testOnHeapHnswGraphSearch()
