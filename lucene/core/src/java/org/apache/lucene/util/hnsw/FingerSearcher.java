@@ -44,15 +44,10 @@ public class FingerSearcher<T> {
             hnswGraph.seek(0, node);
             int neighbor;
             while ((neighbor = hnswGraph.nextNeighbor()) != NO_MORE_DOCS) {
-                RealVector d = valuesMatrix.getRowVector(neighbor);
-
                 // Compute the residual vector.
-                double[] projection = c.toArray();
+                RealVector d = valuesMatrix.getRowVector(neighbor);
                 double scale = d.dotProduct(c) / c.dotProduct(c);
-                for (int i = 0; i < projection.length; i++) {
-                    projection[i] *= scale;
-                }
-                RealVector d_proj = new ArrayRealVector(projection);
+                RealVector d_proj = c.mapMultiply(scale);
                 RealVector d_res = d.subtract(d_proj);
 
                 trainingData.add(d_res);
