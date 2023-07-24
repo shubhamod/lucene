@@ -51,36 +51,19 @@ public class FingerSearcher<T> {
                 RealVector d_res = d.subtract(d_proj);
 
                 trainingData.add(d_res);
+                residuals.put(neighbor, d_res);
             }
+
+            neighorResiduals[node] = residuals;
         }
         return trainingData;
     }
 
     private RealMatrix valuesToMatrix() throws IOException {
         RealMatrix valuesMatrix = new Array2DRowRealMatrix(values.size(), values.dimension());
-
         for (int i = 0; i < values.size(); i++) {
-            T vector = values.vectorValue(i);
-
-            // Convert vector to double array based on vectorEncoding.
-            double[] doubleVector;
-            if (vectorEncoding == VectorEncoding.BYTE) {
-                byte[] byteVector = (byte[]) vector;
-                doubleVector = new double[byteVector.length];
-                for (int j = 0; j < byteVector.length; j++) {
-                    doubleVector[j] = byteVector[j];
-                }
-            } else if (vectorEncoding == VectorEncoding.FLOAT32) {
-                float[] floatVector = (float[]) vector;
-                doubleVector = new double[floatVector.length];
-                for (int j = 0; j < floatVector.length; j++) {
-                    doubleVector[j] = floatVector[j];
-                }
-            } else {
-                throw new IllegalStateException("Unsupported vector encoding: " + vectorEncoding);
-            }
-
-            valuesMatrix.setRowVector(i, new ArrayRealVector(doubleVector));
+            RealVector v = toRealVector(values.vectorValue(i));
+            valuesMatrix.setRowVector(i, v);
         }
         return valuesMatrix;
     }
@@ -126,7 +109,31 @@ public class FingerSearcher<T> {
     }
 
     public Function<Integer, Float> distanceFunction(T query) {
+        RealVector queryVector = toRealVector(query);
+
         // Project the query vector into the LSH space
+        RealVector queryProjection = lshBasis.operate(queryVector);
+        float qpSquared = normSq(queryProjection);
+
+        // Function that computes the distance between the query vector and other vectors in the LHS space
+        return ordinal -> {
+            T genericVector = null;
+            try {
+                genericVector = values.vectorValue(ordinal);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            RealVector v = toRealVector(genericVector);
+
+            RealVector vProjection = lshBasis.operate(v);
+            float vpSquared = normSq(vProjection);
+
+            // Compute the cosine similarity in the LSH space
+            return qpSquared + vpSquared - 2 * (float) queryProjection.dotProduct(vProjection);
+        };
+    }
+
+    private RealVector toRealVector(T query) {
         RealVector queryVector;
         if (vectorEncoding == VectorEncoding.BYTE) {
             byte[] byteArray = (byte[]) query;
@@ -143,39 +150,6 @@ public class FingerSearcher<T> {
         } else {
             throw new IllegalArgumentException("Unsupported vector encoding: " + vectorEncoding);
         }
-
-        RealVector queryProjection = lshBasis.operate(queryVector);
-        float qpSquared = normSq(queryProjection);
-
-        // Function that computes the distance between the query vector and other vectors in the LHS space
-        return ordinal -> {
-            T genericVector = null;
-            try {
-                genericVector = values.vectorValue(ordinal);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-            RealVector v;
-            if (vectorEncoding == VectorEncoding.BYTE) {
-                byte[] byteArray = (byte[]) genericVector;
-                v = new ArrayRealVector(byteArray.length);
-                for (int j = 0; j < byteArray.length; j++) {
-                    v.setEntry(j, byteArray[j]);
-                }
-            } else {
-                assert vectorEncoding == VectorEncoding.FLOAT32;
-                float[] floatArray = (float[]) genericVector;
-                v = new ArrayRealVector(floatArray.length);
-                for (int j = 0; j < floatArray.length; j++) {
-                    v.setEntry(j, floatArray[j]);
-                }
-            }
-
-            RealVector vProjection = lshBasis.operate(v);
-            float vpSquared = normSq(vProjection);
-
-            // Compute the cosine similarity in the LSH space
-            return qpSquared + vpSquared - 2 * (float) queryProjection.dotProduct(vProjection);
-        };
+        return queryVector;
     }
 }
