@@ -25,6 +25,7 @@ dependencies {
 }
 
 test {
+  maxHeapSize = "8G"
   // open jdk classes for inspection by ram usage estimator
   jvmArgs(
           '--add-opens', 'java.base/java.lang=ALL-UNNAMED',
