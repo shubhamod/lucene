@@ -312,9 +312,17 @@ public final class ConcurrentOnHeapHnswGraph extends HnswGraph implements Accoun
       return ConcurrentOnHeapHnswGraph.this.getNodesOnLevel(level);
     }
 
+    int lastLevel = -1;
+    Map<Integer, ConcurrentNeighborSet> nodesOnLastLevel = null;
     @Override
     public void seek(int level, int targetNode) {
-      remainingNeighbors = getNeighbors(level, targetNode).nodeIterator();
+      if (level == lastLevel) {
+        remainingNeighbors = nodesOnLastLevel.get(targetNode).nodeIterator();
+        return;
+      }
+      lastLevel = level;
+      nodesOnLastLevel = graphLevels.get(level);
+      remainingNeighbors = nodesOnLastLevel.get(targetNode).nodeIterator();
     }
 
     @Override
