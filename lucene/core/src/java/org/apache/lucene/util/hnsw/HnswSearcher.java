@@ -20,6 +20,9 @@ package org.apache.lucene.util.hnsw;
 import static org.apache.lucene.search.DocIdSetIterator.NO_MORE_DOCS;
 
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.LongAdder;
+
 import org.apache.lucene.index.VectorEncoding;
 import org.apache.lucene.index.VectorSimilarityFunction;
 import org.apache.lucene.util.BitSet;
@@ -179,6 +182,9 @@ public class HnswSearcher<T> {
     return fingerMetadata.similarityProviderFor(query);
   }
 
+  public LongAdder exactSimilarityCalls = new LongAdder();
+  public LongAdder approxSimilarityCalls = new LongAdder();
+
   /**
    * Add the closest neighbors found to a priority queue (heap). These are returned in REVERSE
    * proximity order -- the most distant neighbor of the topK found, i.e. the one with the lowest
@@ -205,6 +211,7 @@ public class HnswSearcher<T> {
           break;
         }
         float score = similarityProvider.exactSimilarityTo(ep);
+        exactSimilarityCalls.increment();
         numVisited++;
         candidates.add(ep, score);
         if (acceptOrds == null || acceptOrds.get(ep)) {
@@ -227,7 +234,7 @@ public class HnswSearcher<T> {
       }
 
       int topCandidateNode = candidates.pop();
-      boolean useFinger = numVisited > 5 || level < graph.numLevels() - 2;
+      boolean useFinger = fingerMetadata != null && (numVisited > 5 || level < graph.numLevels() - 2);
       SimilarityProvider.SimilarityFunction localDistances = useFinger
           ? similarityProvider.approximateSimilarityNear(topCandidateNode, topCandidateSimilarity)
           : similarityProvider::exactSimilarityTo;
@@ -243,10 +250,12 @@ public class HnswSearcher<T> {
           break;
         }
         float friendSimilarity = localDistances.apply(friendOrd);
+        (useFinger ? approxSimilarityCalls : exactSimilarityCalls).increment();
         numVisited++;
         if (friendSimilarity >= minAcceptedSimilarity) {
           if (useFinger) {
             friendSimilarity = similarityProvider.exactSimilarityTo(friendOrd);
+            exactSimilarityCalls.increment();
             if (friendSimilarity < minAcceptedSimilarity) {
               continue;
             }
