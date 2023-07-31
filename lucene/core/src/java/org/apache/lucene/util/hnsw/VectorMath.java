@@ -23,7 +23,7 @@ public class VectorMath {
       return result;
   }
 
-  static void computeOuterProduct(float[] a, float[] b, float[][] result) {
+  static void computeOuterProduct(float[] a, float[] b, double[][] result) {
       int dimension = a.length;
       for (int i = 0; i < dimension; i++) {
           for (int j = 0; j < dimension; j++) {
@@ -32,7 +32,7 @@ public class VectorMath {
       }
   }
 
-  static void addInPlace(float[][] m1, float[][] m2) {
+  static void addInPlace(double[][] m1, double[][] m2) {
       int rows = m1.length;
       int cols = m1[0].length;
       for (int i = 0; i < rows; i++) {
@@ -42,7 +42,7 @@ public class VectorMath {
       }
   }
 
-  static void multiplyInPlace(float[][] m, float f) {
+  static void multiplyInPlace(double[][] m, float f) {
       int rows = m.length;
       int cols = m[0].length;
       for (int i = 0; i < rows; i++) {
@@ -52,7 +52,9 @@ public class VectorMath {
       }
   }
 
-  static float[][] incrementalCovariance(Iterator<float[]> data, int dimension) {
+  // might as well use double internally since that's what Commons Math wants
+  // to compute eigenvectors later, anyway
+  static double[][] incrementalCovariance(Iterator<float[]> data, int dimension) {
       if (!data.hasNext()) {
           throw new IllegalArgumentException("No data provided.");
       }
@@ -61,8 +63,8 @@ public class VectorMath {
       // doing an extra transform is more work that we don't want to do for each query
 
       // Initialize sum of squares matrix and outerProduct scratch space
-      float[][] sumOfSquares = new float[dimension][dimension];
-    float[][] outerProduct = new float[dimension][dimension];
+      double[][] sumOfSquares = new double[dimension][dimension];
+      double[][] outerProduct = new double[dimension][dimension];
 
       // Iterate over data
       int count = 0;

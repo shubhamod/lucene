@@ -193,18 +193,10 @@ public class FingerMetadata<T> {
         }
 
         static <T> LshBasis computeFromResiduals(Iterator<float[]> data, int dataDimensions, int lshDimensions) {
-            float[][] covarianceMatrix = VectorMath.incrementalCovariance(data, dataDimensions);
-
-            // Convert float[][] to double[][]
-            double[][] covarianceMatrixDouble = new double[covarianceMatrix.length][covarianceMatrix[0].length];
-            for (int i = 0; i < covarianceMatrix.length; i++) {
-                for (int j = 0; j < covarianceMatrix[i].length; j++) {
-                    covarianceMatrixDouble[i][j] = covarianceMatrix[i][j];
-                }
-            }
+            double[][] covarianceMatrix = VectorMath.incrementalCovariance(data, dataDimensions);
 
             // Compute the eigen decomposition of the covariance matrix.
-            RealMatrix covarianceMatrixRM = MatrixUtils.createRealMatrix(covarianceMatrixDouble);
+            RealMatrix covarianceMatrixRM = MatrixUtils.createRealMatrix(covarianceMatrix);
             EigenDecomposition eig = new EigenDecomposition(covarianceMatrixRM);
 
             // The LSH basis is given by the eigenvectors corresponding to the r largest eigenvalues.
