@@ -5,11 +5,18 @@ import org.apache.lucene.index.VectorSimilarityFunction;
 import org.apache.lucene.tests.util.LuceneTestCase;
 import org.apache.lucene.util.VectorUtil;
 import org.apache.lucene.util.hnsw.FingerMetadata.LshBasis;
+import org.apache.lucene.util.hnsw.math.distribution.NormalDistribution;
+import org.apache.lucene.util.hnsw.math.linear.ArrayRealVector;
+import org.apache.lucene.util.hnsw.math.linear.MatrixUtils;
+import org.apache.lucene.util.hnsw.math.linear.RealMatrix;
+import org.apache.lucene.util.hnsw.math.linear.RealVector;
 import org.apache.lucene.util.hnsw.math.stat.correlation.PearsonsCorrelation;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static org.apache.lucene.search.DocIdSetIterator.NO_MORE_DOCS;
 import static org.apache.lucene.util.hnsw.HnswGraphTestCase.createRandomFloatVectors;
@@ -20,6 +27,134 @@ public class TestFingerMetadata extends LuceneTestCase {
     var lsh = LshBasis.computeFromResiduals(vectors.iterator(), 3, 2);
     assertArrayEquals(new float[] {-0.33809817f, -0.55064932f, -0.76320047f}, lsh.basis[0], 0.01f);
     assertArrayEquals(new float[] {0.84795222f,  0.17354729f, -0.50085764f}, lsh.basis[1], 0.01f);
+  }
+
+  public void testLshSanity() {
+    List<float[]> data = generateTestData(1000, 50);
+    LshBasis lsh = LshBasis.computeFromResiduals(data.iterator(), 50, 8);
+    List<RealVector> projectedData = data.stream().map(lsh::project).map(this::toRealVector).collect(Collectors.toList());
+
+    // Verify that the basis is orthonormal and that the vectors have length 1
+    RealMatrix basis = toRealMatrix(lsh.basis);
+    RealMatrix product = basis.multiply(basis.transpose());
+    RealMatrix I = MatrixUtils.createRealIdentityMatrix(8);
+    for (int i = 0; i < 8; i++) {
+      assertArrayEquals(I.getRow(i), product.getRow(i), 0.01);
+      assertEquals(1.0, basis.getRowVector(i).getNorm(), 0.01);
+    }
+
+    // Verify that the variance of each component decreases in order
+    double previousVariance = Double.MAX_VALUE;
+    for (int i = 0; i < basis.getRowDimension(); i++) {
+      int finalI = i;
+      List<Double> componentData = projectedData.stream().map(v -> v.getEntry(finalI)).collect(Collectors.toList());
+      double currentVariance = computeVarianceList(componentData);
+      assert currentVariance <= previousVariance : "Variance of component " + i + " is not less than or equal to variance of the previous component";
+      previousVariance = currentVariance;
+    }
+
+    // Compute the reconstruction error for the LSH basis
+    List<RealVector> rvData = data.stream().map(this::toRealVector).toList();
+    double lshError = computeReconstructionError(basis, rvData, projectedData);
+    System.out.println("Reconstruction error for LSH basis: " + lshError);
+
+    // Compute the variance of the projected data.
+    double lshV = computeVariance(projectedData);
+    System.out.println("Variance of projected LSH data: " + lshV);
+
+    // Compare with some random projections. If we computed the basis correctly,
+    // its variance will be higher and reconstruction lower than any random basis.
+    for (int i = 0; i < 100; i++) {
+      // Generate a random 50x8 matrix.
+      LshBasis randomBasis = LshBasis.createRandom(50, 8);
+
+      // Variance
+      List<RealVector> randomProjectedData = data.stream().map(randomBasis::project).map(this::toRealVector).toList();
+      double rv = computeVariance(randomProjectedData);
+      assert rv < lshV : "Random variance " + rv + " is not less than LSH variance " + lshV;
+
+      // Reconstruction error
+      double randomError = computeReconstructionError(basis, rvData, randomProjectedData);
+      assert randomError > lshError : "Random reconstruction error " + randomError + " is not greater than LSH error " + lshError;
+    }
+  }
+
+  private RealMatrix toRealMatrix(float[][] basis) {
+    double[][] d = new double[basis.length][];
+    for (int i = 0; i < basis.length; i++) {
+      d[i] = toDoubleArray(basis[i]);
+    }
+    return MatrixUtils.createRealMatrix(d);
+  }
+
+  private RealVector toRealVector(float[] v) {
+    return new ArrayRealVector(toDoubleArray(v));
+  }
+
+  private static double[] toDoubleArray(float[] v) {
+    double[] d = new double[v.length];
+    for (int i = 0; i < v.length; i++) {
+      d[i] = v[i];
+    }
+    return d;
+  }
+
+  private static double computeVarianceList(List<Double> data) {
+    int m = data.size();
+    double sum = data.stream().mapToDouble(Double::doubleValue).sum();
+    double mean = sum / m;
+
+    double sumSquaredDeviations = 0.0;
+    for (Double value : data) {
+      double deviation = value - mean;
+      sumSquaredDeviations += deviation * deviation;
+    }
+    return sumSquaredDeviations / (m - 1);
+  }
+
+  private static double computeReconstructionError(RealMatrix basis, List<RealVector> originalData, List<RealVector> projectedData) {
+    double totalError = 0.0;
+    for (int i = 0; i < originalData.size(); i++) {
+      RealVector original = originalData.get(i);
+      RealVector projected = projectedData.get(i);
+      RealVector reconstructed = unproject(basis, projected);
+      double error = original.subtract(reconstructed).getNorm();
+      totalError += error * error;
+    }
+    return totalError / originalData.size();
+  }
+
+  private static RealVector unproject(RealMatrix basis, RealVector v) {
+    return basis.transpose().operate(v);
+  }
+
+  private static List<float[]> generateTestData(int count, int dimension) {
+    NormalDistribution nd = new NormalDistribution();
+    return IntStream.range(0, count)
+        .mapToObj(i -> {
+          var a = new float[dimension];
+          for (int j = 0; j < dimension; j++) {
+            a[j] = (float) nd.sample();
+          }
+          return a;
+        })
+        .collect(Collectors.toList());
+  }
+
+  private static double computeVariance(List<RealVector> data) {
+    int m = data.size();
+    double sum = 0.0;
+    for (RealVector v : data) {
+      sum += v.getEntry(0);
+    }
+    double mean = sum / m;
+
+    double sumSquaredDeviations = 0.0;
+    for (RealVector v : data) {
+      double deviation = v.getEntry(0) - mean;
+      sumSquaredDeviations += deviation * deviation;
+    }
+    return sumSquaredDeviations / (m - 1);
   }
 
   public void testAccuracy() throws IOException {

@@ -24,6 +24,8 @@ import static org.apache.lucene.util.hnsw.VectorMath.cosine;
 import static org.apache.lucene.util.hnsw.VectorMath.mapMultiply;
 import static org.apache.lucene.util.hnsw.VectorMath.norm;
 import static org.apache.lucene.util.hnsw.VectorMath.subtract;
+import static org.apache.lucene.util.hnsw.VectorMath.toFloatArray;
+import static org.apache.lucene.util.hnsw.VectorMath.toFloatMatrix;
 
 public class FingerMetadata<T> {
     private final RandomAccessVectorValues<T> vectors;
@@ -184,14 +186,6 @@ public class FingerMetadata<T> {
             return new LshBasis(toFloatMatrix(Q.transpose()));
         }
 
-        private static float[][] toFloatMatrix(RealMatrix m) {
-            float[][] result = new float[m.getRowDimension()][];
-            for (int i = 0; i < m.getRowDimension(); i++) {
-                result[i] = toFloatArray(m.getRowVector(i));
-            }
-            return result;
-        }
-
         static <T> LshBasis computeFromResiduals(Iterator<float[]> data, int dataDimensions, int lshDimensions) {
             double[][] covarianceMatrix = VectorMath.incrementalCovariance(data, dataDimensions);
 
@@ -221,14 +215,6 @@ public class FingerMetadata<T> {
             }
 
             return new LshBasis(basis);
-        }
-
-        private static float[] toFloatArray(RealVector v) {
-            float[] result = new float[v.getDimension()];
-            for (int i = 0; i < result.length; i++) {
-                result[i] = (float) v.getEntry(i);
-            }
-            return result;
         }
     }
 

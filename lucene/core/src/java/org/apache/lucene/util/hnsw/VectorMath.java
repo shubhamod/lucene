@@ -1,6 +1,8 @@
 package org.apache.lucene.util.hnsw;
 
 import org.apache.lucene.util.VectorUtil;
+import org.apache.lucene.util.hnsw.math.linear.RealMatrix;
+import org.apache.lucene.util.hnsw.math.linear.RealVector;
 
 import java.util.Iterator;
 
@@ -94,5 +96,21 @@ public class VectorMath {
 
   static float norm(float[] v) {
       return (float) Math.sqrt(VectorUtil.dotProduct(v, v));
+  }
+
+  public static float[][] toFloatMatrix(RealMatrix m) {
+    float[][] result = new float[m.getRowDimension()][];
+    for (int i = 0; i < m.getRowDimension(); i++) {
+      result[i] = toFloatArray(m.getRowVector(i));
+    }
+    return result;
+  }
+
+  public static float[] toFloatArray(RealVector v) {
+    float[] result = new float[v.getDimension()];
+    for (int i = 0; i < result.length; i++) {
+      result[i] = (float) v.getEntry(i);
+    }
+    return result;
   }
 }
