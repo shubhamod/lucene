@@ -31,13 +31,13 @@ public class FingerMetadata<T> {
     private final RandomAccessVectorValues<T> vectors;
     private final VectorEncoding vectorEncoding;
     private final HnswGraph hnsw;
-    private final int lshDimensions;
+    private final int lshDimensions; // "r" in the paper
     private final Map<Integer, CachedResidual>[] cachedResiduals;
     private final VectorSimilarityFunction similarityFunction;
     private final LshBasis lsh;
     private final LinearTransform transform;
-    private final float[] cNormSquared;
-    private final float[][] cBasis; // projection of each vector onto the LSH basis
+    private final float[] normsSquared;
+    private final float[][] basisProjections; // projection of each vector onto the LSH basis
     private final float piOverDimensions;
 
     public FingerMetadata(HnswGraph hnswGraph, RandomAccessVectorValues<T> vectors, VectorEncoding encoding, VectorSimilarityFunction similarityFunction, int lshDimensions) {
@@ -59,16 +59,19 @@ public class FingerMetadata<T> {
             this.vectors = vectors.copy();
 //            this.lsh = LshBasis.createRandom(vectors.dimension(), lshDimensions);
             this.lsh = LshBasis.computeFromResiduals(new TrainingVectorIterator(), vectors.dimension(), lshDimensions);
-            this.cNormSquared = cacheCNormSquared();
-            this.cBasis = cacheCBasis();
+            // cache the per-node norms and basis projections
+            this.normsSquared = computeNormsSquared();
+            this.basisProjections = computeBasisProjections();
+            // the linear transform from estimated to actual cosine similarity; this improves accuracy
             this.transform = computeTransform();
-            this.cachedResiduals = cacheResiduals();
+            // for each node c and neighbor d, cache the residual vector dRes = d - dProj [onto c]
+            this.cachedResiduals = computeResiduals();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
-    private float[][] cacheCBasis() throws IOException {
+    private float[][] computeBasisProjections() throws IOException {
         float[][] cBasis = new float[vectors.size()][];
         for (int i = 0; i < vectors.size(); i++) {
             float[] c = (float[]) vectors.vectorValue(i);
@@ -77,7 +80,7 @@ public class FingerMetadata<T> {
         return cBasis;
     }
 
-    private float[] cacheCNormSquared() throws IOException {
+    private float[] computeNormsSquared() throws IOException {
         float[] cNormSquared = new float[vectors.size()];
         for (int i = 0; i < vectors.size(); i++) {
             float[] v = (float[]) vectors.vectorValue(i);
@@ -86,7 +89,7 @@ public class FingerMetadata<T> {
         return cNormSquared;
     }
 
-    private Map<Integer, CachedResidual>[] cacheResiduals() throws IOException {
+    private Map<Integer, CachedResidual>[] computeResiduals() throws IOException {
         var vectorsCopy = vectors.copy();
         Map<Integer, CachedResidual>[] map = new Map[hnsw.size()];
         for (int level = 0; level < hnsw.numLevels(); level++)
@@ -146,6 +149,7 @@ public class FingerMetadata<T> {
 
         LinearTransform(double fromMean, double toMean, double fromStdDev, double toStdDev, double epsilon) {
             this.fromMean = fromMean;
+            // store combinations of these four variables to reduce the number of floating point operations in `apply`
             this.stdDevRatio = toStdDev / fromStdDev;
             this.toMeanEspilon = toMean + epsilon;
         }
@@ -173,6 +177,7 @@ public class FingerMetadata<T> {
 
         public static LshBasis createRandom(int originalDimensions, int basisDimensions) {
             double[][] randomData = new double[originalDimensions][basisDimensions];
+            // populate the random matrix with samples from the standard normal distribution
             NormalDistribution nd = new NormalDistribution();
             for (int j = 0; j < originalDimensions; j++) {
                 for (int k = 0; k < basisDimensions; k++) {
@@ -181,7 +186,7 @@ public class FingerMetadata<T> {
             }
             // Compute the QR decomposition of the random matrix.
             QRDecomposition qr = new QRDecomposition(new Array2DRowRealMatrix(randomData));
-            // The Q matrix is a 50x50 random orthogonal matrix. We keep only the first 8 columns.
+            // The Q matrix is a NxN random orthogonal matrix. We keep only the first r columns.
             RealMatrix Q = qr.getQ().getSubMatrix(0, originalDimensions - 1, 0, basisDimensions - 1);
             return new LshBasis(toFloatMatrix(Q.transpose()));
         }
@@ -194,19 +199,16 @@ public class FingerMetadata<T> {
             EigenDecomposition eig = new EigenDecomposition(covarianceMatrixRM);
 
             // The LSH basis is given by the eigenvectors corresponding to the r largest eigenvalues.
-            // Get the eigenvalues and the matrix of eigenvectors.
             double[] eigenvalues = eig.getRealEigenvalues();
             RealMatrix eigenvectors = eig.getV();
-
             // Create a stream of indices [0, 1, 2, ..., n-1], sort them by corresponding eigenvalue in descending order,
-            // and select the top lshDimensions indices.
+            // and select the top r indices.
             int[] topIndices = IntStream.range(0, eigenvalues.length)
                 .boxed()
                 .sorted(Comparator.comparingDouble(i -> -eigenvalues[i]))
                 .mapToInt(Integer::intValue)
                 .limit(lshDimensions)
                 .toArray();
-
             // Extract the corresponding eigenvectors.
             float[][] basis = new float[lshDimensions][];
             for (int i = 0; i < lshDimensions; i++) {
@@ -232,10 +234,13 @@ public class FingerMetadata<T> {
         }
     }
 
+    /**
+     * Computes the estimated and actual angle between the residual vectors of two neighbors of the same node.
+     */
     private EstimatedAngle estimateAngleForTraining(int cNode, int d1Node, int d2Node) throws IOException {
         var v1 = vectors.copy();
         var v2 = vectors.copy();
-        var cNS = cNormSquared[cNode];
+        var cNS = normsSquared[cNode];
         var c = (float[]) vectors.vectorValue(cNode);
         var q = (float[]) v1.vectorValue(d1Node);
         var d = (float[]) v2.vectorValue(d2Node);
@@ -258,6 +263,11 @@ public class FingerMetadata<T> {
         return new EstimatedAngle(Math.cos(diffSigns * Math.PI / lshDimensions), cosine(qRes, dRes));
     }
 
+    /**
+     * Computes the residual vectors between each node c and its neighbors d.  The somewhat clunky
+     * iterator allows us to compute the covariance vector-at-a-time instead of materializing
+     * the entire set as a matrix in memory.
+     */
     private class TrainingVectorIterator implements Iterator<float[]> {
         int level = 0;
         HnswGraph.NodesIterator nodesIterator;
@@ -322,13 +332,18 @@ public class FingerMetadata<T> {
         }
     }
 
+    /**
+     * Caches the signs of the residual vectors dRes projected onto the reduced basis
+     * in `dResBits` and two other pieces of per-neighbor data we will need for the
+     * approximation calculation.
+     */
     private class CachedResidual {
         private final long dResBits;
         private final float dResNorm;
         private final float dDotC;
 
         public CachedResidual(int cNode, float[] c, float[] d) {
-            float cNS = cNormSquared[cNode];
+            float cNS = normsSquared[cNode];
             dDotC = dotProduct(d, c);
             float[] dProj = mapMultiply(c, dDotC / cNS);
             float[] dRes = subtract(d, dProj);
@@ -368,25 +383,29 @@ public class FingerMetadata<T> {
             }
         }
 
-        // The first FINGER insight is that we can compute the distance D = q.d
-        // as qp.dp + qr.dr, where qp and dp are the projections of the query vector and the data
+        // The first FINGER insight is that we can compute the distance
+        // D = q.d = qp.dp + qr.dr
+        // where qp and dp are the projections of the query vector and the data
         // (neighbor) vector onto the node vector c, and qr and dr are the residuals of that projection.
-        // (I am using x.y to indicate dot product of x and y.)
+        // (I am using x.y to indicate dot product of x and y.)  [See Figure 3 of the paper and
+        // Appendix D.]
         //
         // This is valuable because we can express the first term as easily-cached and easily-computed
         // operations, compared to calculating the full n-dimensional dot product of q and d.
-        // qp.dp = (qp.c / c.c) * c . (dp.c / c.c) * c
+        // qp.dp = (qp.c / c.c) * c . (dp.c / c.c) * c [from equation 1 of section 3.2]
         //       = (qp.c * dp.c) / (c.c)^2
-        // qp.c is the projection of q onto c, which we compute once at the start of the query.
-        // dp.c is the projection of d onto c, which we compute once for each neighbor and cache.
+        // qp.c is computed once at the start of the query.
+        // dp.c is computed ahead of time by computeResiduals for each node -> neighbor pair and cached.
         // c.c is the norm of c, which we compute once for each node and cache.
         //
         // The second term is the dot product of the residuals.  There is no way to avoid computing
-        // this, BUT the second FINGER insight is that we can approximate this term using LSH with
-        // very little loss of precision.
+        // this, BUT the second FINGER insight [still section 3.2] is that
+        // qr.dr = ||qr|| ||dr|| cos(qr, dr)
+        // and we can approximate the angle theta between qr and dr using the number of bits that differ
+        // between their projections onto the lsh basis.
         @Override
         public SimilarityFunction approximateSimilarityNear(int cNode, float qDotC) {
-            float cNS = cNormSquared[cNode];
+            float cNS = normsSquared[cNode];
 
             // "We know that norm(q_proj)^2 = t^2 * norm(c)^2 [where t = (q.c / c.c)] ...
             //  Since norm(q)^2 = norm(q_proj)^2 + norm(q_res)^2,
@@ -396,7 +415,7 @@ public class FingerMetadata<T> {
 
             // "To get Bq_res, recall q_res = q - q_proj, so
             //  Bq_res = Bq - Bq_proj = Bq - tBc [where t = (q.c / c.c)]"
-            float[] Bc = cBasis[cNode];
+            float[] Bc = basisProjections[cNode];
             float[] Bq_res = subtract(Bq, mapMultiply(Bc, t));
             long qResBits = CachedResidual.toBits(Bq_res);
 
