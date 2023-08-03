@@ -28,7 +28,7 @@ import org.apache.lucene.util.ArrayUtil;
  *
  * @lucene.internal
  */
-public class NeighborArray {
+public class NeighborArray implements INeighborArray {
   protected final boolean scoresDescOrder;
   protected int size;
 
@@ -134,6 +134,7 @@ public class NeighborArray {
     score = ArrayUtil.growExact(score, node.length);
   }
 
+  @Override
   public int size() {
     return size;
   }
@@ -143,12 +144,19 @@ public class NeighborArray {
    *
    * @lucene.internal
    */
+  @Override
   public int[] node() {
     return node;
   }
 
+  @Override
   public float[] score() {
     return score;
+  }
+
+  @Override
+  public boolean scoresDescending() {
+    return scoresDescOrder;
   }
 
   public void clear() {

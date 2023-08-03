@@ -537,7 +537,7 @@ abstract class ConcurrentHnswGraphTestCase<T> extends LuceneTestCase {
         };
 
     ConcurrentOnHeapHnswGraph topDownOrderReversedHnsw =
-        new ConcurrentOnHeapHnswGraph(10, mockSimilarity);
+        new ConcurrentOnHeapHnswGraph(10, (node, m) -> new ConcurrentNeighborSet(node, m, mockSimilarity));
     for (int currLevel = numLevels - 1; currLevel >= 0; currLevel--) {
       List<Integer> currLevelNodes = nodesPerLevel.get(currLevel);
       int currLevelNodesSize = currLevelNodes.size();
@@ -547,7 +547,7 @@ abstract class ConcurrentHnswGraphTestCase<T> extends LuceneTestCase {
     }
 
     ConcurrentOnHeapHnswGraph bottomUpOrderReversedHnsw =
-        new ConcurrentOnHeapHnswGraph(10, mockSimilarity);
+        new ConcurrentOnHeapHnswGraph(10, (node, m) -> new ConcurrentNeighborSet(node, m, mockSimilarity));
     for (int currLevel = 0; currLevel < numLevels; currLevel++) {
       List<Integer> currLevelNodes = nodesPerLevel.get(currLevel);
       int currLevelNodesSize = currLevelNodes.size();
@@ -557,7 +557,7 @@ abstract class ConcurrentHnswGraphTestCase<T> extends LuceneTestCase {
     }
 
     ConcurrentOnHeapHnswGraph topDownOrderRandomHnsw =
-        new ConcurrentOnHeapHnswGraph(10, mockSimilarity);
+        new ConcurrentOnHeapHnswGraph(10, (node, m) -> new ConcurrentNeighborSet(node, m, mockSimilarity));
     for (int currLevel = numLevels - 1; currLevel >= 0; currLevel--) {
       List<Integer> currLevelNodes = new ArrayList<>(nodesPerLevel.get(currLevel));
       Collections.shuffle(currLevelNodes, random());
@@ -567,7 +567,7 @@ abstract class ConcurrentHnswGraphTestCase<T> extends LuceneTestCase {
     }
 
     ConcurrentOnHeapHnswGraph bottomUpExpectedHnsw =
-        new ConcurrentOnHeapHnswGraph(10, mockSimilarity);
+        new ConcurrentOnHeapHnswGraph(10, (node, m) -> new ConcurrentNeighborSet(node, m, mockSimilarity));
     for (int currLevel = 0; currLevel < numLevels; currLevel++) {
       for (Integer currNode : nodesPerLevel.get(currLevel)) {
         bottomUpExpectedHnsw.addNode(currLevel, currNode);

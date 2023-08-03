@@ -27,6 +27,8 @@ import org.apache.lucene.tests.util.LuceneTestCase;
 import org.apache.lucene.util.ArrayUtil;
 import org.apache.lucene.util.hnsw.ConcurrentNeighborSet.ConcurrentNeighborArray;
 
+import static org.apache.lucene.util.hnsw.ConcurrentNeighborSet.mergeCandidates;
+
 public class TestConcurrentNeighborSet extends LuceneTestCase {
   private static final NeighborSimilarity simpleScore =
       new NeighborSimilarity() {
@@ -142,5 +144,67 @@ public class TestConcurrentNeighborSet extends LuceneTestCase {
         new float[] {10.0f, 10.0f, 10.0f},
         ArrayUtil.copyOfSubArray(cna.score, 0, cna.size()),
         0.01f);
+  }
+
+  public void testMergeCandidatesSimple() {
+    NeighborArray arr1 = new NeighborArray(3, true);
+    arr1.addInOrder(3, 3.0f);
+    arr1.addInOrder(2, 2.0f);
+    arr1.addInOrder(1, 1.0f);
+
+    NeighborArray arr2 = new NeighborArray(3, true);
+    arr2.addInOrder(4, 4.0f);
+    arr2.addInOrder(2, 2.0f);
+    arr2.addInOrder(1, 1.0f);
+
+    NeighborArray merged = mergeCandidates(arr1, arr2);
+
+    // Expected result: [4, 3, 2, 1]
+    assertEquals(4, merged.size());
+    assertArrayEquals(new int[]{4, 3, 2, 1}, Arrays.copyOf(merged.node(), 4));
+    assertArrayEquals(new float[]{4.0f, 3.0f, 2.0f, 1.0f}, Arrays.copyOf(merged.score(), 4), 0.0f);
+
+    // Testing boundary conditions
+    arr1 = new NeighborArray(2, true);
+    arr1.addInOrder(3, 3.0f);
+    arr1.addInOrder(2, 2.0f);
+
+    arr2 = new NeighborArray(1, true);
+    arr2.addInOrder(2, 2.0f);
+
+    merged = mergeCandidates(arr1, arr2);
+
+    // Expected result: [3, 2]
+    assertEquals(2, merged.size());
+    assertArrayEquals(new int[]{3, 2}, Arrays.copyOf(merged.node(), 2));
+    assertArrayEquals(new float[]{3.0f, 2.0f}, Arrays.copyOf(merged.score(), 2), 0.0f);
+  }
+
+  // note this only tests distinct nodes and scores
+  private void testMergeCandidatesOnce() {
+    int maxSize = 1 + random().nextInt(5);
+
+    NeighborArray arr1 = new NeighborArray(maxSize, true);
+    for (int i = 0; i < 1 + random().nextInt(maxSize); i++) {
+      arr1.insertSorted(i, random().nextFloat());
+    }
+
+    NeighborArray arr2 = new NeighborArray(maxSize, true);
+    for (int i = 0; i < 1 + random().nextInt(maxSize); i++) {
+      arr2.insertSorted(i + arr1.size, random().nextFloat());
+    }
+
+    var merged = mergeCandidates(arr1, arr2);
+    assert merged.size <= arr1.size() + arr2.size();
+    assert merged.size >= Math.max(arr1.size(), arr2.size());
+    for (int i = 0; i < merged.size - 1; i++) {
+      assert merged.score[i] >= merged.score[i + 1];
+    }
+  }
+
+  public void testMergeCandidatesRandom() {
+    for (int i = 0; i < 10000; i++) {
+      testMergeCandidatesOnce();
+    }
   }
 }

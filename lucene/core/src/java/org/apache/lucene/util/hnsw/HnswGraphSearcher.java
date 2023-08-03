@@ -250,7 +250,7 @@ public class HnswGraphSearcher<T> {
     return search(query, topK, vectors, graph, graphSearcher, acceptOrds, visitedLimit);
   }
 
-  private static <T> NeighborQueue search(
+  static <T> NeighborQueue search(
       T query,
       int topK,
       RandomAccessVectorValues<T> vectors,
