@@ -18,9 +18,14 @@
 package org.apache.lucene.util.hnsw;
 
 import static java.lang.Math.log;
+import static org.apache.lucene.search.DocIdSetIterator.NO_MORE_DOCS;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -34,8 +39,12 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
+import java.util.stream.IntStream;
+
 import org.apache.lucene.index.VectorEncoding;
 import org.apache.lucene.index.VectorSimilarityFunction;
+import org.apache.lucene.util.Bits;
+import org.apache.lucene.util.FixedBitSet;
 import org.apache.lucene.util.GrowableBitSet;
 import org.apache.lucene.util.InfoStream;
 import org.apache.lucene.util.ThreadInterruptedException;
@@ -438,11 +447,16 @@ public class ConcurrentHnswGraphBuilder<T> {
   }
 
   protected float scoreBetween(T v1, T v2) {
-    return switch (vectorEncoding) {
+    return scoreBetween(vectorEncoding, similarityFunction, v1, v2);
+  }
+
+  static <T> float scoreBetween(VectorEncoding encoding, VectorSimilarityFunction similarityFunction, T v1, T v2) {
+    return switch (encoding) {
       case BYTE -> similarityFunction.compare((byte[]) v1, (byte[]) v2);
       case FLOAT32 -> similarityFunction.compare((float[]) v1, (float[]) v2);
     };
   }
+
 
   private NeighborArray popToScratch(NeighborQueue candidates) {
     NeighborArray scratch = this.scratchNeighbors.get();

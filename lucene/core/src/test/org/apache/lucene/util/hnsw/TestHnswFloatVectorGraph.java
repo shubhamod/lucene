@@ -21,6 +21,10 @@ import static org.apache.lucene.search.DocIdSetIterator.NO_MORE_DOCS;
 
 import com.carrotsearch.randomizedtesting.RandomizedTest;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.KnnFloatVectorField;
 import org.apache.lucene.index.FloatVectorValues;
@@ -109,6 +113,17 @@ public class TestHnswFloatVectorGraph extends HnswGraphTestCase<float[]> {
   }
 
   @Override
+  protected List<float[]> deepCopy(RandomAccessVectorValues<float[]> vectors) throws IOException {
+    List<float[]> list = new ArrayList<>(vectors.size());
+    for (int i = 0; i < vectors.size(); i++) {
+      float[] v = new float[vectors.dimension()];
+      System.arraycopy(vectors.vectorValue(i), 0, v, 0, v.length);
+      list.add(v);
+    }
+    return list;
+  }
+
+  @Override
   Field knnVectorField(String name, float[] vector, VectorSimilarityFunction similarityFunction) {
     return new KnnFloatVectorField(name, vector, similarityFunction);
   }
@@ -158,5 +173,10 @@ public class TestHnswFloatVectorGraph extends HnswGraphTestCase<float[]> {
     // We still expect to get reasonable recall. The lowest non-skipped docIds
     // are closest to the query vector: sum(500,509) = 5045
     assertTrue("sum(result docs)=" + sum, sum < 5100);
+  }
+
+  @Override
+  protected String vectorString(RandomAccessVectorValues<float[]> vectors, int i) throws IOException {
+    return Arrays.toString(vectors.vectorValue(i));
   }
 }

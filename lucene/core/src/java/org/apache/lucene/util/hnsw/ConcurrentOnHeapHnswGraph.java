@@ -50,9 +50,9 @@ public final class ConcurrentOnHeapHnswGraph extends HnswGraph implements Accoun
   private final CompletionTracker completions;
 
   // Neighbours' size on upper levels (nsize) and level 0 (nsize0)
-  private final int nsize;
-  private final int nsize0;
-  private final NeighborSimilarity similarity;
+  final int nsize;
+  final int nsize0;
+  final NeighborSimilarity similarity;
 
   ConcurrentOnHeapHnswGraph(int M, NeighborSimilarity similarity) {
     this.entryPoint =

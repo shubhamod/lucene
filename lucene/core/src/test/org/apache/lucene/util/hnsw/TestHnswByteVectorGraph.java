@@ -21,6 +21,10 @@ import static org.apache.lucene.search.DocIdSetIterator.NO_MORE_DOCS;
 
 import com.carrotsearch.randomizedtesting.RandomizedTest;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.KnnByteVectorField;
 import org.apache.lucene.index.ByteVectorValues;
@@ -127,6 +131,17 @@ public class TestHnswByteVectorGraph extends HnswGraphTestCase<byte[]> {
   }
 
   @Override
+  protected List<byte[]> deepCopy(RandomAccessVectorValues<byte[]> vectors) throws IOException {
+    List<byte[]> list = new ArrayList<>(vectors.size());
+    for (int i = 0; i < vectors.size(); i++) {
+      byte[] v = new byte[vectors.dimension()];
+      System.arraycopy(vectors.vectorValue(i), 0, v, 0, v.length);
+      list.add(v);
+    }
+    return list;
+  }
+
+  @Override
   Field knnVectorField(String name, byte[] vector, VectorSimilarityFunction similarityFunction) {
     return new KnnByteVectorField(name, vector, similarityFunction);
   }
@@ -139,5 +154,10 @@ public class TestHnswByteVectorGraph extends HnswGraphTestCase<byte[]> {
   @Override
   byte[] getTargetVector() {
     return new byte[] {1, 0};
+  }
+
+  @Override
+  protected String vectorString(RandomAccessVectorValues<byte[]> vectors, int i) throws IOException {
+    return Arrays.toString(vectors.vectorValue(i));
   }
 }
