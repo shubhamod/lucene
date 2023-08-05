@@ -360,6 +360,7 @@ public class HnswGraphSearcher<T> {
     }
     while (candidates.size() > 0 && results.incomplete() == false) {
       // get the best candidate (closest or best scoring)
+      numVisited++;
       float topCandidateSimilarity = candidates.topScore();
       if (topCandidateSimilarity < minAcceptedSimilarity) {
         break;
@@ -378,7 +379,6 @@ public class HnswGraphSearcher<T> {
           break;
         }
         float friendSimilarity = compare(query, vectors, friendOrd);
-        numVisited++;
         if (friendSimilarity >= minAcceptedSimilarity) {
           candidates.add(friendOrd, friendSimilarity);
           if (acceptOrds == null || acceptOrds.get(friendOrd)) {
