@@ -81,6 +81,60 @@ public class VamanaGraphBuilder<T> {
    * buildVamana assumes that the graph is completely built and no further nodes
    * are added concurrently.
    */
+  public ConcurrentVamanaGraph createFromVectors(int M, int beamWidth, float alphaTarget) {
+    int s = approximateMediod(hnsw, beamWidth);
+    System.out.println("mediod is " + s);
+    ConcurrentVamanaGraph vamana = new ConcurrentVamanaGraph(hnsw, M, s, similarityFunction());
+
+    LongAdder nodesVisited = new LongAdder();
+    LongAdder edgesChanged = new LongAdder();
+    var greedyVisitedNodes = ThreadLocal.withInitial(() -> new NeighborQueue(beamWidth, false));
+    var greedySearcher = ThreadLocal.withInitial(() -> new VamanaSearcher<>(vamana, vectors.get(), encoding, similarityFunction));
+
+    for (float alpha = 1.2f; alpha < alphaTarget; alpha += 0.2f) {
+      // iterate over the points in a random order.
+      List<Integer> L = generateRandomPermutation(vamana.size());
+      float finalAlpha = alpha;
+      L.stream().parallel().filter(p -> p != s).forEach(p -> {
+        try {
+          var notSelfBits = new Bits() {
+            @Override
+            public boolean get(int index) {
+              return index != p;
+            }
+
+            @Override
+            public int length() {
+              return vamana.size();
+            }
+          };
+          var searcher = greedySearcher.get();
+          var visitedNodes = greedyVisitedNodes.get();
+          visitedNodes.clear();
+          var qr = searcher.search(vectors.get().vectorValue(p), beamWidth, notSelfBits, visitedNodes);
+          nodesVisited.add(visitedNodes.size());
+          NeighborArray added = vamana.getNeighbors(p).robustPrune(qr.results, finalAlpha);
+          edgesChanged.add(added.size);
+          for (int i = 0; i < added.size(); i++) {
+            int q = added.node[i];
+            assert q != p : "node " + p + " should not be a neighbor of itself";
+            vamana.getNeighbors(q).insert(p, added.score[i], finalAlpha);
+          }
+        } catch (IOException e) {
+          throw new UncheckedIOException(e);
+        }
+      });
+    }
+
+    System.out.printf("visited %d nodes and changed %d edges to build vamana index for graph of %d%n",
+        nodesVisited.sum(), edgesChanged.sum(), hnsw.size());
+    return vamana;
+  }
+
+  /**
+   * buildVamana assumes that the graph is completely built and no further nodes
+   * are added concurrently.
+   */
   public ConcurrentVamanaGraph optimizeHnsw(HnswGraph hnsw, int M, int beamWidth, float alphaTarget) {
     int s = approximateMediod(hnsw, beamWidth);
     System.out.println("mediod is " + s);

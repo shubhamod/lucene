@@ -51,6 +51,15 @@ public final class ConcurrentVamanaGraph extends HnswGraph {
     }
   }
 
+  <T> ConcurrentVamanaGraph(RandomAccessVectorValues<T> vectors, int M, int entryPoint, NeighborSimilarity similarityFunction) {
+    this.entryNode = entryPoint;
+    this.graphNeighbors = new ConcurrentNeighborSet[vectors.size()];
+    for (int i = 0; i < vectors.size(); i++) {
+      graphNeighbors[i] = ((ConcurrentOnHeapHnswGraph) hnsw).getNeighbors(0, i).copy();
+    }
+  }
+
+
   @Override
   public int size() {
     return graphNeighbors.length;
