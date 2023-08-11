@@ -38,35 +38,31 @@ public class ConcurrentNeighborSet {
    * references, and no fancy encoding necessary for node/score.
    */
   private final AtomicReference<ConcurrentNeighborArray> neighborsRef;
+  private final float alpha;
 
   private final NeighborSimilarity similarity;
 
   /** the maximum number of neighbors we can store */
   private final int maxConnections;
 
-  public ConcurrentNeighborSet(int nodeId, int maxConnections, NeighborSimilarity similarity) {
+  public ConcurrentNeighborSet(int nodeId, int maxConnections, NeighborSimilarity similarity, float alpha) {
     this.nodeId = nodeId;
     this.maxConnections = maxConnections;
     this.similarity = similarity;
     neighborsRef = new AtomicReference<>(new ConcurrentNeighborArray(maxConnections, true));
+    this.alpha = alpha;
+  }
+
+  public ConcurrentNeighborSet(int nodeId, int maxConnections, NeighborSimilarity similarity) {
+    this(nodeId, maxConnections, similarity, 1.0f);
   }
 
   private ConcurrentNeighborSet(ConcurrentNeighborSet old) {
     this.nodeId = old.nodeId;
     this.maxConnections = old.maxConnections;
     this.similarity = old.similarity;
+    this.alpha = old.alpha;
     neighborsRef = new AtomicReference<>(old.neighborsRef.get());
-  }
-
-  public ConcurrentNeighborSet(int i, NeighborArray neighbors, int maxConnections, NeighborSimilarity similarity) {
-    this.nodeId = i;
-    this.maxConnections = maxConnections;
-    this.similarity = similarity;
-    ConcurrentNeighborArray cna = new ConcurrentNeighborArray(maxConnections, true);
-    for (int j = 0; j < neighbors.size(); j++) {
-      cna.addInOrder(neighbors.node[j], neighbors.score[j]);
-    }
-    neighborsRef = new AtomicReference<>(cna);
   }
 
   public PrimitiveIterator.OfInt nodeIterator() {
@@ -119,76 +115,28 @@ public class ConcurrentNeighborSet {
    * were selected by this method, or were added as a "backlink" to a node inserted concurrently
    * that chose this one as a neighbor.
    */
-  public void insertDiverse(NeighborArray candidates) {
+  public void insertDiverse(INeighborArray candidates) {
     BitSet selected = new FixedBitSet(candidates.size());
-    for (int i = candidates.size() - 1; i >= 0; i--) {
-      int cNode = candidates.node[i];
-      float cScore = candidates.score[i];
-      if (isDiverse(cNode, cScore, candidates, selected, 1.0f)) {
-        selected.set(i);
+    int nSelected = 0;
+    for (float a = 1.0f; a <= alpha && nSelected < maxConnections; a += 0.2) {
+      for (int i = candidates.size() - 1; i >= 0; i--) {
+        if (selected.get(i)) {
+          continue;
+        }
+
+        int cNode = candidates.node()[i];
+        float cScore = candidates.score()[i];
+        if (isDiverse(cNode, cScore, candidates, selected, a)) {
+          selected.set(i);
+          nSelected++;
+        }
       }
     }
     insertMultiple(candidates, selected);
-    // This leaves the paper's keepPrunedConnection option out; we might want to add that
-    // as an option in the future.
   }
 
   public ConcurrentNeighborArray getCurrent() {
     return neighborsRef.get();
-  }
-
-  /**
-   * Set the neighbors to the result of the Vamana RobustPrune algorithm.  In a single-threaded
-   * context, we would expect candidates to be a superset of the existing neighbors, but
-   * since we are running this concurrently, another thread may have modified the existing neighbors
-   * and we want to make sure not to throw those away unnecessarily.
-   *
-   * @return an array of the neighbors that were actually added
-   */
-  public NeighborArray robustPrune(INeighborArray externalCandidates, float alpha) {
-    // this is basically insertDiverse + insertMultiple, only wrapped into a coarser getAndUpdate
-    NeighborArray old = neighborsRef.get();
-    NeighborArray next = neighborsRef.updateAndGet(current -> {
-      NeighborArray candidates = mergeCandidates(externalCandidates, current);
-      assert !candidates.scoresDescOrder;
-      BitSet selected = new FixedBitSet(candidates.size());
-      for (int i = candidates.size() - 1; i >= 0 && selected.cardinality() < maxConnections; i--) {
-        int cNode = candidates.node[i];
-        float cScore = candidates.score[i];
-        if (isDiverse(cNode, cScore, candidates, selected, alpha)) {
-          selected.set(i);
-        }
-      }
-
-      ConcurrentNeighborArray na = new ConcurrentNeighborArray(maxConnections, true);
-      for (int i = candidates.size() - 1; i >= 0; i--) {
-        if (!selected.get(i)) {
-          continue;
-        }
-        int node = candidates.node[i];
-        float score = candidates.score[i];
-        na.insertSorted(node, score);
-      }
-      return na;
-    });
-
-    // TODO can we do better than this?
-    NeighborArray added = new NeighborArray(maxConnections, true);
-    for (int i = 0; i < next.size(); i++) {
-      if (!containsNode(old, next.node[i])) {
-        added.addInOrder(next.node[i], next.score[i]);
-      }
-    }
-    return added;
-  }
-
-  private static boolean containsNode(NeighborArray na, int node) {
-    for (int i = 0; i < na.size(); i++) {
-      if (na.node[i] == node) {
-        return true;
-      }
-    }
-    return false;
   }
 
   static NeighborArray mergeCandidates(INeighborArray a1, NeighborArray a2) {
@@ -245,7 +193,7 @@ public class ConcurrentNeighborSet {
     return m2;
   }
 
-  private void insertMultiple(NeighborArray others, BitSet selected) {
+  private void insertMultiple(INeighborArray others, BitSet selected) {
     neighborsRef.getAndUpdate(
         current -> {
           ConcurrentNeighborArray next = current.copy();
@@ -253,8 +201,8 @@ public class ConcurrentNeighborSet {
             if (!selected.get(i)) {
               continue;
             }
-            int node = others.node[i];
-            float score = others.score[i];
+            int node = others.node()[i];
+            float score = others.score()[i];
             next.insertSorted(node, score);
           }
           enforceMaxConnLimit(next, 1.0f);
@@ -283,7 +231,7 @@ public class ConcurrentNeighborSet {
 
   // is the candidate node with the given score closer to the base node than it is to any of the
   // existing neighbors
-  private boolean isDiverse(int node, float score, NeighborArray others, BitSet selected, float alpha) {
+  private boolean isDiverse(int node, float score, INeighborArray others, BitSet selected, float alpha) {
     if (others.size() == 0) {
       return true;
     }
@@ -293,7 +241,7 @@ public class ConcurrentNeighborSet {
       if (!selected.get(i)) {
         continue;
       }
-      int otherNode = others.node[i];
+      int otherNode = others.node()[i];
       if (node == otherNode) {
         break;
       }

@@ -5,6 +5,7 @@ import org.apache.lucene.index.VectorSimilarityFunction;
 import org.apache.lucene.util.BitSet;
 import org.apache.lucene.util.Bits;
 import org.apache.lucene.util.FixedBitSet;
+import org.apache.lucene.util.GrowableBitSet;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -13,14 +14,14 @@ import static org.apache.lucene.search.DocIdSetIterator.NO_MORE_DOCS;
 
 /** beamwidth-based searcher */
 public class VamanaSearcher <T> {
-  private final ConcurrentVamanaGraph graph;
+  private final ConcurrentOnHeapHnswGraph graph;
   private final VectorEncoding encoding;
   private final VectorSimilarityFunction similarityFunction;
   private final RandomAccessVectorValues<T> vectors;
 
   private final BitSet visitedSet;
 
-  public VamanaSearcher(ConcurrentVamanaGraph graph, RandomAccessVectorValues<T> ravv, VectorEncoding encoding, VectorSimilarityFunction similarityFunction) {
+  public VamanaSearcher(ConcurrentOnHeapHnswGraph graph, RandomAccessVectorValues<T> ravv, VectorEncoding encoding, VectorSimilarityFunction similarityFunction) {
     this.graph = graph;
     this.encoding = encoding;
     this.similarityFunction = similarityFunction;
@@ -29,7 +30,7 @@ public class VamanaSearcher <T> {
     } catch (IOException e) {
       throw new UncheckedIOException(e);
     }
-    visitedSet = new FixedBitSet(graph.size());
+    visitedSet = new GrowableBitSet(graph.size());
   }
 
   protected float scoreBetween(T v1, T v2) {
@@ -61,6 +62,10 @@ public class VamanaSearcher <T> {
     var view = graph.getView();
 
     int s = graph.entryNode();
+    if (s < 0) {
+      return new QueryResult(resultCandidates, visitedNodesCount);
+    }
+
     resultCandidates.push(s, scoreBetween(vP, vectors.vectorValue(s)));
     while (true) {
       // get the best candidate (closest or best scoring)

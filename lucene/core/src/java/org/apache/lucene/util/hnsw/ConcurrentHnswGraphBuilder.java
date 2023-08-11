@@ -161,7 +161,7 @@ public class ConcurrentHnswGraphBuilder<T> {
             };
           }
         };
-    this.hnsw = new ConcurrentOnHeapHnswGraph(M, similarity);
+    this.hnsw = new ConcurrentOnHeapHnswGraph(M, (node, m) -> new ConcurrentNeighborSet(node, m, similarity));
 
     this.graphSearcher =
         ExplicitThreadLocal.withInitial(

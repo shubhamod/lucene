@@ -1023,37 +1023,28 @@ abstract class HnswGraphTestCase<T> extends LuceneTestCase {
     size = vectors.size(); // vectorValues doesn't always return the requested size
     int buildThreads = 24;
     var es = new ForkJoinPool(buildThreads);
-
-    var builder = ConcurrentHnswGraphBuilder.create(vectors, getVectorEncoding(), similarityFunction, M, beamWidth);
-    var hnsw = builder.buildAsync(vectors.copy(), es, buildThreads).get();
-
-    var vamanaBuilder = new VamanaGraphBuilder<>(vectors, getVectorEncoding(), similarityFunction);
-    float alpha = 1.5f;
-    ConcurrentVamanaGraph vamana = es.submit(() -> vamanaBuilder.optimizeHnsw(hnsw, M, beamWidth, alpha)).get();
-    ConcurrentVamanaGraph badVamana = es.submit(() -> vamanaBuilder.hnswL0(hnsw)).get();
-//    System.out.format("L0 of hnsw:%n%s", printGraph(badVamana.getView(), vectors));
-//    System.out.format("Vamana:%n%s", printGraph(vamana.getView(), vectors));
+    RandomAccessVectorValues<T> vectorsCopy = vectors.copy();
+    float alpha = 1.4f;
+    var vamanaBuilder = new VamanaGraphBuilder<>(vectors, getVectorEncoding(), similarityFunction, M, beamWidth, alpha);
+    var vamana = es.submit(() -> vamanaBuilder.buildAsync(vectorsCopy, es, buildThreads)).get().get();
     es.shutdown();
 
     var serialBuilder = HnswGraphBuilder.create(vectors, getVectorEncoding(), similarityFunction, M, beamWidth, random().nextLong());
-    var serialHnsw = serialBuilder.build(vectors.copy());
+    var serialHnsw = serialBuilder.build(vectorsCopy);
 
     Bits acceptOrds = null; // random().nextBoolean() ? null : createRandomAcceptOrds(0, size);
 
     int serialOverlap = 0;
     int vamanaOverlap = 0;
-    int badVamanaOverlap = 0;
     int greedyOverlap = 0;
     int serialVisits = 0;
     int vamanaVisits = 0;
-    int badVamanaVisits = 0;
     int greedyVisits = 0;
     int queryCount = size / 10;
     for (int i = 0; i < queryCount; i++) {
       T query = randomVector(dim);
-      NeighborQueue serialResults = HnswGraphSearcher.search((float[]) query, topK, (RandomAccessVectorValues<float[]>) vectors.copy(), getVectorEncoding(), similarityFunction, serialHnsw, acceptOrds, Integer.MAX_VALUE);
-      NeighborQueue vamanaResults = HnswGraphSearcher.search((float[]) query, topK, (RandomAccessVectorValues<float[]>) vectors.copy(), getVectorEncoding(), similarityFunction, vamana.getView(), acceptOrds, Integer.MAX_VALUE);
-      NeighborQueue badVamanaResults = HnswGraphSearcher.search((float[]) query, topK, (RandomAccessVectorValues<float[]>) vectors.copy(), getVectorEncoding(), similarityFunction, badVamana.getView(), acceptOrds, Integer.MAX_VALUE);
+      NeighborQueue serialResults = HnswGraphSearcher.search((float[]) query, topK, (RandomAccessVectorValues<float[]>) vectorsCopy, getVectorEncoding(), similarityFunction, serialHnsw, acceptOrds, Integer.MAX_VALUE);
+      NeighborQueue vamanaResults = HnswGraphSearcher.search((float[]) query, topK, (RandomAccessVectorValues<float[]>) vectorsCopy, getVectorEncoding(), similarityFunction, vamana.getView(), acceptOrds, Integer.MAX_VALUE);
       var vSearcher = new VamanaSearcher<>(vamana, vectors, getVectorEncoding(), similarityFunction);
       var greedyResults = vSearcher.search(query, 2*topK);
 
@@ -1074,56 +1065,20 @@ abstract class HnswGraphTestCase<T> extends LuceneTestCase {
       }
       serialOverlap += computeOverlap(serialResults.nodes(), expected.nodes());
       vamanaOverlap += computeOverlap(vamanaResults.nodes(), expected.nodes());
-      badVamanaOverlap += computeOverlap(badVamanaResults.nodes(), expected.nodes());
       greedyOverlap += computeOverlap(Arrays.copyOf(greedyResults.results.node, topK), expected.nodes());
       serialVisits += serialResults.visitedCount();
       vamanaVisits += vamanaResults.visitedCount();
-      badVamanaVisits += badVamanaResults.visitedCount();
       greedyVisits += greedyResults.visitedCount;
-    }
-
-    if (size < 10000) {
-      var optimal = vamanaBuilder.buildOptimal(hnsw, alpha);
-      var hnswShared = overlapBetween(optimal, hnsw.getView());
-      var serialShared = overlapBetween(optimal, serialHnsw);
-      var vamanaShared = overlapBetween(optimal, vamana.getView());
-      var badVamanaShared = overlapBetween(optimal, badVamana.getView());
-      System.out.format("Edge count:%n");
-      System.out.format("  serial=%s (%.2f L0 optimal)%n", countEdges(serialHnsw), serialShared);
-      System.out.format("  hnsw=%s (%.2f L0 optimal)%n", countEdges(hnsw.getView()), hnswShared);
-      System.out.format("  vamana=%s (%.2f L0 optimal)%n", countEdges(vamana.getView()), vamanaShared);
-      System.out.format("  badVamana=%s (%.2f L0 optimal)%n", countEdges(badVamana.getView()), badVamanaShared);
-    } else {
-      System.out.println("Skipping optimal overlap check for large graph");
     }
 
     System.out.format("Serial recall=%.2f%n", (double) serialOverlap / (topK * queryCount));
     System.out.format("  vamana=%.2f%n", (double) vamanaOverlap / (topK * queryCount));
-    System.out.format("  badVamana=%.2f%n", (double) badVamanaOverlap / (topK * queryCount));
     System.out.format("  greedy=%.2f%n", (double) greedyOverlap / (topK * queryCount));
 
     System.out.format("Serial visits=%s%n", serialVisits);
     System.out.format("  vamana/serial=%.2f%n", (double) vamanaVisits / serialVisits);
     System.out.format("  greedy/serial=%.2f%n", (double) greedyVisits / serialVisits);
-    System.out.format("  badVamana/serial=%.2f%n", (double) badVamanaVisits / serialVisits);
     assert vamanaOverlap >= 0.99 * serialOverlap : "fingerOverlap=" + vamanaOverlap + " rawOverlap=" + serialOverlap;
-  }
-
-  private float overlapBetween(ConcurrentVamanaGraph optimal, HnswGraph graph) throws IOException {
-    int overlap = 0;
-    int total = 0;
-    assertEquals(optimal.size(), graph.size());
-    for (int i = 0; i < optimal.size(); i++) {
-      ConcurrentNeighborSet optimalNeighbors = optimal.getNeighbors(i);
-      graph.seek(0, i);
-      for (int n = graph.nextNeighbor(); n != NO_MORE_DOCS; n = graph.nextNeighbor()) {
-        if (optimalNeighbors.contains(n)) {
-          overlap++;
-        }
-      }
-      total += optimalNeighbors.size();
-    }
-    return (float) overlap / total;
   }
 
   private String printGraph(HnswGraph graph, RandomAccessVectorValues<T> vectors) throws IOException {
@@ -1163,60 +1118,6 @@ abstract class HnswGraphTestCase<T> extends LuceneTestCase {
 
   public void testVamana100kLargeVectors() throws IOException, ExecutionException, InterruptedException {
     testVamanaInternal(100_000, 100, 16, 128, atLeast(20));
-  }
-
-
-  public void testVamanaDiversityTiny() throws IOException {
-    similarityFunction = VectorSimilarityFunction.DOT_PRODUCT;
-    float[][] values = {
-        unitVector2d(0.5),
-        unitVector2d(0.75),
-        unitVector2d(1.0),
-    };
-    AbstractMockVectorValues<T> vectors = vectorValues(values);
-    // First add nodes until everybody gets a full neighbor list
-    HnswGraphBuilder<T> builder =
-        HnswGraphBuilder.create(
-            vectors, getVectorEncoding(), similarityFunction, 2, 10, random().nextInt());
-    builder.build(vectors.copy());
-    assertLevel0Neighbors(builder.hnsw, 0, 1);
-    assertLevel0Neighbors(builder.hnsw, 1, 0, 2);
-    assertLevel0Neighbors(builder.hnsw, 2, 1);
-
-    var vamanaBuilder = new VamanaGraphBuilder<>(vectors, getVectorEncoding(), similarityFunction);
-    var vamana = vamanaBuilder.optimizeHnsw(builder.hnsw, 2, 2, 1.5f);
-    assertLevel0Neighbors(vamana.getView(), 0, 1, 2);
-    assertLevel0Neighbors(vamana.getView(), 1, 0, 2);
-    assertLevel0Neighbors(vamana.getView(), 2, 1, 0);
-  }
-
-  public void testVamanaDiversityMini() throws IOException {
-    similarityFunction = VectorSimilarityFunction.DOT_PRODUCT;
-    float[][] values = {
-        unitVector2d(0.0),
-        unitVector2d(0.25),
-        unitVector2d(0.5),
-        unitVector2d(0.75),
-        unitVector2d(1.0),
-    };
-    AbstractMockVectorValues<T> vectors = vectorValues(values);
-    // First add nodes until everybody gets a full neighbor list
-    HnswGraphBuilder<T> builder =
-        HnswGraphBuilder.create(
-            vectors, getVectorEncoding(), similarityFunction, 2, 10, random().nextInt());
-    builder.build(vectors.copy());
-    System.out.println(prettyPrint(builder.hnsw));
-    assertLevel0Neighbors(builder.hnsw, 0, 1);
-    assertLevel0Neighbors(builder.hnsw, 1, 0, 2);
-    assertLevel0Neighbors(builder.hnsw, 2, 1, 3);
-    assertLevel0Neighbors(builder.hnsw, 3, 2, 4);
-    assertLevel0Neighbors(builder.hnsw, 4, 3);
-
-    var vamanaBuilder = new VamanaGraphBuilder<>(vectors, getVectorEncoding(), similarityFunction);
-    System.out.println(prettyPrint(vamanaBuilder.buildOptimal(builder.hnsw, 1.5f).getView()));
-
-    var vamana = vamanaBuilder.optimizeHnsw(builder.hnsw, 2, 2, 1.5f);
-    System.out.println(prettyPrint(vamana.getView()));
   }
 
   private class RAVectorValues implements RandomAccessVectorValues<T> {
