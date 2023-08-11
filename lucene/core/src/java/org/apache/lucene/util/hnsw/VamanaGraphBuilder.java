@@ -3,7 +3,6 @@ package org.apache.lucene.util.hnsw;
 import org.apache.lucene.index.VectorEncoding;
 import org.apache.lucene.index.VectorSimilarityFunction;
 import org.apache.lucene.util.Bits;
-import org.apache.lucene.util.FixedBitSet;
 import org.apache.lucene.util.GrowableBitSet;
 
 import java.io.IOException;
@@ -16,25 +15,19 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.stream.IntStream;
 
-import static org.apache.lucene.search.DocIdSetIterator.NO_MORE_DOCS;
-
 /**
  * VamanaGraphBuilder builds a VamanaGraph from an HNSW graph.
  */
 public class VamanaGraphBuilder<T> {
   private final VectorEncoding encoding;
   private final VectorSimilarityFunction similarityFunction;
-  private final int beamWidth;
-  private final HnswGraph hnsw;
 
   private final ThreadLocal<RandomAccessVectorValues<T>> vectors;
   private final ThreadLocal<RandomAccessVectorValues<T>> vectorsCopy;
 
-  public VamanaGraphBuilder(HnswGraph hnsw, RandomAccessVectorValues<T> ravv, VectorEncoding encoding, VectorSimilarityFunction similarityFunction, int beamWidth) {
-    this.hnsw = hnsw;
+  public VamanaGraphBuilder(RandomAccessVectorValues<T> ravv, VectorEncoding encoding, VectorSimilarityFunction similarityFunction) {
     this.encoding = encoding;
     this.similarityFunction = similarityFunction;
-    this.beamWidth = beamWidth;
     this.vectors = ThreadLocal.withInitial(() -> {
       try {
         return ravv.copy();
@@ -53,18 +46,18 @@ public class VamanaGraphBuilder<T> {
 
 
   /**
-   * For testing.  Bad vanama is just L0 of the hnsw graph.
+   * For testing.  Creates a VamanaGraph from the HNSW graph at level 0.
+   * No modifications to the HNSW graph are made.
    */
-  ConcurrentVamanaGraph buildBadVamana() throws IOException {
-    ConcurrentOnHeapHnswGraph chnsw = (ConcurrentOnHeapHnswGraph) hnsw;
-    int s = hnsw.entryNode();
-    return new ConcurrentVamanaGraph(hnsw, chnsw.nsize0, s, chnsw.similarity);
+  ConcurrentVamanaGraph hnswL0(ConcurrentOnHeapHnswGraph chnsw) throws IOException {
+    int s = chnsw.entryNode();
+    return new ConcurrentVamanaGraph(chnsw, chnsw.nsize0, s, chnsw.similarity);
   }
 
   /**
    * For testing.  Quadratic!
    */
-  ConcurrentVamanaGraph buildOptimal(float alpha) throws IOException {
+  ConcurrentVamanaGraph buildOptimal(HnswGraph hnsw, float alpha) throws IOException {
     int s = hnsw.entryNode();
     ConcurrentNeighborSet.NeighborSimilarity sf = similarityFunction();
     var optimal = new ConcurrentVamanaGraph(hnsw, hnsw.size() - 1, s, sf);
@@ -84,43 +77,12 @@ public class VamanaGraphBuilder<T> {
     return optimal;
   }
 
-
-    static String prettyPrint(HnswGraph hnsw) {
-    StringBuilder sb = new StringBuilder();
-    sb.append(hnsw);
-    sb.append("\n");
-
-    try {
-      for (int level = 0; level < hnsw.numLevels(); level++) {
-        sb.append("# Level ").append(level).append("\n");
-        HnswGraph.NodesIterator it = hnsw.getNodesOnLevel(level);
-        while (it.hasNext()) {
-          int node = it.nextInt();
-          sb.append("  ").append(node).append(" -> ");
-          hnsw.seek(level, node);
-          while (true) {
-            int neighbor = hnsw.nextNeighbor();
-            if (neighbor == NO_MORE_DOCS) {
-              break;
-            }
-            sb.append(" ").append(neighbor);
-          }
-          sb.append("\n");
-        }
-      }
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
-
-    return sb.toString();
-  }
-
   /**
    * buildVamana assumes that the graph is completely built and no further nodes
    * are added concurrently.
    */
-  public ConcurrentVamanaGraph buildVamana(int M, float alphaTarget) {
-    int s = approximateMediod();
+  public ConcurrentVamanaGraph optimizeHnsw(HnswGraph hnsw, int M, int beamWidth, float alphaTarget) {
+    int s = approximateMediod(hnsw, beamWidth);
     System.out.println("mediod is " + s);
     ConcurrentVamanaGraph vamana = new ConcurrentVamanaGraph(hnsw, M, s, similarityFunction());
 
@@ -212,11 +174,11 @@ public class VamanaGraphBuilder<T> {
   // the mediod doesn't seem to matter a whole lot in practice -- the results are nearly the same if we use
   // the hnsw entry node which is effectively random.  this is fortunate because I don't know how to do
   // an approximation that is both high-quality and fast.
-  private int approximateMediod() {
+  private int approximateMediod(HnswGraph hnsw, int samples) {
     assert hnsw.size() > 0;
-    // pick the best mediod candidate from beamWidth options, each of which uses its nearest neighbors to approximate
+    // pick the best mediod candidate from samples options, each of which uses its nearest neighbors to approximate
     // the true distance to all neighbors
-    IntStream range = IntStream.range(0, beamWidth);
+    IntStream range = IntStream.range(0, samples);
     if (hnsw instanceof ConcurrentOnHeapHnswGraph) {
       range = range.parallel();
     }
@@ -227,12 +189,12 @@ public class VamanaGraphBuilder<T> {
               HnswGraphSearcher<T> searcher = new HnswGraphSearcher<>(
                   encoding,
                   similarityFunction,
-                  new NeighborQueue(beamWidth, true),
+                  new NeighborQueue(samples, true),
                   new GrowableBitSet(this.vectors.get().size()));
               NeighborQueue neighbors;
               try {
                 var graph = hnsw instanceof ConcurrentOnHeapHnswGraph ? ((ConcurrentOnHeapHnswGraph) hnsw).getView() : hnsw;
-                neighbors = HnswGraphSearcher.search(vectors.get().vectorValue(i), beamWidth, vectorsCopy.get(), graph, searcher, null, Integer.MAX_VALUE);
+                neighbors = HnswGraphSearcher.search(vectors.get().vectorValue(i), samples, vectorsCopy.get(), graph, searcher, null, Integer.MAX_VALUE);
               } catch (IOException e) {
                 throw new RuntimeException(e);
               }
