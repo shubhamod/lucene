@@ -11,8 +11,6 @@ import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
-import java.util.OptionalInt;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.stream.IntStream;
@@ -234,53 +232,6 @@ public class VamanaGraphBuilder<T> {
       }
     }
     return visitedNodes;
-  }
-
-  /** Query result. */
-  public static final class QueryResult {
-    public final FixedNeighborArray results;
-    public final long visitedCount;
-
-    public QueryResult(FixedNeighborArray results, long visitedCount) {
-      this.results = results;
-      this.visitedCount = visitedCount;
-    }
-  }
-
-  // TODO make a searcher object, make the threadlocals instance fields there
-  public QueryResult greedySearch(ConcurrentVamanaGraph vamana, T vP, int topK) throws IOException {
-    var resultCandidates = new FixedNeighborArray(topK);
-    var visitedSet = greedyVisitedSet.get();
-    visitedSet.clear();
-    var visitedNodesCount = 0;
-    var vc = vectorsCopy.get();
-    var graph = vamana.getView();
-
-    int s = vamana.entryNode();
-    resultCandidates.push(s, scoreBetween(vP, vc.vectorValue(s)));
-    while (true) {
-      // get the best candidate (closest or best scoring)
-      int n = resultCandidates.nextUnvisited(visitedSet);
-      if (n < 0) {
-        break;
-      }
-
-      int topCandidateNode = resultCandidates.node[n];
-      visitedNodesCount++;
-      visitedSet.set(topCandidateNode);
-      graph.seek(0, topCandidateNode);
-      int friendOrd;
-      while ((friendOrd = graph.nextNeighbor()) != NO_MORE_DOCS) {
-        if (visitedSet.get(friendOrd)) {
-          continue;
-        }
-
-        T vNeighbor = vc.vectorValue(friendOrd);
-        float friendSimilarity = scoreBetween(vP, vNeighbor);
-        resultCandidates.push(friendOrd, friendSimilarity);
-      }
-    }
-    return new QueryResult(resultCandidates, visitedNodesCount);
   }
 
   private List<Integer> generateRandomPermutation(int size) {
