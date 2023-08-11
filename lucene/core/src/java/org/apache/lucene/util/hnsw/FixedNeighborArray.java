@@ -8,7 +8,7 @@ import java.util.Arrays;
  * Stores nodes and scores in descending order.  The best scores are highest and will
  * be at the start of the array.
  */
-public class FixedNeighborArray {
+public class FixedNeighborArray implements INeighborArray {
   int size;
   int cur;
 
@@ -18,6 +18,26 @@ public class FixedNeighborArray {
   public FixedNeighborArray(int maxSize) {
     node = new int[maxSize];
     score = new float[maxSize];
+  }
+
+  @Override
+  public int size() {
+    return size;
+  }
+
+  @Override
+  public int[] node() {
+    return node;
+  }
+
+  @Override
+  public float[] score() {
+    return score;
+  }
+
+  @Override
+  public boolean scoresDescending() {
+    return true;
   }
 
   /**

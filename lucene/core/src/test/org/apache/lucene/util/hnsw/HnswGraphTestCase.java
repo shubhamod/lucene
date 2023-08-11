@@ -1030,7 +1030,7 @@ abstract class HnswGraphTestCase<T> extends LuceneTestCase {
     var vamanaBuilder = new VamanaGraphBuilder<>(hnsw, vectors, getVectorEncoding(), similarityFunction, beamWidth);
     float alpha = 4.0f;
     ConcurrentVamanaGraph vamana = es.submit(() -> vamanaBuilder.buildVamana(M, alpha)).get();
-    ConcurrentVamanaGraph badVamana = es.submit(() -> vamanaBuilder.buildBadVamana(alpha)).get();
+    ConcurrentVamanaGraph badVamana = es.submit(() -> vamanaBuilder.buildBadVamana()).get();
 //    System.out.format("L0 of hnsw:%n%s", printGraph(badVamana.getView(), vectors));
 //    System.out.format("Vamana:%n%s", printGraph(vamana.getView(), vectors));
     es.shutdown();
@@ -1054,7 +1054,8 @@ abstract class HnswGraphTestCase<T> extends LuceneTestCase {
       NeighborQueue serialResults = HnswGraphSearcher.search((float[]) query, topK, (RandomAccessVectorValues<float[]>) vectors.copy(), getVectorEncoding(), similarityFunction, serialHnsw, acceptOrds, Integer.MAX_VALUE);
       NeighborQueue vamanaResults = HnswGraphSearcher.search((float[]) query, topK, (RandomAccessVectorValues<float[]>) vectors.copy(), getVectorEncoding(), similarityFunction, vamana.getView(), acceptOrds, Integer.MAX_VALUE);
       NeighborQueue badVamanaResults = HnswGraphSearcher.search((float[]) query, topK, (RandomAccessVectorValues<float[]>) vectors.copy(), getVectorEncoding(), similarityFunction, badVamana.getView(), acceptOrds, Integer.MAX_VALUE);
-      var greedyResults = vamanaBuilder.greedySearch(vamana, query, M*topK);
+      var vSearcher = new VamanaSearcher<>(vamana, vectors, getVectorEncoding(), similarityFunction);
+      var greedyResults = vSearcher.search(query, 2*topK);
 
       // brute force the solutions
       NeighborQueue expected = new NeighborQueue(topK, false);

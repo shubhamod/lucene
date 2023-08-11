@@ -2,6 +2,7 @@ package org.apache.lucene.util.hnsw;
 
 import org.apache.lucene.index.VectorEncoding;
 import org.apache.lucene.index.VectorSimilarityFunction;
+import org.apache.lucene.util.Bits;
 import org.apache.lucene.util.FixedBitSet;
 import org.apache.lucene.util.GrowableBitSet;
 
@@ -26,12 +27,8 @@ public class VamanaGraphBuilder<T> {
   private final int beamWidth;
   private final HnswGraph hnsw;
 
-  private final ThreadLocal<NeighborArray> scratchNeighbors;
   private final ThreadLocal<RandomAccessVectorValues<T>> vectors;
   private final ThreadLocal<RandomAccessVectorValues<T>> vectorsCopy;
-  private final ThreadLocal<NeighborQueue> greedyVisitedNodes;
-  private final ThreadLocal<FixedBitSet> greedyVisitedSet;
-  private final ThreadLocal<FixedNeighborArray> greedyCandidates;
 
   public VamanaGraphBuilder(HnswGraph hnsw, RandomAccessVectorValues<T> ravv, VectorEncoding encoding, VectorSimilarityFunction similarityFunction, int beamWidth) {
     this.hnsw = hnsw;
@@ -52,17 +49,13 @@ public class VamanaGraphBuilder<T> {
         throw new UncheckedIOException(e);
       }
     });
-    scratchNeighbors = ThreadLocal.withInitial(() -> new NeighborArray(beamWidth, true));
-    greedyVisitedNodes = ThreadLocal.withInitial(() -> new NeighborQueue(beamWidth, false));
-    greedyVisitedSet = ThreadLocal.withInitial(() -> new FixedBitSet(hnsw.size()));
-    this.greedyCandidates = ThreadLocal.withInitial(() -> new FixedNeighborArray(beamWidth));
   }
 
 
   /**
    * For testing.  Bad vanama is just L0 of the hnsw graph.
    */
-  ConcurrentVamanaGraph buildBadVamana(float alpha) throws IOException {
+  ConcurrentVamanaGraph buildBadVamana() throws IOException {
     ConcurrentOnHeapHnswGraph chnsw = (ConcurrentOnHeapHnswGraph) hnsw;
     int s = hnsw.entryNode();
     return new ConcurrentVamanaGraph(hnsw, chnsw.nsize0, s, chnsw.similarity);
@@ -131,16 +124,32 @@ public class VamanaGraphBuilder<T> {
     System.out.println("mediod is " + s);
     ConcurrentVamanaGraph vamana = new ConcurrentVamanaGraph(hnsw, M, s, similarityFunction());
 
-    // iterate over the points in a random order.
-    List<Integer> L = generateRandomPermutation(vamana.size());
     LongAdder nodesVisited = new LongAdder();
     LongAdder edgesChanged = new LongAdder();
+    var greedyVisitedNodes = ThreadLocal.withInitial(() -> new NeighborQueue(beamWidth, false));
+    var greedySearcher = ThreadLocal.withInitial(() -> new VamanaSearcher<>(vamana, vectors.get(), encoding, similarityFunction));
+
+    // iterate over the points in a random order.
+    List<Integer> L = generateRandomPermutation(vamana.size());
     L.stream().parallel().filter(p -> p != s).forEach(p -> {
       try {
-        NeighborQueue cq = greedySearch(vamana, p);
-        nodesVisited.add(cq.size());
-        NeighborArray candidates = popToDesc(cq);
-        NeighborArray added = vamana.getNeighbors(p).robustPrune(candidates, alpha);
+        var notSelfBits = new Bits() {
+          @Override
+          public boolean get(int index) {
+            return index != p;
+          }
+
+          @Override
+          public int length() {
+            return vamana.size();
+          }
+        };
+        var searcher = greedySearcher.get();
+        var visitedNodes = greedyVisitedNodes.get();
+        visitedNodes.clear();
+        var qr = searcher.search(vectors.get().vectorValue(p), beamWidth, notSelfBits, visitedNodes);
+        nodesVisited.add(visitedNodes.size());
+        NeighborArray added = vamana.getNeighbors(p).robustPrune(qr.results, alpha);
         edgesChanged.add(added.size);
         for (int i = 0; i < added.size(); i++) {
           int q = added.node[i];
@@ -186,52 +195,6 @@ public class VamanaGraphBuilder<T> {
         };
       }
     };
-  }
-
-  /**
-   * Returns *all* the nodes visited by a greedy best-first search from s to p.
-   * (NOT the top k nodes!)
-   */
-  private NeighborQueue greedySearch(ConcurrentVamanaGraph vamana, int p) throws IOException {
-    var resultCandidates = greedyCandidates.get();
-    resultCandidates.clear();
-    var visitedSet = greedyVisitedSet.get();
-    visitedSet.clear();
-    var visitedNodes = greedyVisitedNodes.get();
-    visitedNodes.clear();
-    var v = vectors.get();
-    var vc = vectorsCopy.get();
-    var graph = vamana.getView();
-
-    int s = vamana.entryNode();
-    T vP = v.vectorValue(p);
-    resultCandidates.push(s, scoreBetween(vP, vc.vectorValue(s)));
-    visitedSet.set(p);
-    while (true) {
-      // get the best candidate (closest or best scoring)
-      int n = resultCandidates.nextUnvisited(visitedSet);
-      if (n < 0) {
-        break;
-      }
-
-      int topCandidateNode = resultCandidates.node[n];
-      float topCandidateSimilarity = resultCandidates.score[n];
-      visitedNodes.add(topCandidateNode, topCandidateSimilarity);
-      visitedSet.set(topCandidateNode);
-      graph.seek(0, topCandidateNode);
-      int friendOrd;
-      while ((friendOrd = graph.nextNeighbor()) != NO_MORE_DOCS) {
-        if (visitedSet.get(friendOrd)) {
-          continue;
-        }
-        assert friendOrd != p : "node " + p + " should not be a neighbor of itself";
-
-        T vNeighbor = vc.vectorValue(friendOrd);
-        float friendSimilarity = scoreBetween(vP, vNeighbor);
-        resultCandidates.push(friendOrd, friendSimilarity);
-      }
-    }
-    return visitedNodes;
   }
 
   private List<Integer> generateRandomPermutation(int size) {
@@ -287,26 +250,5 @@ public class VamanaGraphBuilder<T> {
       case BYTE -> similarityFunction.compare((byte[]) v1, (byte[]) v2);
       case FLOAT32 -> similarityFunction.compare((float[]) v1, (float[]) v2);
     };
-  }
-
-  private NeighborArray popToDesc(NeighborQueue candidates) {
-    NeighborArray scratch = this.scratchNeighbors.get();
-    scratch.clear();
-    while (scratch.node.length < candidates.size()) {
-      scratch.growArrays();
-    }
-
-    // the neighbors will be popped from worst to best, so we reverse that
-    // by reaching into the private fields of the NeighborQueue
-    int candidateCount = candidates.size();
-    for (int i = 0; i < candidateCount; i++) {
-      float similarity = candidates.topScore();
-      int node = candidates.pop();
-      int n = candidateCount - i - 1;
-      scratch.node[n] = node;
-      scratch.score[n] = similarity;
-    }
-    scratch.size = candidateCount;
-    return scratch;
   }
 }
