@@ -1025,7 +1025,7 @@ abstract class HnswGraphTestCase<T> extends LuceneTestCase {
     var es = new ForkJoinPool(buildThreads);
     RandomAccessVectorValues<T> vectorsCopy = vectors.copy();
     float alpha = 1.4f;
-    var vamanaBuilder = new VamanaGraphBuilder<>(vectors, getVectorEncoding(), similarityFunction, M, beamWidth, alpha);
+    var vamanaBuilder = new VamanaGraphBuilder<>(vectors, getVectorEncoding(), similarityFunction, 2 * M, 2 * beamWidth, alpha);
     var vamana = es.submit(() -> vamanaBuilder.buildAsync(vectorsCopy, es, buildThreads)).get().get();
     es.shutdown();
 

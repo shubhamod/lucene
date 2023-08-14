@@ -60,7 +60,7 @@ public class VamanaGraphBuilder<T> {
   /** A name for the HNSW component for the info-stream */
   public static final String HNSW_COMPONENT = "HNSW";
 
-  private final int beamWidth;
+  private final int efConstruction;
   private final double ml;
   private final ExplicitThreadLocal<NeighborArray> scratchNeighbors;
 
@@ -89,14 +89,14 @@ public class VamanaGraphBuilder<T> {
    *     different view over those vectors than the one used to add via addGraphNode.
    * @param M – graph fanout parameter used to calculate the maximum number of connections a node
    *     can have – M on upper layers, and M * 2 on the lowest level.
-   * @param beamWidth the size of the beam search to use when finding nearest neighbors.
+   * @param efConstruction the size of the beam search to use when finding nearest neighbors.
    */
   public VamanaGraphBuilder(
       RandomAccessVectorValues<T> vectorValues,
       VectorEncoding vectorEncoding,
       VectorSimilarityFunction similarityFunction,
       int M,
-      int beamWidth,
+      int efConstruction,
       float alpha) {
     this.vectors = createThreadSafeVectors(vectorValues);
     this.vectorsCopy = createThreadSafeVectors(vectorValues);
@@ -106,10 +106,10 @@ public class VamanaGraphBuilder<T> {
     if (M <= 0) {
       throw new IllegalArgumentException("maxConn must be positive");
     }
-    if (beamWidth <= 0) {
+    if (efConstruction <= 0) {
       throw new IllegalArgumentException("beamWidth must be positive");
     }
-    this.beamWidth = 2 * beamWidth;
+    this.efConstruction = efConstruction;
     // normalization factor for level generation; currently not configurable
     this.ml = M == 1 ? 1 : 1 / Math.log(1.0 * M);
 
@@ -157,7 +157,7 @@ public class VamanaGraphBuilder<T> {
     this.scratchNeighbors =
         ExplicitThreadLocal.withInitial(() -> new NeighborArray(Math.max(beamWidth, M + 1), false));
     this.greedyVisitedNodes =
-        ExplicitThreadLocal.withInitial(() -> new NeighborQueue(beamWidth, false));
+        ExplicitThreadLocal.withInitial(() -> new NeighborQueue(efConstruction, false));
   }
 
   private abstract static class ExplicitThreadLocal<U> {
@@ -333,7 +333,7 @@ public class VamanaGraphBuilder<T> {
       };
       var visitedNodes = greedyVisitedNodes.get();
       visitedNodes.clear();
-      var qr = gs.search(vectors.get().vectorValue(node), beamWidth, notSelfBits, visitedNodes);
+      var qr = gs.search(vectors.get().vectorValue(node), efConstruction, notSelfBits, visitedNodes);
 
       // Update entry points and neighbors with these candidates.
       //
