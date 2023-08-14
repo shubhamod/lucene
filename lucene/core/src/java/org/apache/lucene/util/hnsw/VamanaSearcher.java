@@ -63,12 +63,13 @@ public class VamanaSearcher <T> {
 
     int s = graph.entryNode();
     if (s < 0) {
+      // empty graph
       return new QueryResult(resultCandidates, visitedNodesCount);
     }
 
     resultCandidates.push(s, scoreBetween(vP, vectors.vectorValue(s)));
     while (true) {
-      // get the best candidate (closest or best scoring)
+      // get the best (most similar) candidate whose neighbors we haven't evaluated yet
       int n = resultCandidates.nextUnvisited(visitedSet);
       if (n < 0) {
         break;
