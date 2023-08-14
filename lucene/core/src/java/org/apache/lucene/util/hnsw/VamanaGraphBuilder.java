@@ -61,7 +61,6 @@ public class VamanaGraphBuilder<T> {
   public static final String HNSW_COMPONENT = "HNSW";
 
   private final int efConstruction;
-  private final double ml;
   private final ExplicitThreadLocal<NeighborArray> scratchNeighbors;
 
   private final VectorSimilarityFunction similarityFunction;
@@ -110,8 +109,6 @@ public class VamanaGraphBuilder<T> {
       throw new IllegalArgumentException("beamWidth must be positive");
     }
     this.efConstruction = efConstruction;
-    // normalization factor for level generation; currently not configurable
-    this.ml = M == 1 ? 1 : 1 / Math.log(1.0 * M);
 
     NeighborSimilarity similarity =
         new NeighborSimilarity() {
