@@ -1112,8 +1112,8 @@ abstract class HnswGraphTestCase<T> extends LuceneTestCase {
     testVamanaInternal(atLeast(10_000), 100, 16, atLeast(50), atLeast(10));
   }
 
-  public void testVamanaOnly20k() throws IOException, ExecutionException, InterruptedException {
-    testVamanaOnlyInternal(atLeast(20_000), 100, 16, atLeast(50), atLeast(10));
+  public void testVamanaOnly50k() throws IOException, ExecutionException, InterruptedException {
+    testVamanaOnlyInternal(atLeast(50_000), 100, 16, atLeast(50), atLeast(10));
   }
 
   @SuppressWarnings("unchecked")
