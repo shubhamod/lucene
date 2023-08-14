@@ -250,6 +250,7 @@ public class VamanaGraphBuilder<T> {
           if (asyncException.get() != null) {
             throw new CompletionException(asyncException.get());
           }
+          cleanup();
           hnsw.validateEntryNode();
           return hnsw;
         });
@@ -288,6 +289,13 @@ public class VamanaGraphBuilder<T> {
   /** Number of inserts in progress, across all threads. */
   public int insertsInProgress() {
     return insertionsInProgress.size();
+  }
+
+  public void cleanup() {
+    for (int i = 0; i < hnsw.size(); i++) {
+      var neighbors = hnsw.getNeighbors(0, i);
+      neighbors.cleanup();
+    }
   }
 
   /**
