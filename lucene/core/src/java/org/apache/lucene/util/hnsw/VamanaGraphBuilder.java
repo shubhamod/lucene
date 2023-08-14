@@ -88,14 +88,14 @@ public class VamanaGraphBuilder<T> {
    *     different view over those vectors than the one used to add via addGraphNode.
    * @param M – graph fanout parameter used to calculate the maximum number of connections a node
    *     can have – M on upper layers, and M * 2 on the lowest level.
-   * @param efConstruction the size of the beam search to use when finding nearest neighbors.
+   * @param beamWidth the size of the beam search to use when finding nearest neighbors.
    */
   public VamanaGraphBuilder(
       RandomAccessVectorValues<T> vectorValues,
       VectorEncoding vectorEncoding,
       VectorSimilarityFunction similarityFunction,
       int M,
-      int efConstruction,
+      int beamWidth,
       float alpha) {
     this.vectors = createThreadSafeVectors(vectorValues);
     this.vectorsCopy = createThreadSafeVectors(vectorValues);
@@ -105,10 +105,11 @@ public class VamanaGraphBuilder<T> {
     if (M <= 0) {
       throw new IllegalArgumentException("maxConn must be positive");
     }
-    if (efConstruction <= 0) {
+    if (beamWidth <= 0) {
       throw new IllegalArgumentException("beamWidth must be positive");
     }
-    this.efConstruction = efConstruction;
+    // this keeps the number of nodes visited roughly equal to HNSW construction of the given beamWidth
+    this.efConstruction = 2 * beamWidth;
 
     NeighborSimilarity similarity =
         new NeighborSimilarity() {
