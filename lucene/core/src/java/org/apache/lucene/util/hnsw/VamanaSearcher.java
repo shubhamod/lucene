@@ -2,9 +2,7 @@ package org.apache.lucene.util.hnsw;
 
 import org.apache.lucene.index.VectorEncoding;
 import org.apache.lucene.index.VectorSimilarityFunction;
-import org.apache.lucene.util.BitSet;
 import org.apache.lucene.util.Bits;
-import org.apache.lucene.util.GrowableBitSet;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -18,8 +16,6 @@ public class VamanaSearcher <T> {
   private final VectorSimilarityFunction similarityFunction;
   private final RandomAccessVectorValues<T> vectors;
 
-  private final BitSet visitedSet;
-
   public VamanaSearcher(ConcurrentOnHeapHnswGraph graph, RandomAccessVectorValues<T> ravv, VectorEncoding encoding, VectorSimilarityFunction similarityFunction) {
     this.graph = graph;
     this.encoding = encoding;
@@ -29,7 +25,6 @@ public class VamanaSearcher <T> {
     } catch (IOException e) {
       throw new UncheckedIOException(e);
     }
-    visitedSet = new GrowableBitSet(graph.size());
   }
 
   protected float scoreBetween(T v1, T v2) {
@@ -56,7 +51,6 @@ public class VamanaSearcher <T> {
 
   public QueryResult search(T vP, int beamWidth, Bits acceptOrds, NeighborQueue visitedNodes) throws IOException {
     var resultCandidates = new FixedNeighborArray(beamWidth);
-    visitedSet.clear();
     var visitedNodesCount = 0;
     var view = graph.getView();
 
@@ -69,7 +63,7 @@ public class VamanaSearcher <T> {
     resultCandidates.push(s, scoreBetween(vP, vectors.vectorValue(s)));
     while (true) {
       // get the best (most similar) candidate whose neighbors we haven't evaluated yet
-      int n = resultCandidates.nextUnvisited(visitedSet);
+      int n = resultCandidates.nextUnvisited();
       if (n < 0) {
         break;
       }
@@ -80,7 +74,6 @@ public class VamanaSearcher <T> {
       if (visitedNodes != null) {
         visitedNodes.add(topCandidateNode, resultCandidates.score[n]);
       }
-      visitedSet.set(topCandidateNode);
 
       // add neighbors to resultCandidates, if they are good enough
       view.seek(0, topCandidateNode);
