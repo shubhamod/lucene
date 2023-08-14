@@ -3,6 +3,7 @@ package org.apache.lucene.util.hnsw;
 import org.apache.lucene.util.BitSet;
 
 import java.util.Arrays;
+import java.util.HashSet;
 
 /**
  * Stores nodes and scores in descending order.  The best scores are highest and will
@@ -15,9 +16,12 @@ public class FixedNeighborArray implements INeighborArray {
   float[] score;
   int[] node;
 
+  HashSet<Integer> contents;
+
   public FixedNeighborArray(int maxSize) {
     node = new int[maxSize];
     score = new float[maxSize];
+    contents = new HashSet<>(maxSize);
   }
 
   @Override
@@ -38,6 +42,10 @@ public class FixedNeighborArray implements INeighborArray {
   @Override
   public boolean scoresDescending() {
     return true;
+  }
+
+  public boolean contains(int node) {
+    return contents.contains(node);
   }
 
   /**
@@ -83,6 +91,8 @@ public class FixedNeighborArray implements INeighborArray {
     if (lo < cur) {
       cur = lo;
     }
+
+    contents.add(newNode);
   }
 
   int nextUnvisited(BitSet visited) {
