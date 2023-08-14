@@ -121,6 +121,10 @@ public final class ConcurrentOnHeapHnswGraph extends HnswGraph implements Accoun
     completions.markComplete(node);
   }
 
+  public void updateEntryNode(int node) {
+    entryPoint.set(new NodeAtLevel(0, node));
+  }
+
   private int connectionsOnLevel(int level) {
     return level == 0 ? nsize0 : nsize;
   }
