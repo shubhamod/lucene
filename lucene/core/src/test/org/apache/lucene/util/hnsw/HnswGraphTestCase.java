@@ -1112,6 +1112,61 @@ abstract class HnswGraphTestCase<T> extends LuceneTestCase {
     testVamanaInternal(atLeast(10_000), 100, 16, atLeast(50), atLeast(10));
   }
 
+  public void testVamanaOnly20k() throws IOException, ExecutionException, InterruptedException {
+    testVamanaOnlyInternal(atLeast(20_000), 100, 16, atLeast(50), atLeast(10));
+  }
+
+  @SuppressWarnings("unchecked")
+  private void testVamanaOnlyInternal(int size, int beamWidth, int M, int dim, int topK) throws IOException, ExecutionException, InterruptedException {
+    RandomAccessVectorValues<T> vectors = vectorValues(size, dim);
+    if (size >= 100_000) {
+      // mock vectors are too slow b/c of the array copying they do
+      vectors = new RAVectorValues(vectors, dim);
+    }
+    size = vectors.size(); // vectorValues doesn't always return the requested size
+    int buildThreads = 24;
+    var es = new ForkJoinPool(buildThreads);
+    RandomAccessVectorValues<T> vectorsCopy = vectors.copy();
+    float alpha = 1.4f;
+    var vamanaBuilder = new VamanaGraphBuilder<>(vectors, getVectorEncoding(), similarityFunction, M, beamWidth, alpha);
+    var start = System.nanoTime();
+    var vamana = es.submit(() -> vamanaBuilder.buildAsync(vectorsCopy, es, buildThreads)).get().get();
+    es.shutdown();
+
+    Bits acceptOrds = null; // random().nextBoolean() ? null : createRandomAcceptOrds(0, size);
+
+    int greedyOverlap = 0;
+    int greedyVisits = 0;
+    int queryCount = size / 10;
+    for (int i = 0; i < queryCount; i++) {
+      T query = randomVector(dim);
+      var vSearcher = new VamanaSearcher<>(vamana, vectors, getVectorEncoding(), similarityFunction);
+      var greedyResults = vSearcher.search(query, 2*topK);
+
+      // brute force the solutions
+      NeighborQueue expected = new NeighborQueue(topK, false);
+      for (int j = 0; j < size; j++) {
+        if (vectors.vectorValue(j) != null && (acceptOrds == null || acceptOrds.get(j))) {
+          if (getVectorEncoding() == VectorEncoding.BYTE) {
+            assert query instanceof byte[];
+            expected.insertWithOverflow(
+                j, similarityFunction.compare((byte[]) query, (byte[]) vectors.vectorValue(j)));
+          } else {
+            assert query instanceof float[];
+            expected.insertWithOverflow(
+                j, similarityFunction.compare((float[]) query, (float[]) vectors.vectorValue(j)));
+          }
+        }
+      }
+      greedyOverlap += computeOverlap(Arrays.copyOf(greedyResults.results.node, topK), expected.nodes());
+      greedyVisits += greedyResults.visitedCount;
+    }
+
+    System.out.format("Recall=%.2f%n", (double) greedyOverlap / (topK * queryCount));
+    System.out.format("Visits=%d%n", greedyVisits);
+    System.out.format("Elapsed=%d%n", TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start));
+  }
+
   public void testVamana100k() throws IOException, ExecutionException, InterruptedException {
     testVamanaInternal(100_000, 50, 8, 2, atLeast(20));
   }
