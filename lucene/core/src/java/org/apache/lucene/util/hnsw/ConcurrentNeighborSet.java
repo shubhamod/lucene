@@ -17,13 +17,14 @@
 
 package org.apache.lucene.util.hnsw;
 
+import org.apache.lucene.util.BitSet;
+import org.apache.lucene.util.FixedBitSet;
+
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.PrimitiveIterator;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
-import org.apache.lucene.util.BitSet;
-import org.apache.lucene.util.FixedBitSet;
 
 import static org.apache.lucene.search.DocIdSetIterator.NO_MORE_DOCS;
 
@@ -127,23 +128,63 @@ public class ConcurrentNeighborSet {
    * that chose this one as a neighbor.
    */
   public void insertDiverse(INeighborArray candidates) {
-    BitSet selected = new FixedBitSet(candidates.size());
-    int nSelected = 0;
-    for (float a = 1.0f; a <= alpha && nSelected < maxConnections; a += 0.2) {
-      for (int i = candidates.size() - 1; i >= 0; i--) {
-        if (selected.get(i)) {
-          continue;
-        }
-
-        int cNode = candidates.node()[i];
-        float cScore = candidates.score()[i];
-        if (isDiverse(cNode, cScore, candidates, selected, a)) {
-          selected.set(i);
-          nSelected++;
-        }
-      }
+    if (candidates.size() == 0) {
+      return;
     }
-    insertMultiple(candidates, selected);
+    assert candidates.scoresDescending();
+
+    neighborsRef.getAndUpdate(
+        current -> {
+          // merge candidates and current neighbors into a single array and compute the
+          // diverse ones to keep from that.
+          //
+          // this method is called two ways: first with candidates = natural neighbors for this new node
+          // (current should just have a few miscellaneous edges from backlinks), and then with
+          // candidates = concurrent inserts in progress (current should have the natural neighbors)
+          // so we shouldn't assume that either candidates or current is a larger set to start with.
+          INeighborArray merged;
+          if (current.size == 0) {
+            merged = candidates;
+          } else {
+            merged = new ConcurrentNeighborArray(current.size() + candidates.size(), candidates.size() > current.size() ? candidates : current);
+            var toMerge = candidates.size() > current.size() ? current : candidates;
+            for (int i = 0; i < toMerge.size(); i++) {
+              ((ConcurrentNeighborArray) merged).insertSorted(toMerge.node()[i], toMerge.score()[i]);
+            }
+          }
+
+          // select diverse candidates from the merged set
+          BitSet selected = new FixedBitSet(merged.size());
+          int nSelected = 0;
+          for (float a = 1.0f; a <= alpha && nSelected < maxConnections; a += 0.2) {
+            for (int i = 0; i < merged.size(); i++) {
+              if (selected.get(i)) {
+                continue;
+              }
+
+              int cNode = merged.node()[i];
+              float cScore = merged.score()[i];
+              if (isDiverse(cNode, cScore, merged, selected, a)) {
+                selected.set(i);
+                nSelected++;
+              }
+            }
+          }
+
+          // copy the diverse candidates into a new array
+          ConcurrentNeighborArray next = new ConcurrentNeighborArray(maxConnections, true);
+          for (int i = 0; i < merged.size(); i++) {
+            if (!selected.get(i)) {
+              continue;
+            }
+            int node = merged.node()[i];
+            float score = merged.score()[i];
+            next.addInOrder(node, score);
+          }
+
+          // we're done!  don't need to call enforceMaxConnLimit because we made sure to only select that many
+          return next;
+        });
   }
 
   public ConcurrentNeighborArray getCurrent() {
@@ -202,23 +243,6 @@ public class ConcurrentNeighborSet {
       m2.addInOrder(merged.node[k], merged.score[k]);
     }
     return m2;
-  }
-
-  private void insertMultiple(INeighborArray others, BitSet selected) {
-    neighborsRef.getAndUpdate(
-        current -> {
-          ConcurrentNeighborArray next = current.copy();
-          for (int i = others.size() - 1; i >= 0; i--) {
-            if (!selected.get(i)) {
-              continue;
-            }
-            int node = others.node()[i];
-            float score = others.score()[i];
-            next.insertSorted(node, score);
-          }
-          enforceMaxConnLimit(next, 1.0f);
-          return next;
-        });
   }
 
   /**
@@ -323,6 +347,13 @@ public class ConcurrentNeighborSet {
   static class ConcurrentNeighborArray extends NeighborArray {
     public ConcurrentNeighborArray(int maxSize, boolean descOrder) {
       super(maxSize, descOrder);
+    }
+
+    public ConcurrentNeighborArray(int maxSize, INeighborArray other) {
+      super(maxSize, other.scoresDescending());
+      System.arraycopy(other.node(), 0, node, 0, other.size());
+      System.arraycopy(other.score(), 0, score, 0, other.size());
+      size = other.size();
     }
 
     // two nodes may attempt to add each other in the Concurrent classes,

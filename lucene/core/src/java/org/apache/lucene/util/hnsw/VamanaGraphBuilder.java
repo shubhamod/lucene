@@ -153,9 +153,8 @@ public class VamanaGraphBuilder<T> {
                   vectorEncoding,
                   similarityFunction);
             });
-    // in scratch we store candidates in reverse order: worse candidates are first
     this.scratchNeighbors =
-        ExplicitThreadLocal.withInitial(() -> new NeighborArray(Math.max(beamWidth, M + 1), false));
+        ExplicitThreadLocal.withInitial(() -> new NeighborArray(Runtime.getRuntime().availableProcessors(), true));
     this.greedyVisitedNodes =
         ExplicitThreadLocal.withInitial(() -> new NeighborQueue(efConstruction, false));
   }
@@ -358,6 +357,7 @@ public class VamanaGraphBuilder<T> {
       // Considering concurrent inserts separately from natural candidates solves this problem;
       // both 1 and 2 will be added as neighbors to 3, avoiding the partition, and 2 will then
       // pick up the connection to 1 that it's supposed to have as well.
+      // TODO ^ with alpha > 0 the above is obsolete
       addForwardLinks(0, node, qr.results); // natural candidates
       addForwardLinks(0, node, inProgressBefore, progressMarker); // concurrent candidates
       // Backlinking is the same for both natural and concurrent candidates.
@@ -389,15 +389,15 @@ public class VamanaGraphBuilder<T> {
     }
 
     T v = vectors.get().vectorValue(newNode);
-    // TODO re-use storage for this NQ -- or it may be faster to just sort
-    NeighborQueue candidates = new NeighborQueue(inProgress.size(), false);
+    NeighborArray scratch = this.scratchNeighbors.get();
+    scratch.clear();
     for (NodeAtLevel n : inProgress) {
       if (n.level >= level && n != progressMarker) {
-        candidates.add(n.node, scoreBetween(v, vectorsCopy.get().vectorValue(n.node)));
+        scratch.insertSorted(n.node, scoreBetween(v, vectorsCopy.get().vectorValue(n.node)));
       }
     }
+
     ConcurrentNeighborSet neighbors = hnsw.getNeighbors(level, newNode);
-    NeighborArray scratch = popToScratch(candidates); // worst are first
     neighbors.insertDiverse(scratch);
   }
 
@@ -417,16 +417,4 @@ public class VamanaGraphBuilder<T> {
     };
   }
 
-  private NeighborArray popToScratch(NeighborQueue candidates) {
-    NeighborArray scratch = this.scratchNeighbors.get();
-    scratch.clear();
-    int candidateCount = candidates.size();
-    // extract all the Neighbors from the queue into an array; these will now be
-    // sorted from worst to best
-    for (int i = 0; i < candidateCount; i++) {
-      float maxSimilarity = candidates.topScore();
-      scratch.addInOrder(candidates.pop(), maxSimilarity);
-    }
-    return scratch;
-  }
 }
