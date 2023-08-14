@@ -83,6 +83,15 @@ public class ConcurrentNeighborSet {
     }
   }
 
+  public void cleanup() {
+    neighborsRef.getAndUpdate(
+        current -> {
+          ConcurrentNeighborArray next = current.copy();
+          enforceMaxConnLimit(next, alpha);
+          return next;
+        });
+  }
+
   private static class NeighborIterator implements PrimitiveIterator.OfInt {
     private final NeighborArray neighbors;
     private int i;
@@ -222,7 +231,11 @@ public class ConcurrentNeighborSet {
         current -> {
           ConcurrentNeighborArray next = current.copy();
           next.insertSorted(neighborId, score);
-          enforceMaxConnLimit(next, alpha);
+          // batch up the enforcement of the max connection limit, since otherwise
+          // we do a lot of duplicate work scanning nodes that we won't remove
+          if (next.size > 1.5 * maxConnections) {
+            enforceMaxConnLimit(next, alpha);
+          }
           return next;
         });
   }
