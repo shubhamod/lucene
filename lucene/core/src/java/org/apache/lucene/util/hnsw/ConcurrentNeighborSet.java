@@ -19,13 +19,9 @@ package org.apache.lucene.util.hnsw;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.PrimitiveIterator;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
-import java.util.function.Supplier;
-
 import org.apache.lucene.util.BitSet;
 import org.apache.lucene.util.FixedBitSet;
 
@@ -124,7 +120,6 @@ public class ConcurrentNeighborSet {
   public void insertDiverse(INeighborArray candidates) {
     BitSet selected = new FixedBitSet(candidates.size());
     int nSelected = 0;
-    var scores = new ScoreCache();
     for (float a = 1.0f; a <= alpha && nSelected < maxConnections; a += 0.2) {
       for (int i = candidates.size() - 1; i >= 0; i--) {
         if (selected.get(i)) {
@@ -133,13 +128,13 @@ public class ConcurrentNeighborSet {
 
         int cNode = candidates.node()[i];
         float cScore = candidates.score()[i];
-        if (isDiverse(cNode, cScore, candidates, selected, a, scores)) {
+        if (isDiverse(cNode, cScore, candidates, selected, a)) {
           selected.set(i);
           nSelected++;
         }
       }
     }
-    insertMultiple(candidates, selected, scores);
+    insertMultiple(candidates, selected);
   }
 
   public ConcurrentNeighborArray getCurrent() {
@@ -200,7 +195,7 @@ public class ConcurrentNeighborSet {
     return m2;
   }
 
-  private void insertMultiple(INeighborArray others, BitSet selected, ScoreCache scores) {
+  private void insertMultiple(INeighborArray others, BitSet selected) {
     neighborsRef.getAndUpdate(
         current -> {
           ConcurrentNeighborArray next = current.copy();
@@ -212,7 +207,7 @@ public class ConcurrentNeighborSet {
             float score = others.score()[i];
             next.insertSorted(node, score);
           }
-          enforceMaxConnLimit(next, 1.0f, scores);
+          enforceMaxConnLimit(next, 1.0f);
           return next;
         });
   }
@@ -227,7 +222,7 @@ public class ConcurrentNeighborSet {
         current -> {
           ConcurrentNeighborArray next = current.copy();
           next.insertSorted(neighborId, score);
-          enforceMaxConnLimit(next, alpha, null);
+          enforceMaxConnLimit(next, alpha);
           return next;
         });
   }
@@ -236,23 +231,9 @@ public class ConcurrentNeighborSet {
     insert(neighborId, score, 1.0f);
   }
 
-  private static class ScoreCache {
-    private final Map<Long, Float> scores = new HashMap<>();
-
-    public float get(int node, int other, NeighborSimilarity.ScoreFunction scoreProvider) {
-      long key = (((long) node) << 32) | (0xFFFFFFFFL & other);
-      Float score = scores.get(key);
-      if (score == null) {
-        score = scoreProvider.apply(other);
-        scores.put(key, score);
-      }
-      return score;
-    }
-  }
-
   // is the candidate node with the given score closer to the base node than it is to any of the
   // existing neighbors
-  private boolean isDiverse(int node, float score, INeighborArray others, BitSet selected, float alpha, ScoreCache scores) {
+  private boolean isDiverse(int node, float score, INeighborArray others, BitSet selected, float alpha) {
     if (others.size() == 0) {
       return true;
     }
@@ -263,7 +244,7 @@ public class ConcurrentNeighborSet {
       if (node == otherNode) {
         break;
       }
-      if (scores.get(node, i, scoreProvider) > score * alpha) {
+      if (scoreProvider.apply(otherNode) > score * alpha) {
         return false;
       }
 
@@ -275,10 +256,10 @@ public class ConcurrentNeighborSet {
     return true;
   }
 
-  private void enforceMaxConnLimit(NeighborArray neighbors, float alpha, ScoreCache scores) {
+  private void enforceMaxConnLimit(NeighborArray neighbors, float alpha) {
     while (neighbors.size() > maxConnections) {
       try {
-        removeLeastDiverse(neighbors, alpha, scores);
+        removeLeastDiverse(neighbors, alpha);
       } catch (IOException e) {
         throw new UncheckedIOException(e); // called from closures
       }
@@ -290,7 +271,7 @@ public class ConcurrentNeighborSet {
    * all nodes e2 that are closer to the base node than e1 is. If any e2 is closer to e1 than e1 is
    * to the base node, remove e1.
    */
-  private void removeLeastDiverse(NeighborArray neighbors, float alpha, ScoreCache scores) throws IOException {
+  private void removeLeastDiverse(NeighborArray neighbors, float alpha) throws IOException {
     for (int i = neighbors.size() - 1; i >= 1; i--) {
       int e1Id = neighbors.node[i];
       float baseScore = neighbors.score[i];
@@ -298,7 +279,7 @@ public class ConcurrentNeighborSet {
 
       for (int j = i - 1; j >= 0; j--) {
         int n2Id = neighbors.node[j];
-        float n1n2Score = scores == null ? scoreProvider.apply(n2Id) : scores.get(e1Id, n2Id, scoreProvider);
+        float n1n2Score = scoreProvider.apply(n2Id);
         if (n1n2Score > baseScore * alpha) {
           neighbors.removeIndex(i);
           return;
