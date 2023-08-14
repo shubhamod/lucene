@@ -36,12 +36,10 @@ import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.Semaphore;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 import java.util.function.Supplier;
-
-import static java.lang.Math.log;
 
 /**
  * Builder for Concurrent HNSW graph. See {@link HnswGraph} for a high level overview, and the
@@ -164,15 +162,16 @@ public class VamanaGraphBuilder<T> {
 
   private abstract static class ExplicitThreadLocal<U> {
     private final ConcurrentHashMap<Long, U> map = new ConcurrentHashMap<>();
+    private final Function<Long, U> initialSupplier = k -> initialValue();
 
     public U get() {
-      return map.computeIfAbsent(Thread.currentThread().getId(), k -> initialValue());
+      return map.computeIfAbsent(Thread.currentThread().getId(), initialSupplier);
     }
 
     protected abstract U initialValue();
 
     public static <U> ExplicitThreadLocal<U> withInitial(Supplier<U> initialValue) {
-      return new VamanaGraphBuilder.ExplicitThreadLocal<U>() {
+      return new VamanaGraphBuilder.ExplicitThreadLocal<>() {
         @Override
         protected U initialValue() {
           return initialValue.get();
