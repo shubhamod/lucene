@@ -109,7 +109,7 @@ public class VamanaGraphBuilder<T> {
       throw new IllegalArgumentException("beamWidth must be positive");
     }
     // this keeps the number of nodes visited roughly equal to HNSW construction of the given beamWidth
-    this.efConstruction = 2 * beamWidth;
+    this.efConstruction = beamWidth;
 
     NeighborSimilarity similarity =
         new NeighborSimilarity() {
