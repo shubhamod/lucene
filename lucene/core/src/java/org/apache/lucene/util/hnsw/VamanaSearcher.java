@@ -86,7 +86,7 @@ public class VamanaSearcher <T> {
       view.seek(0, topCandidateNode);
       int friendOrd;
       while ((friendOrd = view.nextNeighbor()) != NO_MORE_DOCS) {
-        if (resultCandidates.contains(friendOrd) || (acceptOrds != null && !acceptOrds.get(friendOrd))) {
+        if (resultCandidates.alreadyEvaluated(friendOrd) || (acceptOrds != null && !acceptOrds.get(friendOrd))) {
           continue;
         }
 
