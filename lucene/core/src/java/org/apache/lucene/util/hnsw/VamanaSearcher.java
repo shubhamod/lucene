@@ -4,7 +4,6 @@ import org.apache.lucene.index.VectorEncoding;
 import org.apache.lucene.index.VectorSimilarityFunction;
 import org.apache.lucene.util.BitSet;
 import org.apache.lucene.util.Bits;
-import org.apache.lucene.util.FixedBitSet;
 import org.apache.lucene.util.GrowableBitSet;
 
 import java.io.IOException;
@@ -87,7 +86,7 @@ public class VamanaSearcher <T> {
       view.seek(0, topCandidateNode);
       int friendOrd;
       while ((friendOrd = view.nextNeighbor()) != NO_MORE_DOCS) {
-        if (visitedSet.get(friendOrd) || (acceptOrds != null && !acceptOrds.get(friendOrd))) {
+        if (resultCandidates.contains(friendOrd) || (acceptOrds != null && !acceptOrds.get(friendOrd))) {
           continue;
         }
 
