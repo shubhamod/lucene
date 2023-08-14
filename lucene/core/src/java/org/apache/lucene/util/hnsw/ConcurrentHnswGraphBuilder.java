@@ -33,7 +33,9 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 import java.util.function.Supplier;
+
 import org.apache.lucene.index.VectorEncoding;
 import org.apache.lucene.index.VectorSimilarityFunction;
 import org.apache.lucene.util.GrowableBitSet;
@@ -151,7 +153,7 @@ public class ConcurrentHnswGraphBuilder<T> {
             };
           }
         };
-    this.hnsw = new ConcurrentOnHeapHnswGraph(M, similarity);
+    this.hnsw = new ConcurrentOnHeapHnswGraph(M, (node, m) -> new ConcurrentNeighborSet(node, m, similarity));
 
     this.graphSearcher =
         ExplicitThreadLocal.withInitial(
@@ -164,16 +166,17 @@ public class ConcurrentHnswGraphBuilder<T> {
             });
     // in scratch we store candidates in reverse order: worse candidates are first
     this.scratchNeighbors =
-        ExplicitThreadLocal.withInitial(() -> new NeighborArray(Math.max(beamWidth, M + 1), false));
+        ExplicitThreadLocal.withInitial(() -> new NeighborArray(Math.max(beamWidth, M + 1), true));
     this.beamCandidates =
         ExplicitThreadLocal.withInitial(() -> new NeighborQueue(beamWidth, false));
   }
 
   private abstract static class ExplicitThreadLocal<U> {
     private final ConcurrentHashMap<Long, U> map = new ConcurrentHashMap<>();
+    private final Function<Long, U> initialSupplier = k -> initialValue();
 
     public U get() {
-      return map.computeIfAbsent(Thread.currentThread().getId(), k -> initialValue());
+      return map.computeIfAbsent(Thread.currentThread().getId(), initialSupplier);
     }
 
     protected abstract U initialValue();
@@ -224,30 +227,29 @@ public class ConcurrentHnswGraphBuilder<T> {
     ExplicitThreadLocal<RandomAccessVectorValues<T>> threadSafeVectors =
         createThreadSafeVectors(vectorsToAdd);
 
-    for (int i = 0; i < vectorsToAdd.size() && asyncException.get() == null; i++) {
-      final int node = i; // copy for closure
-      try {
-        semaphore.acquire();
-        inFlight.add(node);
-        pool.submit(
-            () -> {
-              try {
-                addGraphNode(node, threadSafeVectors.get());
-              } catch (Throwable e) {
-                asyncException.set(e);
-              } finally {
-                semaphore.release();
-                inFlight.remove(node);
-              }
-            });
-      } catch (InterruptedException e) {
-        throw new ThreadInterruptedException(e);
-      }
-    }
-
-    // return a future that will complete when the inflight set is empty
     return CompletableFuture.supplyAsync(
         () -> {
+          // parallel build
+          for (int i = 0; i < vectorsToAdd.size() && asyncException.get() == null; i++) {
+            final int node = i; // copy for closure
+            try {
+              semaphore.acquire();
+              inFlight.add(node);
+              pool.submit(
+                  () -> {
+                    try {
+                      addGraphNode(node, threadSafeVectors.get());
+                    } catch (Throwable e) {
+                      asyncException.set(e);
+                    } finally {
+                      semaphore.release();
+                      inFlight.remove(node);
+                    }
+                  });
+            } catch (InterruptedException e) {
+              throw new ThreadInterruptedException(e);
+            }
+          }
           while (!inFlight.isEmpty()) {
             try {
               TimeUnit.MILLISECONDS.sleep(10);
@@ -255,6 +257,41 @@ public class ConcurrentHnswGraphBuilder<T> {
               throw new ThreadInterruptedException(e);
             }
           }
+
+          // parallel cleanup
+          for (int i = 0; i < vectorsToAdd.size() && asyncException.get() == null; i++) {
+            final int node = i; // copy for closure
+            try {
+              semaphore.acquire();
+              inFlight.add(node);
+              pool.submit(
+                  () -> {
+                    try {
+                      for (int L = 0; L < hnsw.numLevels(); L++) {
+                        var neighbors = hnsw.getNeighbors(L, node);
+                        if (neighbors != null) {
+                          neighbors.cleanup();
+                        }
+                      }
+                    } catch (Throwable e) {
+                      asyncException.set(e);
+                    } finally {
+                      semaphore.release();
+                      inFlight.remove(node);
+                    }
+                  });
+            } catch (InterruptedException e) {
+              throw new ThreadInterruptedException(e);
+            }
+          }
+          while (!inFlight.isEmpty()) {
+            try {
+              TimeUnit.MILLISECONDS.sleep(10);
+            } catch (InterruptedException e) {
+              throw new ThreadInterruptedException(e);
+            }
+          }
+
           if (asyncException.get() != null) {
             throw new CompletionException(asyncException.get());
           }
@@ -407,7 +444,22 @@ public class ConcurrentHnswGraphBuilder<T> {
   }
 
   private void addForwardLinks(int level, int newNode, NeighborQueue candidates) {
-    NeighborArray scratch = popToScratch(candidates); // worst are first
+    NeighborArray scratch = this.scratchNeighbors.get();
+    scratch.clear();
+    int candidateCount = candidates.size();
+    for (int i = candidateCount - 1; i >= 0; i--) {
+      float score = candidates.topScore();
+      int node = candidates.pop();
+      scratch.node()[i] = node;
+      scratch.score()[i] = score;
+      scratch.size = candidateCount;
+    }
+
+    // validate that scratch is sorted by descending score
+    for (int i = 1; i < candidateCount; i++) {
+      assert scratch.score()[i - 1] >= scratch.score()[i];
+    }
+
     ConcurrentNeighborSet neighbors = hnsw.getNeighbors(level, newNode);
     neighbors.insertDiverse(scratch);
   }
@@ -420,41 +472,34 @@ public class ConcurrentHnswGraphBuilder<T> {
     }
 
     T v = vectors.get().vectorValue(newNode);
-    NeighborQueue candidates = new NeighborQueue(inProgress.size(), false);
+    NeighborArray scratch = this.scratchNeighbors.get();
+    scratch.clear();
     for (NodeAtLevel n : inProgress) {
       if (n.level >= level && n != progressMarker) {
-        candidates.add(n.node, scoreBetween(v, vectorsCopy.get().vectorValue(n.node)));
+        scratch.insertSorted(n.node, scoreBetween(v, vectorsCopy.get().vectorValue(n.node)));
       }
     }
+
     ConcurrentNeighborSet neighbors = hnsw.getNeighbors(level, newNode);
-    NeighborArray scratch = popToScratch(candidates); // worst are first
     neighbors.insertDiverse(scratch);
   }
 
   private void addBackLinks(int level, int newNode) throws IOException {
     ConcurrentNeighborSet neighbors = hnsw.getNeighbors(level, newNode);
-    neighbors.backlink(i -> hnsw.getNeighbors(level, i));
+    neighbors.backlink(i -> hnsw.getNeighbors(level, i), 1.5f);
   }
 
   protected float scoreBetween(T v1, T v2) {
-    return switch (vectorEncoding) {
+    return scoreBetween(vectorEncoding, similarityFunction, v1, v2);
+  }
+
+  static <T> float scoreBetween(VectorEncoding encoding, VectorSimilarityFunction similarityFunction, T v1, T v2) {
+    return switch (encoding) {
       case BYTE -> similarityFunction.compare((byte[]) v1, (byte[]) v2);
       case FLOAT32 -> similarityFunction.compare((float[]) v1, (float[]) v2);
     };
   }
 
-  private NeighborArray popToScratch(NeighborQueue candidates) {
-    NeighborArray scratch = this.scratchNeighbors.get();
-    scratch.clear();
-    int candidateCount = candidates.size();
-    // extract all the Neighbors from the queue into an array; these will now be
-    // sorted from worst to best
-    for (int i = 0; i < candidateCount; i++) {
-      float maxSimilarity = candidates.topScore();
-      scratch.addInOrder(candidates.pop(), maxSimilarity);
-    }
-    return scratch;
-  }
 
   int getRandomGraphLevel(double ml) {
     double randDouble;

@@ -199,4 +199,14 @@ public class NeighborArray {
     }
     return start;
   }
+
+  /** for testing */
+  boolean contains(int node) {
+    for (int i = 0; i < size; i++) {
+      if (this.node[i] == node) {
+        return true;
+      }
+    }
+    return false;
+  }
 }

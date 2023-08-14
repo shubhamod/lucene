@@ -27,6 +27,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicIntegerArray;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.StampedLock;
+import java.util.function.BiFunction;
+
 import org.apache.lucene.util.Accountable;
 import org.apache.lucene.util.RamUsageEstimator;
 
@@ -49,18 +51,18 @@ public final class ConcurrentOnHeapHnswGraph extends HnswGraph implements Accoun
   private final CompletionTracker completions;
 
   // Neighbours' size on upper levels (nsize) and level 0 (nsize0)
-  private final int nsize;
-  private final int nsize0;
-  private final NeighborSimilarity similarity;
+  final int nsize;
+  final int nsize0;
+  private final BiFunction<Integer, Integer, ConcurrentNeighborSet> neighborFactory;
 
-  ConcurrentOnHeapHnswGraph(int M, NeighborSimilarity similarity) {
+  ConcurrentOnHeapHnswGraph(int M, BiFunction<Integer, Integer, ConcurrentNeighborSet> neighborFactory) {
+    this.neighborFactory = neighborFactory;
     this.entryPoint =
         new AtomicReference<>(
             new NodeAtLevel(0, -1)); // Entry node should be negative until a node is added
     this.nsize = M;
     this.nsize0 = 2 * M;
 
-    this.similarity = similarity;
     this.graphLevels = new ConcurrentHashMap<>();
     this.completions = new CompletionTracker(nsize0);
   }
@@ -102,9 +104,7 @@ public final class ConcurrentOnHeapHnswGraph extends HnswGraph implements Accoun
       }
     }
 
-    graphLevels
-        .get(level)
-        .put(node, new ConcurrentNeighborSet(node, connectionsOnLevel(level), similarity));
+    graphLevels.get(level).put(node, neighborFactory.apply(node, connectionsOnLevel(level)));
   }
 
   /** must be called after addNode once neighbors are linked in all levels. */
@@ -119,6 +119,10 @@ public final class ConcurrentOnHeapHnswGraph extends HnswGraph implements Accoun
           }
         });
     completions.markComplete(node);
+  }
+
+  public void updateEntryNode(int node) {
+    entryPoint.set(new NodeAtLevel(0, node));
   }
 
   private int connectionsOnLevel(int level) {

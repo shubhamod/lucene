@@ -17,13 +17,16 @@
 
 package org.apache.lucene.util.hnsw;
 
+import org.apache.lucene.util.BitSet;
+import org.apache.lucene.util.FixedBitSet;
+
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.PrimitiveIterator;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
-import org.apache.lucene.util.BitSet;
-import org.apache.lucene.util.FixedBitSet;
+
+import static org.apache.lucene.search.DocIdSetIterator.NO_MORE_DOCS;
 
 /** A concurrent set of neighbors. */
 public class ConcurrentNeighborSet {
@@ -38,17 +41,31 @@ public class ConcurrentNeighborSet {
    * references, and no fancy encoding necessary for node/score.
    */
   private final AtomicReference<ConcurrentNeighborArray> neighborsRef;
+  private final float alpha;
 
   private final NeighborSimilarity similarity;
 
   /** the maximum number of neighbors we can store */
   private final int maxConnections;
 
-  public ConcurrentNeighborSet(int nodeId, int maxConnections, NeighborSimilarity similarity) {
+  public ConcurrentNeighborSet(int nodeId, int maxConnections, NeighborSimilarity similarity, float alpha) {
     this.nodeId = nodeId;
     this.maxConnections = maxConnections;
     this.similarity = similarity;
     neighborsRef = new AtomicReference<>(new ConcurrentNeighborArray(maxConnections, true));
+    this.alpha = alpha;
+  }
+
+  public ConcurrentNeighborSet(int nodeId, int maxConnections, NeighborSimilarity similarity) {
+    this(nodeId, maxConnections, similarity, 1.0f);
+  }
+
+  private ConcurrentNeighborSet(ConcurrentNeighborSet old) {
+    this.nodeId = old.nodeId;
+    this.maxConnections = old.maxConnections;
+    this.similarity = old.similarity;
+    this.alpha = old.alpha;
+    neighborsRef = new AtomicReference<>(old.neighborsRef.get());
   }
 
   public PrimitiveIterator.OfInt nodeIterator() {
@@ -57,14 +74,23 @@ public class ConcurrentNeighborSet {
     return new NeighborIterator(neighborsRef.get());
   }
 
-  public void backlink(Function<Integer, ConcurrentNeighborSet> neighborhoodOf) throws IOException {
+  public void backlink(Function<Integer, ConcurrentNeighborSet> neighborhoodOf, float overflow) throws IOException {
     NeighborArray neighbors = neighborsRef.get();
     for (int i = 0; i < neighbors.size(); i++) {
       int nbr = neighbors.node[i];
       float nbrScore = neighbors.score[i];
       ConcurrentNeighborSet nbrNbr = neighborhoodOf.apply(nbr);
-      nbrNbr.insert(nodeId, nbrScore);
+      nbrNbr.insert(nodeId, nbrScore, overflow);
     }
+  }
+
+  public void cleanup() {
+    neighborsRef.getAndUpdate(
+        current -> {
+          ConcurrentNeighborArray next = current.copy();
+          enforceMaxConnLimit(next);
+          return next;
+        });
   }
 
   private static class NeighborIterator implements PrimitiveIterator.OfInt {
@@ -102,69 +128,147 @@ public class ConcurrentNeighborSet {
    * that chose this one as a neighbor.
    */
   public void insertDiverse(NeighborArray candidates) {
-    BitSet selected = new FixedBitSet(candidates.size());
-    for (int i = candidates.size() - 1; i >= 0; i--) {
-      int cNode = candidates.node[i];
-      float cScore = candidates.score[i];
-      if (isDiverse(cNode, cScore, candidates, selected)) {
-        selected.set(i);
-      }
+    if (candidates.size() == 0) {
+      return;
     }
-    insertMultiple(candidates, selected);
-    // This leaves the paper's keepPrunedConnection option out; we might want to add that
-    // as an option in the future.
-  }
+    assert candidates.scoresDescOrder;
 
-  private void insertMultiple(NeighborArray others, BitSet selected) {
     neighborsRef.getAndUpdate(
         current -> {
-          ConcurrentNeighborArray next = current.copy();
-          for (int i = others.size() - 1; i >= 0; i--) {
+          // merge candidates and current neighbors into a single array and compute the
+          // diverse ones to keep from that.
+          NeighborArray merged = mergeCandidates(candidates, current);
+
+          // select diverse candidates from the merged set
+          BitSet selected = new FixedBitSet(merged.size());
+          int nSelected = 0;
+          for (float a = 1.0f; a <= alpha + 1E-6 && nSelected < maxConnections; a += 0.2f) {
+            for (int i = 0; i < merged.size() && nSelected < maxConnections; i++) {
+              if (selected.get(i)) {
+                continue;
+              }
+
+              int cNode = merged.node()[i];
+              float cScore = merged.score()[i];
+              if (isDiverse(cNode, cScore, merged, selected, a)) {
+                selected.set(i);
+                nSelected++;
+              }
+            }
+          }
+
+          // copy the diverse candidates into a new array
+          ConcurrentNeighborArray next = new ConcurrentNeighborArray(maxConnections, true);
+          for (int i = 0; i < merged.size(); i++) {
             if (!selected.get(i)) {
               continue;
             }
-            int node = others.node[i];
-            float score = others.score[i];
-            next.insertSorted(node, score);
+            int node = merged.node()[i];
+            float score = merged.score()[i];
+            next.addInOrder(node, score);
           }
-          enforceMaxConnLimit(next);
+
+          // we're done!  don't need to call enforceMaxConnLimit because we made sure to only select that many
           return next;
         });
   }
 
+  public ConcurrentNeighborArray getCurrent() {
+    return neighborsRef.get();
+  }
+
+  static NeighborArray mergeCandidates(NeighborArray a1, NeighborArray a2) {
+    assert a1.scoresDescOrder;
+    assert a2.scoresDescOrder;
+
+    NeighborArray merged = new NeighborArray(a1.size() + a2.size(), true);
+    int i = 0, j = 0;
+
+    while (i < a1.size() && j < a2.size()) {
+      if (a1.score()[i] < a2.score[j]) {
+        merged.addInOrder(a2.node[j], a2.score[j]);
+        j++;
+      } else if (a1.score()[i] > a2.score[j]) {
+        merged.addInOrder(a1.node()[i], a1.score()[i]);
+        i++;
+      } else {
+        merged.addInOrder(a1.node()[i], a1.score()[i]);
+        if (a2.node[j] != a1.node()[i]) {
+          merged.addInOrder(a2.node[j], a2.score[j]);
+        }
+        i++;
+        j++;
+      }
+    }
+
+    // If elements remain in a1, add them
+    while (i < a1.size()) {
+      // Skip duplicates between the remaining elements in a1 and the last added element in a2
+      if (j > 0 && i < a1.size() && a1.node()[i] == a2.node[j-1]) {
+        i++;
+        continue;
+      }
+      merged.addInOrder(a1.node()[i], a1.score()[i]);
+      i++;
+    }
+
+    // If elements remain in a2, add them
+    while (j < a2.size()) {
+      // Skip duplicates between the remaining elements in a2 and the last added element in a1
+      if (i > 0 && j < a2.size() && a2.node[j] == a1.node()[i-1]) {
+        j++;
+        continue;
+      }
+      merged.addInOrder(a2.node[j], a2.score[j]);
+      j++;
+    }
+
+    return merged;
+  }
+
   /**
    * Insert a new neighbor, maintaining our size cap by removing the least diverse neighbor if
-   * necessary.
+   * necessary.  "Overflow" is the factor by which to allow going over the size cap temporarily.
    */
-  public void insert(int neighborId, float score) throws IOException {
+  public void insert(int neighborId, float score, float overflow) throws IOException {
     assert neighborId != nodeId : "can't add self as neighbor at node " + nodeId;
     neighborsRef.getAndUpdate(
         current -> {
           ConcurrentNeighborArray next = current.copy();
           next.insertSorted(neighborId, score);
-          enforceMaxConnLimit(next);
+          // batch up the enforcement of the max connection limit, since otherwise
+          // we do a lot of duplicate work scanning nodes that we won't remove
+          if (next.size > overflow * maxConnections) {
+            enforceMaxConnLimit(next);
+          }
           return next;
         });
   }
 
+  public void insert(int neighborId, float score) throws IOException {
+    insert(neighborId, score, 1.0f);
+  }
+
   // is the candidate node with the given score closer to the base node than it is to any of the
   // existing neighbors
-  private boolean isDiverse(int node, float score, NeighborArray others, BitSet selected) {
+  private boolean isDiverse(int node, float score, NeighborArray others, BitSet selected, float alpha) {
     if (others.size() == 0) {
       return true;
     }
 
     NeighborSimilarity.ScoreFunction scoreProvider = similarity.scoreProvider(node);
-    for (int i = others.size() - 1; i >= 0; i--) {
-      if (!selected.get(i)) {
-        continue;
-      }
-      int candidateNode = others.node[i];
-      if (node == candidateNode) {
+    for (int i = selected.nextSetBit(0); i != NO_MORE_DOCS; i = selected.nextSetBit(i + 1)) {
+      int otherNode = others.node()[i];
+      if (node == otherNode) {
         break;
       }
-      if (scoreProvider.apply(candidateNode) > score) {
+      if (scoreProvider.apply(otherNode) > score * alpha) {
         return false;
+      }
+
+      // nextSetBit will error out if we're at the end of the bitset, so check this manually
+      if (i + 1 >= selected.length()) {
+        break;
       }
     }
     return true;
@@ -173,7 +277,7 @@ public class ConcurrentNeighborSet {
   private void enforceMaxConnLimit(NeighborArray neighbors) {
     while (neighbors.size() > maxConnections) {
       try {
-        removeLeastDiverse(neighbors);
+        removeLeastDiverse(neighbors, neighbors.size() - maxConnections);
       } catch (IOException e) {
         throw new UncheckedIOException(e); // called from closures
       }
@@ -185,8 +289,8 @@ public class ConcurrentNeighborSet {
    * all nodes e2 that are closer to the base node than e1 is. If any e2 is closer to e1 than e1 is
    * to the base node, remove e1.
    */
-  private void removeLeastDiverse(NeighborArray neighbors) throws IOException {
-    for (int i = neighbors.size() - 1; i >= 1; i--) {
+  private void removeLeastDiverse(NeighborArray neighbors, int n) throws IOException {
+    for (int i = neighbors.size() - 1; i >= 1 && n > 0; i--) {
       int e1Id = neighbors.node[i];
       float baseScore = neighbors.score[i];
       NeighborSimilarity.ScoreFunction scoreProvider = similarity.scoreProvider(e1Id);
@@ -194,15 +298,22 @@ public class ConcurrentNeighborSet {
       for (int j = i - 1; j >= 0; j--) {
         int n2Id = neighbors.node[j];
         float n1n2Score = scoreProvider.apply(n2Id);
-        if (n1n2Score > baseScore) {
+        if (n1n2Score > baseScore * alpha) {
           neighbors.removeIndex(i);
-          return;
+          n--;
+          break;
         }
       }
     }
 
-    // couldn't find any "non-diverse" neighbors, so remove the one farthest from the base node
-    neighbors.removeIndex(neighbors.size() - 1);
+    // if we still have a quota to fill after pruning all "non-diverse" neighbors, remove the farthest
+    while (n-- > 0) {
+      neighbors.removeIndex(neighbors.size() - 1);
+    }
+  }
+
+  public ConcurrentNeighborSet copy() {
+    return new ConcurrentNeighborSet(this);
   }
 
   /** Only for testing; this is a linear search */
@@ -220,6 +331,13 @@ public class ConcurrentNeighborSet {
   static class ConcurrentNeighborArray extends NeighborArray {
     public ConcurrentNeighborArray(int maxSize, boolean descOrder) {
       super(maxSize, descOrder);
+    }
+
+    public ConcurrentNeighborArray(int maxSize, NeighborArray other) {
+      super(maxSize, other.scoresDescOrder);
+      System.arraycopy(other.node(), 0, node, 0, other.size());
+      System.arraycopy(other.score(), 0, score, 0, other.size());
+      size = other.size();
     }
 
     // two nodes may attempt to add each other in the Concurrent classes,
