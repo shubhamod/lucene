@@ -16,12 +16,12 @@ public class FixedNeighborArray implements INeighborArray {
   float[] score;
   int[] node;
 
-  HashSet<Integer> contents;
+  HashSet<Integer> evaluated;
 
   public FixedNeighborArray(int maxSize) {
     node = new int[maxSize];
     score = new float[maxSize];
-    contents = new HashSet<>(maxSize);
+    evaluated = new HashSet<>(maxSize);
   }
 
   @Override
@@ -44,8 +44,8 @@ public class FixedNeighborArray implements INeighborArray {
     return true;
   }
 
-  public boolean contains(int node) {
-    return contents.contains(node);
+  public boolean alreadyEvaluated(int node) {
+    return evaluated.contains(node);
   }
 
   /**
@@ -53,6 +53,7 @@ public class FixedNeighborArray implements INeighborArray {
    * worst node currently in the array.
    */
   public void push(int newNode, float newScore) {
+    evaluated.add(newNode);
     if (size == node.length && newScore <= score[size - 1]) {
       return;
     }
@@ -91,8 +92,6 @@ public class FixedNeighborArray implements INeighborArray {
     if (lo < cur) {
       cur = lo;
     }
-
-    contents.add(newNode);
   }
 
   int nextUnvisited(BitSet visited) {
