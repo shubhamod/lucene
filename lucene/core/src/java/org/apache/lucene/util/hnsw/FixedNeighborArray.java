@@ -1,6 +1,7 @@
 package org.apache.lucene.util.hnsw;
 
 import org.apache.lucene.util.BitSet;
+import org.apache.lucene.util.FixedBitSet;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -17,11 +18,13 @@ public class FixedNeighborArray implements INeighborArray {
   int[] node;
 
   HashSet<Integer> evaluated;
+  HashSet<Integer> visited;
 
   public FixedNeighborArray(int maxSize) {
     node = new int[maxSize];
     score = new float[maxSize];
     evaluated = new HashSet<>(maxSize);
+    visited = new HashSet<>(maxSize);
   }
 
   @Override
@@ -94,10 +97,10 @@ public class FixedNeighborArray implements INeighborArray {
     }
   }
 
-  int nextUnvisited(BitSet visited) {
+  int nextUnvisited() {
     for ( ; cur < size; cur++) {
       int n = this.node[cur];
-      if (!visited.get(n)) {
+      if (visited.add(n)) {
         return cur++;
       }
     }
@@ -116,5 +119,7 @@ public class FixedNeighborArray implements INeighborArray {
   public void clear() {
     size = 0;
     cur = 0;
+    evaluated.clear();
+    visited.clear();
   }
 }
