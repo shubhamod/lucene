@@ -25,6 +25,8 @@ import java.util.function.Function;
 import org.apache.lucene.util.BitSet;
 import org.apache.lucene.util.FixedBitSet;
 
+import static org.apache.lucene.search.DocIdSetIterator.NO_MORE_DOCS;
+
 /** A concurrent set of neighbors. */
 public class ConcurrentNeighborSet {
   /** the node id whose neighbors we are storing */
@@ -237,16 +239,18 @@ public class ConcurrentNeighborSet {
     }
 
     NeighborSimilarity.ScoreFunction scoreProvider = similarity.scoreProvider(node);
-    for (int i = others.size() - 1; i >= 0; i--) {
-      if (!selected.get(i)) {
-        continue;
-      }
+    for (int i = selected.nextSetBit(0); i != NO_MORE_DOCS; i = selected.nextSetBit(i + 1)) {
       int otherNode = others.node()[i];
       if (node == otherNode) {
         break;
       }
       if (scoreProvider.apply(otherNode) > score * alpha) {
         return false;
+      }
+
+      // nextSetBit will error out if we're at the end of the bitset, so check this manually
+      if (i + 1 >= selected.length()) {
+        break;
       }
     }
     return true;
