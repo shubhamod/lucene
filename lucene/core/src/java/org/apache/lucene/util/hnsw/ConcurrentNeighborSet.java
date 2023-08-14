@@ -294,7 +294,7 @@ public class ConcurrentNeighborSet {
   private void enforceMaxConnLimit(NeighborArray neighbors, float alpha) {
     while (neighbors.size() > maxConnections) {
       try {
-        removeLeastDiverse(neighbors, alpha);
+        removeLeastDiverse(neighbors, neighbors.size() - maxConnections, alpha);
       } catch (IOException e) {
         throw new UncheckedIOException(e); // called from closures
       }
@@ -306,8 +306,8 @@ public class ConcurrentNeighborSet {
    * all nodes e2 that are closer to the base node than e1 is. If any e2 is closer to e1 than e1 is
    * to the base node, remove e1.
    */
-  private void removeLeastDiverse(NeighborArray neighbors, float alpha) throws IOException {
-    for (int i = neighbors.size() - 1; i >= 1; i--) {
+  private void removeLeastDiverse(NeighborArray neighbors, int n, float alpha) throws IOException {
+    for (int i = neighbors.size() - 1; i >= 1 && n > 0; i--) {
       int e1Id = neighbors.node[i];
       float baseScore = neighbors.score[i];
       NeighborSimilarity.ScoreFunction scoreProvider = similarity.scoreProvider(e1Id);
@@ -317,13 +317,16 @@ public class ConcurrentNeighborSet {
         float n1n2Score = scoreProvider.apply(n2Id);
         if (n1n2Score > baseScore * alpha) {
           neighbors.removeIndex(i);
-          return;
+          n--;
+          break;
         }
       }
     }
 
-    // couldn't find any "non-diverse" neighbors, so remove the one farthest from the base node
-    neighbors.removeIndex(neighbors.size() - 1);
+    // if we still have a quota to fill after pruning all "non-diverse" neighbors, remove the farthest
+    while (n-- > 0) {
+      neighbors.removeIndex(neighbors.size() - 1);
+    }
   }
 
   public ConcurrentNeighborSet copy() {
