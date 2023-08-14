@@ -18,14 +18,9 @@
 package org.apache.lucene.util.hnsw;
 
 import static java.lang.Math.log;
-import static org.apache.lucene.search.DocIdSetIterator.NO_MORE_DOCS;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.util.AbstractMap;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -39,12 +34,9 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
-import java.util.stream.IntStream;
 
 import org.apache.lucene.index.VectorEncoding;
 import org.apache.lucene.index.VectorSimilarityFunction;
-import org.apache.lucene.util.Bits;
-import org.apache.lucene.util.FixedBitSet;
 import org.apache.lucene.util.GrowableBitSet;
 import org.apache.lucene.util.InfoStream;
 import org.apache.lucene.util.ThreadInterruptedException;
@@ -174,7 +166,7 @@ public class ConcurrentHnswGraphBuilder<T> {
             });
     // in scratch we store candidates in reverse order: worse candidates are first
     this.scratchNeighbors =
-        ExplicitThreadLocal.withInitial(() -> new NeighborArray(Math.max(beamWidth, M + 1), false));
+        ExplicitThreadLocal.withInitial(() -> new NeighborArray(Math.max(beamWidth, M + 1), true));
     this.beamCandidates =
         ExplicitThreadLocal.withInitial(() -> new NeighborQueue(beamWidth, false));
   }
@@ -417,7 +409,22 @@ public class ConcurrentHnswGraphBuilder<T> {
   }
 
   private void addForwardLinks(int level, int newNode, NeighborQueue candidates) {
-    NeighborArray scratch = popToScratch(candidates); // worst are first
+    NeighborArray scratch = this.scratchNeighbors.get();
+    scratch.clear();
+    int candidateCount = candidates.size();
+    for (int i = candidateCount - 1; i >= 0; i--) {
+      float score = candidates.topScore();
+      int node = candidates.pop();
+      scratch.node()[i] = node;
+      scratch.score()[i] = score;
+      scratch.size = candidateCount;
+    }
+
+    // validate that scratch is sorted by descending score
+    for (int i = 1; i < candidateCount; i++) {
+      assert scratch.score()[i - 1] >= scratch.score()[i];
+    }
+
     ConcurrentNeighborSet neighbors = hnsw.getNeighbors(level, newNode);
     neighbors.insertDiverse(scratch);
   }
@@ -430,14 +437,15 @@ public class ConcurrentHnswGraphBuilder<T> {
     }
 
     T v = vectors.get().vectorValue(newNode);
-    NeighborQueue candidates = new NeighborQueue(inProgress.size(), false);
+    NeighborArray scratch = this.scratchNeighbors.get();
+    scratch.clear();
     for (NodeAtLevel n : inProgress) {
       if (n.level >= level && n != progressMarker) {
-        candidates.add(n.node, scoreBetween(v, vectorsCopy.get().vectorValue(n.node)));
+        scratch.insertSorted(n.node, scoreBetween(v, vectorsCopy.get().vectorValue(n.node)));
       }
     }
+
     ConcurrentNeighborSet neighbors = hnsw.getNeighbors(level, newNode);
-    NeighborArray scratch = popToScratch(candidates); // worst are first
     neighbors.insertDiverse(scratch);
   }
 
@@ -457,19 +465,6 @@ public class ConcurrentHnswGraphBuilder<T> {
     };
   }
 
-
-  private NeighborArray popToScratch(NeighborQueue candidates) {
-    NeighborArray scratch = this.scratchNeighbors.get();
-    scratch.clear();
-    int candidateCount = candidates.size();
-    // extract all the Neighbors from the queue into an array; these will now be
-    // sorted from worst to best
-    for (int i = 0; i < candidateCount; i++) {
-      float maxSimilarity = candidates.topScore();
-      scratch.addInOrder(candidates.pop(), maxSimilarity);
-    }
-    return scratch;
-  }
 
   int getRandomGraphLevel(double ml) {
     double randDouble;
