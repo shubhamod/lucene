@@ -156,7 +156,7 @@ public class ConcurrentNeighborSet {
           // select diverse candidates from the merged set
           BitSet selected = new FixedBitSet(merged.size());
           int nSelected = 0;
-          for (float a = 1.0f; a <= alpha && nSelected < maxConnections; a += 0.2) {
+          for (float a = 1.0f; a <= alpha + 1E-6 && nSelected < maxConnections; a += 0.2f) {
             for (int i = 0; i < merged.size(); i++) {
               if (selected.get(i)) {
                 continue;
