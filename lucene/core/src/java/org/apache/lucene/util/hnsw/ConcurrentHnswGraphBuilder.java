@@ -33,6 +33,7 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import org.apache.lucene.index.VectorEncoding;
@@ -172,9 +173,10 @@ public class ConcurrentHnswGraphBuilder<T> {
 
   private abstract static class ExplicitThreadLocal<U> {
     private final ConcurrentHashMap<Long, U> map = new ConcurrentHashMap<>();
+    private final Function<Long, U> initialSupplier = k -> initialValue();
 
     public U get() {
-      return map.computeIfAbsent(Thread.currentThread().getId(), k -> initialValue());
+      return map.computeIfAbsent(Thread.currentThread().getId(), initialSupplier);
     }
 
     protected abstract U initialValue();
