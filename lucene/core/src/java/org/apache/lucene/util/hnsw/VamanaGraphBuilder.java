@@ -424,14 +424,18 @@ public class VamanaGraphBuilder<T> {
     var startNode = hnsw.entryNode();
     int newStartNode;
 
-    // check start node's neighbors for a better candidate, until we reach a local minimum
-    int n = 0;
+    // Check start node's neighbors for a better candidate, until we reach a local minimum.
+    // This isn't a very good mediod approximation, but all we really need to accomplish is
+    // not to be stuck with the worst possible candidate -- searching isn't super sensitive
+    // to how good the mediod is, especially in higher dimensions
     while (true) {
-      var neighbors = hnsw.getNeighbors(0, startNode).getCurrent();
-      // Map each neighbor node to a pair of node and its average distance score
-      newStartNode = IntStream.concat(IntStream.of(startNode), Arrays.stream(neighbors.node()))
+      var startNeighbors = hnsw.getNeighbors(0, startNode).getCurrent();
+      // Map each neighbor node to a pair of node and its average distance score.
+      // (We use average instead of total, since nodes may have different numbers of neighbors.)
+      newStartNode = IntStream.concat(IntStream.of(startNode), Arrays.stream(startNeighbors.node(), 0, startNeighbors.size))
           .mapToObj(node -> {
-            double score = IntStream.range(0, v2.size())
+            var nodeNeighbors = hnsw.getNeighbors(0, node).getCurrent();
+            double score = Arrays.stream(nodeNeighbors.node(), 0, nodeNeighbors.size)
                 .mapToDouble(i -> {
                   try {
                     return scoreBetween(v1.vectorValue(node), v2.vectorValue(i));
@@ -446,11 +450,9 @@ public class VamanaGraphBuilder<T> {
           .min(Comparator.comparingDouble(AbstractMap.SimpleEntry::getValue))
           // Extract the node of the minimum entry
           .map(AbstractMap.SimpleEntry::getKey).get();
-      n++;
       if (startNode != newStartNode) {
         startNode = newStartNode;
       } else {
-        System.out.println("Found mediod in " + n + " iterations at graph size " + hnsw.size());
         return newStartNode;
       }
     }
