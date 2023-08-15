@@ -18,13 +18,10 @@ public class FixedNeighborArray implements INeighborArray {
   int[] node;
   boolean[] visited;
 
-  SparseIntSet evaluated;
-
   public FixedNeighborArray(int maxSize) {
     node = new int[maxSize];
     score = new float[maxSize];
     visited = new boolean[maxSize];
-    evaluated = new SparseIntSet();
   }
 
   @Override
@@ -47,16 +44,11 @@ public class FixedNeighborArray implements INeighborArray {
     return true;
   }
 
-  public boolean alreadyEvaluated(int node) {
-    return evaluated.contains(node);
-  }
-
   /**
    * Adds a new node to the NeighborArray if there is room or if the new node is better than the
    * worst node currently in the array.
    */
   public void push(int newNode, float newScore) {
-    evaluated.add(newNode);
     if (size == node.length && newScore <= score[size - 1]) {
       return;
     }
@@ -121,6 +113,5 @@ public class FixedNeighborArray implements INeighborArray {
   public void clear() {
     size = 0;
     cur = 0;
-    evaluated.clear();
   }
 }

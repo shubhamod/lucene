@@ -78,15 +78,6 @@ public class TestFixedNeighborArray extends LuceneTestCase {
     float maxGenerated = 0;
     int maxOrdinal = 0;
     for (int i = 0; i < 10000; i++) {
-      if (random().nextFloat() < 0.1f && fna.size() > 0) {
-        int j = random().nextInt(fna.size());
-        int node = fna.node()[j];
-        if (!fna.alreadyEvaluated(node)) {
-          fna.push(node, fna.score()[j]);
-        }
-        continue;
-      }
-
       float a = random().nextFloat();
       if (a > maxGenerated) {
         maxGenerated = a;

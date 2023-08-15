@@ -82,4 +82,14 @@ public class SparseIntSet {
   public int size() {
     return size;
   }
+
+  /** Set <code>i</code>, returning <code>true</code> if it was previously set. */
+  public boolean getAndSet(int i) {
+    if (contains(i)) {
+      return true;
+    } else {
+      add(i);
+      return false;
+    }
+  }
 }
