@@ -222,30 +222,29 @@ public class VamanaGraphBuilder<T> {
     ExplicitThreadLocal<RandomAccessVectorValues<T>> threadSafeVectors =
         createThreadSafeVectors(vectorsToAdd);
 
-    for (int i = 0; i < vectorsToAdd.size(); i++) {
-      final int node = i; // copy for closure
-      try {
-        semaphore.acquire();
-        inFlight.add(node);
-        pool.submit(
-            () -> {
-              try {
-                addGraphNode(node, threadSafeVectors.get());
-              } catch (Throwable e) {
-                asyncException.set(e);
-              } finally {
-                semaphore.release();
-                inFlight.remove(node);
-              }
-            });
-      } catch (InterruptedException e) {
-        throw new ThreadInterruptedException(e);
-      }
-    }
-
-    // return a future that will complete when the inflight set is empty
     return CompletableFuture.supplyAsync(
         () -> {
+          // parallel build
+          for (int i = 0; i < vectorsToAdd.size(); i++) {
+            final int node = i; // copy for closure
+            try {
+              semaphore.acquire();
+              inFlight.add(node);
+              pool.submit(
+                  () -> {
+                    try {
+                      addGraphNode(node, threadSafeVectors.get());
+                    } catch (Throwable e) {
+                      asyncException.set(e);
+                    } finally {
+                      semaphore.release();
+                      inFlight.remove(node);
+                    }
+                  });
+            } catch (InterruptedException e) {
+              throw new ThreadInterruptedException(e);
+            }
+          }
           while (!inFlight.isEmpty()) {
             try {
               TimeUnit.MILLISECONDS.sleep(10);
@@ -253,10 +252,40 @@ public class VamanaGraphBuilder<T> {
               throw new ThreadInterruptedException(e);
             }
           }
+
+          // parallel cleanup
+          for (int i = 0; i < vectorsToAdd.size(); i++) {
+            final int node = i; // copy for closure
+            try {
+              semaphore.acquire();
+              inFlight.add(node);
+              pool.submit(
+                  () -> {
+                    try {
+                      var neighbors = hnsw.getNeighbors(0, node);
+                      neighbors.cleanup();
+                    } catch (Throwable e) {
+                      asyncException.set(e);
+                    } finally {
+                      semaphore.release();
+                      inFlight.remove(node);
+                    }
+                  });
+            } catch (InterruptedException e) {
+              throw new ThreadInterruptedException(e);
+            }
+          }
+          while (!inFlight.isEmpty()) {
+            try {
+              TimeUnit.MILLISECONDS.sleep(10);
+            } catch (InterruptedException e) {
+              throw new ThreadInterruptedException(e);
+            }
+          }
+
           if (asyncException.get() != null) {
             throw new CompletionException(asyncException.get());
           }
-          cleanup();
           hnsw.validateEntryNode();
           return hnsw;
         });
