@@ -15,6 +15,7 @@ public class VamanaSearcher <T> {
   private final VectorEncoding encoding;
   private final VectorSimilarityFunction similarityFunction;
   private final RandomAccessVectorValues<T> vectors;
+  private final SparseIntSet evaluatedNodes = new SparseIntSet();
 
   public VamanaSearcher(ConcurrentOnHeapHnswGraph graph, RandomAccessVectorValues<T> ravv, VectorEncoding encoding, VectorSimilarityFunction similarityFunction) {
     this.graph = graph;
@@ -53,6 +54,7 @@ public class VamanaSearcher <T> {
     var resultCandidates = new FixedNeighborArray(beamWidth);
     var visitedNodesCount = 0;
     var view = graph.getView();
+    evaluatedNodes.clear();
 
     int s = graph.entryNode();
     if (s < 0) {
@@ -61,6 +63,7 @@ public class VamanaSearcher <T> {
     }
 
     resultCandidates.push(s, scoreBetween(vP, vectors.vectorValue(s)));
+    evaluatedNodes.add(s);
     while (true) {
       // get the best (most similar) candidate whose neighbors we haven't evaluated yet
       int n = resultCandidates.nextUnvisited();
@@ -79,7 +82,7 @@ public class VamanaSearcher <T> {
       view.seek(0, topCandidateNode);
       int friendOrd;
       while ((friendOrd = view.nextNeighbor()) != NO_MORE_DOCS) {
-        if (resultCandidates.alreadyEvaluated(friendOrd) || (acceptOrds != null && !acceptOrds.get(friendOrd))) {
+        if (evaluatedNodes.getAndSet(friendOrd) || (acceptOrds != null && !acceptOrds.get(friendOrd))) {
           continue;
         }
 
