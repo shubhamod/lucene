@@ -45,6 +45,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 /**
  * Builder for Concurrent HNSW graph. See {@link HnswGraph} for a high level overview, and the
@@ -419,27 +420,40 @@ public class VamanaGraphBuilder<T> {
   private int approximateMediod() {
     var v1 = vectors.get();
     var v2 = vectorsCopy.get();
-    var startNode = hnsw.entryNode();
-    var neighbors = hnsw.getNeighbors(0, startNode).getCurrent();
 
-    // Map each neighbor node to a pair of node and its average distance score
-    return Arrays.stream(neighbors.node())
-        .mapToObj(node -> {
-          double score = IntStream.range(0, v2.size())
-              .mapToDouble(i -> {
-                try {
-                  return scoreBetween(v1.vectorValue(node), v2.vectorValue(i));
-                } catch (IOException e) {
-                  throw new UncheckedIOException(e);
-                }
-              })
-              .sum();
-          return new AbstractMap.SimpleEntry<>(node, score / v2.size());
-        })
-        // Find the entry with the minimum score
-        .min(Comparator.comparingDouble(AbstractMap.SimpleEntry::getValue))
-        // Extract the node of the minimum entry
-        .map(AbstractMap.SimpleEntry::getKey).get();
+    var startNode = hnsw.entryNode();
+    int newStartNode;
+
+    // check start node's neighbors for a better candidate, until we reach a local minimum
+    int n = 0;
+    while (true) {
+      var neighbors = hnsw.getNeighbors(0, startNode).getCurrent();
+      // Map each neighbor node to a pair of node and its average distance score
+      newStartNode = IntStream.concat(IntStream.of(startNode), Arrays.stream(neighbors.node()))
+          .mapToObj(node -> {
+            double score = IntStream.range(0, v2.size())
+                .mapToDouble(i -> {
+                  try {
+                    return scoreBetween(v1.vectorValue(node), v2.vectorValue(i));
+                  } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                  }
+                })
+                .sum();
+            return new AbstractMap.SimpleEntry<>(node, score / v2.size());
+          })
+          // Find the entry with the minimum score
+          .min(Comparator.comparingDouble(AbstractMap.SimpleEntry::getValue))
+          // Extract the node of the minimum entry
+          .map(AbstractMap.SimpleEntry::getKey).get();
+      n++;
+      if (startNode != newStartNode) {
+        startNode = newStartNode;
+      } else {
+        System.out.println("Found mediod in " + n + " iterations at graph size " + hnsw.size());
+        return newStartNode;
+      }
+    }
   }
 
   private void addForwardLinks(int level, int newNode, INeighborArray candidates) {
