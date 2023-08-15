@@ -176,18 +176,29 @@ public class TestConcurrentNeighborSet extends LuceneTestCase {
     assertArrayEquals(new float[]{3.0f, 2.0f}, Arrays.copyOf(merged.score(), 2), 0.0f);
   }
 
-  // note this only tests distinct nodes and scores
   private void testMergeCandidatesOnce() {
     int maxSize = 1 + random().nextInt(5);
 
     NeighborArray arr1 = new NeighborArray(maxSize, true);
-    for (int i = 0; i < 1 + random().nextInt(maxSize); i++) {
+    int a1Size = random().nextBoolean() ? maxSize : 1 + random().nextInt(maxSize);
+    for (int i = 0; i < a1Size; i++) {
       arr1.insertSorted(i, random().nextFloat());
     }
 
     NeighborArray arr2 = new NeighborArray(maxSize, true);
-    for (int i = 0; i < 1 + random().nextInt(maxSize); i++) {
-      arr2.insertSorted(i + arr1.size, random().nextFloat());
+    int a2Size = random().nextBoolean() ? maxSize : 1 + random().nextInt(maxSize);
+    for (int i = 0; i < a2Size; i++) {
+      if (random().nextBoolean()) {
+        // duplicate entry
+        int j = random().nextInt(a1Size);
+        if (!arr2.contains(arr1.node[j])) {
+          arr2.insertSorted(arr1.node[j], arr1.score[j]);
+        }
+      } else {
+        // duplicate just score
+        float score = random().nextBoolean() ? random().nextFloat() : arr1.score[random().nextInt(a1Size)];
+        arr2.insertSorted(i + arr1.size, score);
+      }
     }
 
     var merged = mergeCandidates(arr1, arr2);

@@ -178,6 +178,16 @@ public class NeighborArray implements INeighborArray {
     size--;
   }
 
+  /** Only for testing; this is a linear search */
+  boolean contains(int i) {
+    for (int j = 0; j < size; j++) {
+      if (node[j] == i) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   @Override
   public String toString() {
     return "NeighborArray[" + size + "]";

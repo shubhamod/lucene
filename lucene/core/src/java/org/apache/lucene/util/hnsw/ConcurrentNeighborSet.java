@@ -137,27 +137,13 @@ public class ConcurrentNeighborSet {
         current -> {
           // merge candidates and current neighbors into a single array and compute the
           // diverse ones to keep from that.
-          //
-          // this method is called two ways: first with candidates = natural neighbors for this new node
-          // (current should just have a few miscellaneous edges from backlinks), and then with
-          // candidates = concurrent inserts in progress (current should have the natural neighbors)
-          // so we shouldn't assume that either candidates or current is a larger set to start with.
-          INeighborArray merged;
-          if (current.size == 0) {
-            merged = candidates;
-          } else {
-            merged = new ConcurrentNeighborArray(current.size() + candidates.size(), candidates.size() > current.size() ? candidates : current);
-            var toMerge = candidates.size() > current.size() ? current : candidates;
-            for (int i = 0; i < toMerge.size(); i++) {
-              ((ConcurrentNeighborArray) merged).insertSorted(toMerge.node()[i], toMerge.score()[i]);
-            }
-          }
+          INeighborArray merged = mergeCandidates(candidates, current);
 
           // select diverse candidates from the merged set
           BitSet selected = new FixedBitSet(merged.size());
           int nSelected = 0;
           for (float a = 1.0f; a <= alpha + 1E-6 && nSelected < maxConnections; a += 0.2f) {
-            for (int i = 0; i < merged.size(); i++) {
+            for (int i = 0; i < merged.size() && nSelected < maxConnections; i++) {
               if (selected.get(i)) {
                 continue;
               }
@@ -237,12 +223,7 @@ public class ConcurrentNeighborSet {
       j++;
     }
 
-    // TODO fixme
-    var m2 = new NeighborArray(merged.size(), false);
-    for (int k = merged.size() - 1; k >= 0; k--) {
-      m2.addInOrder(merged.node[k], merged.score[k]);
-    }
-    return m2;
+    return merged;
   }
 
   /**
