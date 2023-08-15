@@ -104,18 +104,20 @@ public class VamanaGraphBuilder<T> {
       int M,
       int beamWidth,
       float alpha) {
-    this.vectors = createThreadSafeVectors(vectorValues);
-    this.vectorsCopy = createThreadSafeVectors(vectorValues);
-    this.vectorEncoding = Objects.requireNonNull(vectorEncoding);
-    this.similarityFunction = Objects.requireNonNull(similarityFunction);
-    this.alpha = alpha;
     if (M <= 0) {
       throw new IllegalArgumentException("maxConn must be positive");
     }
     if (beamWidth <= 0) {
       throw new IllegalArgumentException("beamWidth must be positive");
     }
-    // this keeps the number of nodes visited roughly equal to HNSW construction of the given beamWidth
+    if (alpha < 1.0) {
+      throw new IllegalArgumentException("alpha must be >= 1.0");
+    }
+    this.vectors = createThreadSafeVectors(vectorValues);
+    this.vectorsCopy = createThreadSafeVectors(vectorValues);
+    this.vectorEncoding = Objects.requireNonNull(vectorEncoding);
+    this.similarityFunction = Objects.requireNonNull(similarityFunction);
+    this.alpha = alpha;
     this.beamWidth = beamWidth;
 
     NeighborSimilarity similarity =
