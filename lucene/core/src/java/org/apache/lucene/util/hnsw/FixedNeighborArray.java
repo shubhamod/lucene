@@ -16,15 +16,15 @@ public class FixedNeighborArray implements INeighborArray {
 
   float[] score;
   int[] node;
+  boolean[] visited;
 
-  HashSet<Integer> evaluated;
-  HashSet<Integer> visited;
+  SparseIntSet evaluated;
 
   public FixedNeighborArray(int maxSize) {
     node = new int[maxSize];
     score = new float[maxSize];
-    evaluated = new HashSet<>(maxSize);
-    visited = new HashSet<>(maxSize);
+    visited = new boolean[maxSize];
+    evaluated = new SparseIntSet();
   }
 
   @Override
@@ -83,13 +83,15 @@ public class FixedNeighborArray implements INeighborArray {
       int numToMove = size < node.length ? size - lo : size - lo - 1;
       System.arraycopy(node, lo, node, lo + 1, numToMove);
       System.arraycopy(score, lo, score, lo + 1, numToMove);
+      System.arraycopy(visited, lo, visited, lo + 1, numToMove);
     }
 
     // insert the new node
     node[lo] = newNode;
     score[lo] = newScore;
+    visited[lo] = false;
     if (size < node.length) {
-      ++size;
+      size++;
     }
 
     if (lo < cur) {
@@ -99,8 +101,8 @@ public class FixedNeighborArray implements INeighborArray {
 
   int nextUnvisited() {
     for ( ; cur < size; cur++) {
-      int n = this.node[cur];
-      if (visited.add(n)) {
+      if (!visited[cur]) {
+        visited[cur] = true;
         return cur++;
       }
     }
@@ -120,6 +122,5 @@ public class FixedNeighborArray implements INeighborArray {
     size = 0;
     cur = 0;
     evaluated.clear();
-    visited.clear();
   }
 }

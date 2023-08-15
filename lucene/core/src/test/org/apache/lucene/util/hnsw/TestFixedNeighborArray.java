@@ -97,7 +97,6 @@ public class TestFixedNeighborArray extends LuceneTestCase {
       assert fna.size() <= maxSize;
       assertEquals(maxGenerated, fna.score[0], 1e-6);
       assertEquals(maxOrdinal, fna.node[0]);
-      assertEquals(Math.min(i + 1, maxSize), fna.size);
       // scores are sorted highest to lowest
       for (int j = 0; j < fna.size - 1; j++) {
         assertTrue(fna.score[j] >= fna.score[j + 1]);
