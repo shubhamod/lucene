@@ -236,7 +236,9 @@ public class ConcurrentNeighborSet {
         current -> {
           ConcurrentNeighborArray next = current.copy();
           next.insertSorted(neighborId, score);
-          if (next.size > 2 * maxConnections) {
+          // batch up the enforcement of the max connection limit, since otherwise
+          // we do a lot of duplicate work scanning nodes that we won't remove
+          if (next.size > 1.5 * maxConnections) {
             enforceMaxConnLimit(next, alpha);
           }
           return next;
