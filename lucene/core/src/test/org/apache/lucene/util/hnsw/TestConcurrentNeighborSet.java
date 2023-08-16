@@ -80,7 +80,7 @@ public class TestConcurrentNeighborSet extends LuceneTestCase {
     var similarityFunction = VectorSimilarityFunction.DOT_PRODUCT;
     var vectors = new HnswGraphTestCase.CircularFloatVectorValues(10);
     var vectorsCopy = vectors.copy();
-    var candidates = new NeighborArray(10, false);
+    var candidates = new NeighborArray(10, true);
     NeighborSimilarity scoreBetween =
         new NeighborSimilarity() {
           @Override
