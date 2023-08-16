@@ -17,6 +17,8 @@
 
 package org.apache.lucene.util.hnsw;
 
+import static org.apache.lucene.util.hnsw.ConcurrentNeighborSet.mergeNeighbors;
+
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -26,8 +28,6 @@ import org.apache.lucene.index.VectorSimilarityFunction;
 import org.apache.lucene.tests.util.LuceneTestCase;
 import org.apache.lucene.util.ArrayUtil;
 import org.apache.lucene.util.hnsw.ConcurrentNeighborSet.ConcurrentNeighborArray;
-
-import static org.apache.lucene.util.hnsw.ConcurrentNeighborSet.mergeNeighbors;
 
 public class TestConcurrentNeighborSet extends LuceneTestCase {
   private static final NeighborSimilarity simpleScore =
@@ -198,8 +198,8 @@ public class TestConcurrentNeighborSet extends LuceneTestCase {
 
     // Expected result: [4, 3, 2, 1]
     assertEquals(4, merged.size());
-    assertArrayEquals(new int[]{4, 3, 2, 1}, Arrays.copyOf(merged.node(), 4));
-    assertArrayEquals(new float[]{4.0f, 3.0f, 2.0f, 1.0f}, Arrays.copyOf(merged.score(), 4), 0.0f);
+    assertArrayEquals(new int[] {4, 3, 2, 1}, Arrays.copyOf(merged.node(), 4));
+    assertArrayEquals(new float[] {4.0f, 3.0f, 2.0f, 1.0f}, Arrays.copyOf(merged.score(), 4), 0.0f);
 
     // Testing boundary conditions
     arr1 = new NeighborArray(2, true);
@@ -213,8 +213,8 @@ public class TestConcurrentNeighborSet extends LuceneTestCase {
 
     // Expected result: [3, 2]
     assertEquals(2, merged.size());
-    assertArrayEquals(new int[]{3, 2}, Arrays.copyOf(merged.node(), 2));
-    assertArrayEquals(new float[]{3.0f, 2.0f}, Arrays.copyOf(merged.score(), 2), 0.0f);
+    assertArrayEquals(new int[] {3, 2}, Arrays.copyOf(merged.node(), 2));
+    assertArrayEquals(new float[] {3.0f, 2.0f}, Arrays.copyOf(merged.score(), 2), 0.0f);
   }
 
   private void testMergeCandidatesOnce() {
@@ -237,7 +237,8 @@ public class TestConcurrentNeighborSet extends LuceneTestCase {
         }
       } else {
         // duplicate just score
-        float score = random().nextBoolean() ? random().nextFloat() : arr1.score[random().nextInt(a1Size)];
+        float score =
+            random().nextBoolean() ? random().nextFloat() : arr1.score[random().nextInt(a1Size)];
         arr2.insertSorted(i + arr1.size, score);
       }
     }

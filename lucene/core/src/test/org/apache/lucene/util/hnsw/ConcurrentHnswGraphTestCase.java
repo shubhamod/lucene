@@ -163,9 +163,9 @@ abstract class ConcurrentHnswGraphTestCase<T> extends LuceneTestCase {
           assertVectorsEqual(v3, values);
           HnswGraph graphValues =
               ((Lucene95HnswVectorsReader)
-                  ((PerFieldKnnVectorsFormat.FieldsReader)
-                      ((CodecReader) ctx.reader()).getVectorReader())
-                      .getFieldReader("field"))
+                      ((PerFieldKnnVectorsFormat.FieldsReader)
+                              ((CodecReader) ctx.reader()).getVectorReader())
+                          .getFieldReader("field"))
                   .getGraph("field");
           assertGraphEqual(hnsw, graphValues);
         }
@@ -204,10 +204,10 @@ abstract class ConcurrentHnswGraphTestCase<T> extends LuceneTestCase {
             .setIndexSort(new Sort(new SortField("sortkey", SortField.Type.LONG)));
 
     try (Directory dir = newDirectory();
-         Directory dir2 = newDirectory()) {
+        Directory dir2 = newDirectory()) {
       int indexedDoc = 0;
       try (IndexWriter iw = new IndexWriter(dir, iwc);
-           IndexWriter iw2 = new IndexWriter(dir2, iwc2)) {
+          IndexWriter iw2 = new IndexWriter(dir2, iwc2)) {
         while (vectors.nextDoc() != NO_MORE_DOCS) {
           while (indexedDoc < vectors.docID()) {
             // increment docId in the index by adding empty documents
@@ -224,7 +224,7 @@ abstract class ConcurrentHnswGraphTestCase<T> extends LuceneTestCase {
         }
       }
       try (IndexReader reader = DirectoryReader.open(dir);
-           IndexReader reader2 = DirectoryReader.open(dir2)) {
+          IndexReader reader2 = DirectoryReader.open(dir2)) {
         IndexSearcher searcher = new IndexSearcher(reader);
         IndexSearcher searcher2 = new IndexSearcher(reader2);
         OUTER:
@@ -537,7 +537,8 @@ abstract class ConcurrentHnswGraphTestCase<T> extends LuceneTestCase {
         };
 
     ConcurrentOnHeapHnswGraph topDownOrderReversedHnsw =
-        new ConcurrentOnHeapHnswGraph(10, (node, m) -> new ConcurrentNeighborSet(node, m, mockSimilarity));
+        new ConcurrentOnHeapHnswGraph(
+            10, (node, m) -> new ConcurrentNeighborSet(node, m, mockSimilarity));
     for (int currLevel = numLevels - 1; currLevel >= 0; currLevel--) {
       List<Integer> currLevelNodes = nodesPerLevel.get(currLevel);
       int currLevelNodesSize = currLevelNodes.size();
@@ -547,7 +548,8 @@ abstract class ConcurrentHnswGraphTestCase<T> extends LuceneTestCase {
     }
 
     ConcurrentOnHeapHnswGraph bottomUpOrderReversedHnsw =
-        new ConcurrentOnHeapHnswGraph(10, (node, m) -> new ConcurrentNeighborSet(node, m, mockSimilarity));
+        new ConcurrentOnHeapHnswGraph(
+            10, (node, m) -> new ConcurrentNeighborSet(node, m, mockSimilarity));
     for (int currLevel = 0; currLevel < numLevels; currLevel++) {
       List<Integer> currLevelNodes = nodesPerLevel.get(currLevel);
       int currLevelNodesSize = currLevelNodes.size();
@@ -557,7 +559,8 @@ abstract class ConcurrentHnswGraphTestCase<T> extends LuceneTestCase {
     }
 
     ConcurrentOnHeapHnswGraph topDownOrderRandomHnsw =
-        new ConcurrentOnHeapHnswGraph(10, (node, m) -> new ConcurrentNeighborSet(node, m, mockSimilarity));
+        new ConcurrentOnHeapHnswGraph(
+            10, (node, m) -> new ConcurrentNeighborSet(node, m, mockSimilarity));
     for (int currLevel = numLevels - 1; currLevel >= 0; currLevel--) {
       List<Integer> currLevelNodes = new ArrayList<>(nodesPerLevel.get(currLevel));
       Collections.shuffle(currLevelNodes, random());
@@ -567,7 +570,8 @@ abstract class ConcurrentHnswGraphTestCase<T> extends LuceneTestCase {
     }
 
     ConcurrentOnHeapHnswGraph bottomUpExpectedHnsw =
-        new ConcurrentOnHeapHnswGraph(10, (node, m) -> new ConcurrentNeighborSet(node, m, mockSimilarity));
+        new ConcurrentOnHeapHnswGraph(
+            10, (node, m) -> new ConcurrentNeighborSet(node, m, mockSimilarity));
     for (int currLevel = 0; currLevel < numLevels; currLevel++) {
       for (Integer currNode : nodesPerLevel.get(currLevel)) {
         bottomUpExpectedHnsw.addNode(currLevel, currNode);
@@ -723,8 +727,8 @@ abstract class ConcurrentHnswGraphTestCase<T> extends LuceneTestCase {
 
     Map<Integer, Integer> offsetOrdinalMap = new HashMap<>();
     for (int curr = 0;
-         totalVectorValues.docID() < docIdOffset + docIdSize;
-         totalVectorValues.nextDoc()) {
+        totalVectorValues.docID() < docIdOffset + docIdSize;
+        totalVectorValues.nextDoc()) {
       offsetOrdinalMap.put(curr, ordinalOffset + curr++);
     }
 
@@ -840,7 +844,7 @@ abstract class ConcurrentHnswGraphTestCase<T> extends LuceneTestCase {
     long actual =
         ramUsed(hnsw)
             - ramUsed(
-            vectors); // hnsw has a reference to vectors via the NeighborSimilarity instance
+                vectors); // hnsw has a reference to vectors via the NeighborSimilarity instance
 
     assertEquals((double) actual, (double) estimated, (double) actual * 0.3);
     assertEquals((double) estimated, (double) incrementalEstimate.get(), (double) estimated * 0.1);
@@ -851,13 +855,13 @@ abstract class ConcurrentHnswGraphTestCase<T> extends LuceneTestCase {
     similarityFunction = VectorSimilarityFunction.DOT_PRODUCT;
     // Some carefully checked test cases with simple 2d vectors on the unit circle:
     float[][] values = {
-        unitVector2d(0.5),
-        unitVector2d(0.75),
-        unitVector2d(0.2),
-        unitVector2d(0.9),
-        unitVector2d(0.8),
-        unitVector2d(0.77),
-        unitVector2d(0.6)
+      unitVector2d(0.5),
+      unitVector2d(0.75),
+      unitVector2d(0.2),
+      unitVector2d(0.9),
+      unitVector2d(0.8),
+      unitVector2d(0.77),
+      unitVector2d(0.6)
     };
     AbstractMockVectorValues<T> vectors = vectorValues(values);
     // First add nodes until everybody gets a full neighbor list
@@ -909,11 +913,11 @@ abstract class ConcurrentHnswGraphTestCase<T> extends LuceneTestCase {
     // by being closer to the target, yet none of the existing neighbors is closer to the new vector
     // than to the target -- ie they all remain diverse, so we simply drop the farthest one.
     float[][] values = {
-        {0, 0, 0},
-        {0, 10, 0},
-        {0, 0, 20},
-        {10, 0, 0},
-        {0, 4, 0}
+      {0, 0, 0},
+      {0, 10, 0},
+      {0, 0, 20},
+      {10, 0, 0},
+      {0, 4, 0}
     };
     AbstractMockVectorValues<T> vectors = vectorValues(values);
     // First add nodes until everybody gets a full neighbor list
@@ -942,10 +946,10 @@ abstract class ConcurrentHnswGraphTestCase<T> extends LuceneTestCase {
     similarityFunction = VectorSimilarityFunction.EUCLIDEAN;
     // test the case when a neighbor *becomes* non-diverse when a newer better neighbor arrives
     float[][] values = {
-        {0, 0, 0},
-        {0, 10, 0},
-        {0, 0, 20},
-        {0, 9, 0}
+      {0, 0, 0},
+      {0, 10, 0},
+      {0, 0, 20},
+      {0, 9, 0}
     };
     AbstractMockVectorValues<T> vectors = vectorValues(values);
     // First add nodes until everybody gets a full neighbor list
@@ -1213,7 +1217,7 @@ abstract class ConcurrentHnswGraphTestCase<T> extends LuceneTestCase {
 
   private static float[] unitVector2d(double piRadians, float[] value) {
     return new float[] {
-        (float) Math.cos(Math.PI * piRadians), (float) Math.sin(Math.PI * piRadians)
+      (float) Math.cos(Math.PI * piRadians), (float) Math.sin(Math.PI * piRadians)
     };
   }
 

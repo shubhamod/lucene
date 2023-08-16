@@ -17,16 +17,15 @@
 
 package org.apache.lucene.util.hnsw;
 
-import org.apache.lucene.util.BitSet;
-import org.apache.lucene.util.FixedBitSet;
+import static org.apache.lucene.search.DocIdSetIterator.NO_MORE_DOCS;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.PrimitiveIterator;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
-
-import static org.apache.lucene.search.DocIdSetIterator.NO_MORE_DOCS;
+import org.apache.lucene.util.BitSet;
+import org.apache.lucene.util.FixedBitSet;
 
 /** A concurrent set of neighbors. */
 public class ConcurrentNeighborSet {
@@ -41,6 +40,7 @@ public class ConcurrentNeighborSet {
    * references, and no fancy encoding necessary for node/score.
    */
   private final AtomicReference<ConcurrentNeighborArray> neighborsRef;
+
   private final float alpha;
 
   private final NeighborSimilarity similarity;
@@ -48,7 +48,8 @@ public class ConcurrentNeighborSet {
   /** the maximum number of neighbors we can store */
   private final int maxConnections;
 
-  public ConcurrentNeighborSet(int nodeId, int maxConnections, NeighborSimilarity similarity, float alpha) {
+  public ConcurrentNeighborSet(
+      int nodeId, int maxConnections, NeighborSimilarity similarity, float alpha) {
     this.nodeId = nodeId;
     this.maxConnections = maxConnections;
     this.similarity = similarity;
@@ -74,7 +75,8 @@ public class ConcurrentNeighborSet {
     return new NeighborIterator(neighborsRef.get());
   }
 
-  public void backlink(Function<Integer, ConcurrentNeighborSet> neighborhoodOf, float overflow) throws IOException {
+  public void backlink(Function<Integer, ConcurrentNeighborSet> neighborhoodOf, float overflow)
+      throws IOException {
     NeighborArray neighbors = neighborsRef.get();
     for (int i = 0; i < neighbors.size(); i++) {
       int nbr = neighbors.node[i];
@@ -143,7 +145,8 @@ public class ConcurrentNeighborSet {
           //
           // 0 -> 1
           // 1 <- 0
-          // At this point we insert nodes 2 and 3 concurrently, denoted T1 and T2 for threads 1 and 2
+          // At this point we insert nodes 2 and 3 concurrently, denoted T1 and T2 for threads 1 and
+          // 2
           //   T1  T2
           //       insert 2 to L1 [2 is marked "in progress"]
           //   insert 3 to L1
@@ -161,11 +164,13 @@ public class ConcurrentNeighborSet {
           if (size() + natural.size() + concurrent.size() <= maxConnections) {
             // compute diversity separately, as above
             ConcurrentNeighborArray diverseNatural = copyDiverse(natural, selectDiverse(natural));
-            ConcurrentNeighborArray diverseConcurrent = copyDiverse(concurrent, selectDiverse(concurrent));
+            ConcurrentNeighborArray diverseConcurrent =
+                copyDiverse(concurrent, selectDiverse(concurrent));
             var raw = mergeNeighbors(current, mergeNeighbors(diverseNatural, diverseConcurrent));
             return new ConcurrentNeighborArray(maxConnections, raw);
           } else {
-            // merge all the candidates into a single array and compute the diverse ones to keep from that.
+            // merge all the candidates into a single array and compute the diverse ones to keep
+            // from that.
             // (this is significantly more efficient than the above approach since we'd be adding
             //  extra edges, only to prune them back later; pruning is expensive)
             NeighborArray merged = mergeNeighbors(mergeNeighbors(natural, current), concurrent);
@@ -239,7 +244,7 @@ public class ConcurrentNeighborSet {
     // If elements remain in a1, add them
     while (i < a1.size()) {
       // Skip duplicates between the remaining elements in a1 and the last added element in a2
-      if (j > 0 && i < a1.size() && a1.node()[i] == a2.node[j-1]) {
+      if (j > 0 && i < a1.size() && a1.node()[i] == a2.node[j - 1]) {
         i++;
         continue;
       }
@@ -250,7 +255,7 @@ public class ConcurrentNeighborSet {
     // If elements remain in a2, add them
     while (j < a2.size()) {
       // Skip duplicates between the remaining elements in a2 and the last added element in a1
-      if (i > 0 && j < a2.size() && a2.node[j] == a1.node()[i-1]) {
+      if (i > 0 && j < a2.size() && a2.node[j] == a1.node()[i - 1]) {
         j++;
         continue;
       }
@@ -263,7 +268,7 @@ public class ConcurrentNeighborSet {
 
   /**
    * Insert a new neighbor, maintaining our size cap by removing the least diverse neighbor if
-   * necessary.  "Overflow" is the factor by which to allow going over the size cap temporarily.
+   * necessary. "Overflow" is the factor by which to allow going over the size cap temporarily.
    */
   public void insert(int neighborId, float score, float overflow) throws IOException {
     assert neighborId != nodeId : "can't add self as neighbor at node " + nodeId;
@@ -286,7 +291,8 @@ public class ConcurrentNeighborSet {
 
   // is the candidate node with the given score closer to the base node than it is to any of the
   // existing neighbors
-  private boolean isDiverse(int node, float score, NeighborArray others, BitSet selected, float alpha) {
+  private boolean isDiverse(
+      int node, float score, NeighborArray others, BitSet selected, float alpha) {
     if (others.size() == 0) {
       return true;
     }
@@ -341,7 +347,8 @@ public class ConcurrentNeighborSet {
       }
     }
 
-    // if we still have a quota to fill after pruning all "non-diverse" neighbors, remove the farthest
+    // if we still have a quota to fill after pruning all "non-diverse" neighbors, remove the
+    // farthest
     while (n-- > 0) {
       neighbors.removeIndex(neighbors.size() - 1);
     }

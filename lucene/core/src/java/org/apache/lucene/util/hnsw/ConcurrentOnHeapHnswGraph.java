@@ -28,7 +28,6 @@ import java.util.concurrent.atomic.AtomicIntegerArray;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.StampedLock;
 import java.util.function.BiFunction;
-
 import org.apache.lucene.util.Accountable;
 import org.apache.lucene.util.RamUsageEstimator;
 
@@ -55,7 +54,8 @@ public final class ConcurrentOnHeapHnswGraph extends HnswGraph implements Accoun
   final int nsize0;
   private final BiFunction<Integer, Integer, ConcurrentNeighborSet> neighborFactory;
 
-  ConcurrentOnHeapHnswGraph(int M, BiFunction<Integer, Integer, ConcurrentNeighborSet> neighborFactory) {
+  ConcurrentOnHeapHnswGraph(
+      int M, BiFunction<Integer, Integer, ConcurrentNeighborSet> neighborFactory) {
     this.neighborFactory = neighborFactory;
     this.entryPoint =
         new AtomicReference<>(

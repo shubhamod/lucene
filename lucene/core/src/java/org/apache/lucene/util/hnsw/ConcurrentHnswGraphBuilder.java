@@ -35,7 +35,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.Supplier;
-
 import org.apache.lucene.index.VectorEncoding;
 import org.apache.lucene.index.VectorSimilarityFunction;
 import org.apache.lucene.util.GrowableBitSet;
@@ -92,8 +91,8 @@ public class ConcurrentHnswGraphBuilder<T> {
    * @param M – graph fanout parameter used to calculate the maximum number of connections a node
    *     can have – M on upper layers, and M * 2 on the lowest level.
    * @param beamWidth the size of the beam search to use when finding nearest neighbors.
-   * @param neighborOverflow the ratio of extra neighbors to allow temporarily when inserting a node.
-   *                         larger values will build more efficiently, but use more memory.
+   * @param neighborOverflow the ratio of extra neighbors to allow temporarily when inserting a
+   *     node. larger values will build more efficiently, but use more memory.
    */
   public ConcurrentHnswGraphBuilder(
       RandomAccessVectorValues<T> vectorValues,
@@ -146,7 +145,9 @@ public class ConcurrentHnswGraphBuilder<T> {
             };
           }
         };
-    this.hnsw = new ConcurrentOnHeapHnswGraph(M, (node, m) -> new ConcurrentNeighborSet(node, m, similarity));
+    this.hnsw =
+        new ConcurrentOnHeapHnswGraph(
+            M, (node, m) -> new ConcurrentNeighborSet(node, m, similarity));
 
     this.graphSearcher =
         ExplicitThreadLocal.withInitial(
@@ -426,7 +427,8 @@ public class ConcurrentHnswGraphBuilder<T> {
     return hnsw.ramBytesUsedOneNode(nodeLevel);
   }
 
-  private void updateNeighbors(int node, int level, NeighborArray natural, NeighborArray concurrent) throws IOException {
+  private void updateNeighbors(int node, int level, NeighborArray natural, NeighborArray concurrent)
+      throws IOException {
     ConcurrentNeighborSet neighbors = hnsw.getNeighbors(level, node);
     neighbors.insertDiverse(natural, concurrent);
     neighbors.backlink(i -> hnsw.getNeighbors(level, i), neighborOverflow);
@@ -447,12 +449,16 @@ public class ConcurrentHnswGraphBuilder<T> {
   }
 
   private NeighborArray getConcurrentCandidates(
-      int level, int newNode, Set<NodeAtLevel> inProgress, NodeAtLevel progressMarker) throws IOException {
+      int level, int newNode, Set<NodeAtLevel> inProgress, NodeAtLevel progressMarker)
+      throws IOException {
     NeighborArray scratch = this.concurrentScratch.get();
     scratch.clear();
     for (NodeAtLevel n : inProgress) {
       if (n.level >= level && n != progressMarker) {
-        scratch.insertSorted(n.node, scoreBetween(vectors.get().vectorValue(newNode), vectorsCopy.get().vectorValue(n.node)));
+        scratch.insertSorted(
+            n.node,
+            scoreBetween(
+                vectors.get().vectorValue(newNode), vectorsCopy.get().vectorValue(n.node)));
       }
     }
     return scratch;
@@ -462,13 +468,13 @@ public class ConcurrentHnswGraphBuilder<T> {
     return scoreBetween(vectorEncoding, similarityFunction, v1, v2);
   }
 
-  static <T> float scoreBetween(VectorEncoding encoding, VectorSimilarityFunction similarityFunction, T v1, T v2) {
+  static <T> float scoreBetween(
+      VectorEncoding encoding, VectorSimilarityFunction similarityFunction, T v1, T v2) {
     return switch (encoding) {
       case BYTE -> similarityFunction.compare((byte[]) v1, (byte[]) v2);
       case FLOAT32 -> similarityFunction.compare((float[]) v1, (float[]) v2);
     };
   }
-
 
   int getRandomGraphLevel(double ml) {
     double randDouble;
