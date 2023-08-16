@@ -74,13 +74,13 @@ public class ConcurrentNeighborSet {
     return new NeighborIterator(neighborsRef.get());
   }
 
-  public void backlink(Function<Integer, ConcurrentNeighborSet> neighborhoodOf) throws IOException {
+  public void backlink(Function<Integer, ConcurrentNeighborSet> neighborhoodOf, float overflow) throws IOException {
     NeighborArray neighbors = neighborsRef.get();
     for (int i = 0; i < neighbors.size(); i++) {
       int nbr = neighbors.node[i];
       float nbrScore = neighbors.score[i];
       ConcurrentNeighborSet nbrNbr = neighborhoodOf.apply(nbr);
-      nbrNbr.insert(nodeId, nbrScore);
+      nbrNbr.insert(nodeId, nbrScore, overflow);
     }
   }
 
@@ -88,7 +88,7 @@ public class ConcurrentNeighborSet {
     neighborsRef.getAndUpdate(
         current -> {
           ConcurrentNeighborArray next = current.copy();
-          enforceMaxConnLimit(next, alpha);
+          enforceMaxConnLimit(next);
           return next;
         });
   }
@@ -228,9 +228,9 @@ public class ConcurrentNeighborSet {
 
   /**
    * Insert a new neighbor, maintaining our size cap by removing the least diverse neighbor if
-   * necessary.
+   * necessary.  "Overflow" is the factor by which to allow going over the size cap temporarily.
    */
-  public void insert(int neighborId, float score, float alpha) throws IOException {
+  public void insert(int neighborId, float score, float overflow) throws IOException {
     assert neighborId != nodeId : "can't add self as neighbor at node " + nodeId;
     neighborsRef.getAndUpdate(
         current -> {
@@ -238,8 +238,8 @@ public class ConcurrentNeighborSet {
           next.insertSorted(neighborId, score);
           // batch up the enforcement of the max connection limit, since otherwise
           // we do a lot of duplicate work scanning nodes that we won't remove
-          if (next.size > 1.5 * maxConnections) {
-            enforceMaxConnLimit(next, alpha);
+          if (next.size > overflow * maxConnections) {
+            enforceMaxConnLimit(next);
           }
           return next;
         });
@@ -274,10 +274,10 @@ public class ConcurrentNeighborSet {
     return true;
   }
 
-  private void enforceMaxConnLimit(NeighborArray neighbors, float alpha) {
+  private void enforceMaxConnLimit(NeighborArray neighbors) {
     while (neighbors.size() > maxConnections) {
       try {
-        removeLeastDiverse(neighbors, neighbors.size() - maxConnections, alpha);
+        removeLeastDiverse(neighbors, neighbors.size() - maxConnections);
       } catch (IOException e) {
         throw new UncheckedIOException(e); // called from closures
       }
@@ -289,7 +289,7 @@ public class ConcurrentNeighborSet {
    * all nodes e2 that are closer to the base node than e1 is. If any e2 is closer to e1 than e1 is
    * to the base node, remove e1.
    */
-  private void removeLeastDiverse(NeighborArray neighbors, int n, float alpha) throws IOException {
+  private void removeLeastDiverse(NeighborArray neighbors, int n) throws IOException {
     for (int i = neighbors.size() - 1; i >= 1 && n > 0; i--) {
       int e1Id = neighbors.node[i];
       float baseScore = neighbors.score[i];

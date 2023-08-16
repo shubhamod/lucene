@@ -486,7 +486,7 @@ public class ConcurrentHnswGraphBuilder<T> {
 
   private void addBackLinks(int level, int newNode) throws IOException {
     ConcurrentNeighborSet neighbors = hnsw.getNeighbors(level, newNode);
-    neighbors.backlink(i -> hnsw.getNeighbors(level, i));
+    neighbors.backlink(i -> hnsw.getNeighbors(level, i), 1.5f);
   }
 
   protected float scoreBetween(T v1, T v2) {
