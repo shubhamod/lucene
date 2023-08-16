@@ -50,7 +50,6 @@ import org.apache.lucene.util.hnsw.ConcurrentOnHeapHnswGraph.NodeAtLevel;
  * @param <T> the type of vector
  */
 public class ConcurrentHnswGraphBuilder<T> {
-
   /** Default number of maximum connections per node */
   public static final int DEFAULT_MAX_CONN = 16;
 
@@ -68,6 +67,7 @@ public class ConcurrentHnswGraphBuilder<T> {
   private final ExplicitThreadLocal<NeighborArray> concurrentScratch;
 
   private final VectorSimilarityFunction similarityFunction;
+  private final float neighborOverflow;
   private final VectorEncoding vectorEncoding;
   private final ExplicitThreadLocal<RandomAccessVectorValues<T>> vectors;
   private final ExplicitThreadLocal<HnswGraphSearcher<T>> graphSearcher;
@@ -83,18 +83,6 @@ public class ConcurrentHnswGraphBuilder<T> {
   // colliding
   private final ExplicitThreadLocal<RandomAccessVectorValues<T>> vectorsCopy;
 
-  /** This is the "native" factory for ConcurrentHnswGraphBuilder. */
-  public static <T> ConcurrentHnswGraphBuilder<T> create(
-      RandomAccessVectorValues<T> vectors,
-      VectorEncoding vectorEncoding,
-      VectorSimilarityFunction similarityFunction,
-      int M,
-      int beamWidth)
-      throws IOException {
-    return new ConcurrentHnswGraphBuilder<>(
-        vectors, vectorEncoding, similarityFunction, M, beamWidth);
-  }
-
   /**
    * Reads all the vectors from vector values, builds a graph connecting them by their dense
    * ordinals, using the given hyperparameter settings, and returns the resulting graph.
@@ -104,17 +92,21 @@ public class ConcurrentHnswGraphBuilder<T> {
    * @param M – graph fanout parameter used to calculate the maximum number of connections a node
    *     can have – M on upper layers, and M * 2 on the lowest level.
    * @param beamWidth the size of the beam search to use when finding nearest neighbors.
+   * @param neighborOverflow the ratio of extra neighbors to allow temporarily when inserting a node.
+   *                         larger values will build more efficiently, but use more memory.
    */
   public ConcurrentHnswGraphBuilder(
       RandomAccessVectorValues<T> vectorValues,
       VectorEncoding vectorEncoding,
       VectorSimilarityFunction similarityFunction,
       int M,
-      int beamWidth) {
+      int beamWidth,
+      float neighborOverflow) {
     this.vectors = createThreadSafeVectors(vectorValues);
     this.vectorsCopy = createThreadSafeVectors(vectorValues);
     this.vectorEncoding = Objects.requireNonNull(vectorEncoding);
     this.similarityFunction = Objects.requireNonNull(similarityFunction);
+    this.neighborOverflow = neighborOverflow;
     if (M <= 0) {
       throw new IllegalArgumentException("maxConn must be positive");
     }
@@ -172,6 +164,15 @@ public class ConcurrentHnswGraphBuilder<T> {
         ExplicitThreadLocal.withInitial(() -> new NeighborArray(Math.max(beamWidth, M + 1), true));
     this.beamCandidates =
         ExplicitThreadLocal.withInitial(() -> new NeighborQueue(beamWidth, false));
+  }
+
+  public ConcurrentHnswGraphBuilder(
+      RandomAccessVectorValues<T> vectorValues,
+      VectorEncoding vectorEncoding,
+      VectorSimilarityFunction similarityFunction,
+      int M,
+      int beamWidth) {
+    this(vectorValues, vectorEncoding, similarityFunction, M, beamWidth, 1.0f);
   }
 
   private abstract static class ExplicitThreadLocal<U> {
@@ -428,7 +429,7 @@ public class ConcurrentHnswGraphBuilder<T> {
   private void updateNeighbors(int node, int level, NeighborArray natural, NeighborArray concurrent) throws IOException {
     ConcurrentNeighborSet neighbors = hnsw.getNeighbors(level, node);
     neighbors.insertDiverse(natural, concurrent);
-    neighbors.backlink(i -> hnsw.getNeighbors(level, i), 1.5f);
+    neighbors.backlink(i -> hnsw.getNeighbors(level, i), neighborOverflow);
   }
 
   private NeighborArray getNaturalCandidates(NeighborQueue candidates) {
