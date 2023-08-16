@@ -27,7 +27,7 @@ import org.apache.lucene.tests.util.LuceneTestCase;
 import org.apache.lucene.util.ArrayUtil;
 import org.apache.lucene.util.hnsw.ConcurrentNeighborSet.ConcurrentNeighborArray;
 
-import static org.apache.lucene.util.hnsw.ConcurrentNeighborSet.mergeCandidates;
+import static org.apache.lucene.util.hnsw.ConcurrentNeighborSet.mergeNeighbors;
 
 public class TestConcurrentNeighborSet extends LuceneTestCase {
   private static final NeighborSimilarity simpleScore =
@@ -101,8 +101,45 @@ public class TestConcurrentNeighborSet extends LuceneTestCase {
             });
     assert candidates.size() == 9;
 
-    var neighbors = new ConcurrentNeighborSet(0, 3, scoreBetween);
-    neighbors.insertDiverse(candidates);
+    var neighbors = new ConcurrentNeighborSet(7, 3, scoreBetween);
+    var empty = new NeighborArray(0, true);
+    neighbors.insertDiverse(candidates, empty);
+    assertEquals(2, neighbors.size());
+    assert neighbors.contains(8);
+    assert neighbors.contains(6);
+  }
+
+  public void testInsertDiverseConcurrent() {
+    var similarityFunction = VectorSimilarityFunction.DOT_PRODUCT;
+    var vectors = new HnswGraphTestCase.CircularFloatVectorValues(10);
+    var vectorsCopy = vectors.copy();
+    var natural = new NeighborArray(10, true);
+    var concurrent = new NeighborArray(10, true);
+    NeighborSimilarity scoreBetween =
+        new NeighborSimilarity() {
+          @Override
+          public float score(int a, int b) {
+            return similarityFunction.compare(vectors.vectorValue(a), vectorsCopy.vectorValue(b));
+          }
+
+          @Override
+          public ScoreFunction scoreProvider(int a) {
+            return b -> score(a, b);
+          }
+        };
+    IntStream.range(0, 7)
+        .forEach(
+            i -> {
+              natural.insertSorted(i, scoreBetween.score(7, i));
+            });
+    IntStream.range(8, 10)
+        .forEach(
+            i -> {
+              concurrent.insertSorted(i, scoreBetween.score(7, i));
+            });
+
+    var neighbors = new ConcurrentNeighborSet(7, 3, scoreBetween);
+    neighbors.insertDiverse(natural, concurrent);
     assertEquals(2, neighbors.size());
     assert neighbors.contains(8);
     assert neighbors.contains(6);
@@ -157,7 +194,7 @@ public class TestConcurrentNeighborSet extends LuceneTestCase {
     arr2.addInOrder(2, 2.0f);
     arr2.addInOrder(1, 1.0f);
 
-    NeighborArray merged = mergeCandidates(arr1, arr2);
+    NeighborArray merged = mergeNeighbors(arr1, arr2);
 
     // Expected result: [4, 3, 2, 1]
     assertEquals(4, merged.size());
@@ -172,7 +209,7 @@ public class TestConcurrentNeighborSet extends LuceneTestCase {
     arr2 = new NeighborArray(1, true);
     arr2.addInOrder(2, 2.0f);
 
-    merged = mergeCandidates(arr1, arr2);
+    merged = mergeNeighbors(arr1, arr2);
 
     // Expected result: [3, 2]
     assertEquals(2, merged.size());
@@ -205,7 +242,7 @@ public class TestConcurrentNeighborSet extends LuceneTestCase {
       }
     }
 
-    var merged = mergeCandidates(arr1, arr2);
+    var merged = mergeNeighbors(arr1, arr2);
     assert merged.size <= arr1.size() + arr2.size();
     assert merged.size >= Math.max(arr1.size(), arr2.size());
     for (int i = 0; i < merged.size - 1; i++) {

@@ -64,7 +64,8 @@ public class ConcurrentHnswGraphBuilder<T> {
 
   private final int beamWidth;
   private final double ml;
-  private final ExplicitThreadLocal<NeighborArray> scratchNeighbors;
+  private final ExplicitThreadLocal<NeighborArray> naturalScratch;
+  private final ExplicitThreadLocal<NeighborArray> concurrentScratch;
 
   private final VectorSimilarityFunction similarityFunction;
   private final VectorEncoding vectorEncoding;
@@ -165,7 +166,9 @@ public class ConcurrentHnswGraphBuilder<T> {
                   new GrowableBitSet(this.vectors.get().size()));
             });
     // in scratch we store candidates in reverse order: worse candidates are first
-    this.scratchNeighbors =
+    this.naturalScratch =
+        ExplicitThreadLocal.withInitial(() -> new NeighborArray(Math.max(beamWidth, M + 1), true));
+    this.concurrentScratch =
         ExplicitThreadLocal.withInitial(() -> new NeighborArray(Math.max(beamWidth, M + 1), true));
     this.beamCandidates =
         ExplicitThreadLocal.withInitial(() -> new NeighborQueue(beamWidth, false));
@@ -399,40 +402,19 @@ public class ConcurrentHnswGraphBuilder<T> {
             Integer.MAX_VALUE);
         eps = candidates.nodes();
 
-        // Update entry points and neighbors with these candidates.
-        //
-        // Note: We don't want to over-prune the neighbors, which can
-        // happen if we group the concurrent candidates and the natural candidates together.
-        //
-        // Consider the following graph with "circular" test vectors:
-        //
-        // 0 -> 1
-        // 1 <- 0
-        // At this point we insert nodes 2 and 3 concurrently, denoted T1 and T2 for threads 1 and 2
-        //   T1  T2
-        //       insert 2 to L1 [2 is marked "in progress"]
-        //   insert 3 to L1
-        //   3 considers as neighbors 0, 1, 2; 0 and 1 are not diverse wrt 2
-        // 3 -> 2 is added to graph
-        //   3 is marked entry node
-        //        2 follows 3 to L0, where 3 only has 2 as a neighbor
-        // 2 -> 3 is added to graph
-        // all further nodes will only be added to the 2/3 subgraph; 0/1 are partitioned forever
-        //
-        // Considering concurrent inserts separately from natural candidates solves this problem;
-        // both 1 and 2 will be added as neighbors to 3, avoiding the partition, and 2 will then
-        // pick up the connection to 1 that it's supposed to have as well.
-        addForwardLinks(level, node, candidates); // natural candidates
-        addForwardLinks(level, node, inProgressBefore, progressMarker); // concurrent candidates
-        // Backlinking is the same for both natural and concurrent candidates.
-        addBackLinks(level, node);
+        // Update neighbors with these candidates.
+        var natural = getNaturalCandidates(candidates);
+        var concurrent = getConcurrentCandidates(level, node, inProgressBefore, progressMarker);
+        updateNeighbors(node, level, natural, concurrent);
       }
 
       // If we're being added in a new level above the entry point, consider concurrent insertions
       // for inclusion as neighbors at that level. There are no natural neighbors yet.
       for (int level = entry.level + 1; level <= nodeLevel; level++) {
-        addForwardLinks(level, node, inProgressBefore, progressMarker);
-        addBackLinks(level, node);
+        NeighborArray natural = this.naturalScratch.get();
+        natural.clear();
+        var concurrent = getConcurrentCandidates(level, node, inProgressBefore, progressMarker);
+        updateNeighbors(node, level, natural, concurrent);
       }
 
       hnsw.markComplete(nodeLevel, node);
@@ -443,8 +425,14 @@ public class ConcurrentHnswGraphBuilder<T> {
     return hnsw.ramBytesUsedOneNode(nodeLevel);
   }
 
-  private void addForwardLinks(int level, int newNode, NeighborQueue candidates) {
-    NeighborArray scratch = this.scratchNeighbors.get();
+  private void updateNeighbors(int node, int level, NeighborArray natural, NeighborArray concurrent) throws IOException {
+    ConcurrentNeighborSet neighbors = hnsw.getNeighbors(level, node);
+    neighbors.insertDiverse(natural, concurrent);
+    neighbors.backlink(i -> hnsw.getNeighbors(level, i), 1.5f);
+  }
+
+  private NeighborArray getNaturalCandidates(NeighborQueue candidates) {
+    NeighborArray scratch = this.naturalScratch.get();
     scratch.clear();
     int candidateCount = candidates.size();
     for (int i = candidateCount - 1; i >= 0; i--) {
@@ -454,39 +442,19 @@ public class ConcurrentHnswGraphBuilder<T> {
       scratch.score()[i] = score;
       scratch.size = candidateCount;
     }
-
-    // validate that scratch is sorted by descending score
-    for (int i = 1; i < candidateCount; i++) {
-      assert scratch.score()[i - 1] >= scratch.score()[i];
-    }
-
-    ConcurrentNeighborSet neighbors = hnsw.getNeighbors(level, newNode);
-    neighbors.insertDiverse(scratch);
+    return scratch;
   }
 
-  private void addForwardLinks(
-      int level, int newNode, Set<NodeAtLevel> inProgress, NodeAtLevel progressMarker)
-      throws IOException {
-    if (inProgress.isEmpty()) {
-      return;
-    }
-
-    T v = vectors.get().vectorValue(newNode);
-    NeighborArray scratch = this.scratchNeighbors.get();
+  private NeighborArray getConcurrentCandidates(
+      int level, int newNode, Set<NodeAtLevel> inProgress, NodeAtLevel progressMarker) throws IOException {
+    NeighborArray scratch = this.concurrentScratch.get();
     scratch.clear();
     for (NodeAtLevel n : inProgress) {
       if (n.level >= level && n != progressMarker) {
-        scratch.insertSorted(n.node, scoreBetween(v, vectorsCopy.get().vectorValue(n.node)));
+        scratch.insertSorted(n.node, scoreBetween(vectors.get().vectorValue(newNode), vectorsCopy.get().vectorValue(n.node)));
       }
     }
-
-    ConcurrentNeighborSet neighbors = hnsw.getNeighbors(level, newNode);
-    neighbors.insertDiverse(scratch);
-  }
-
-  private void addBackLinks(int level, int newNode) throws IOException {
-    ConcurrentNeighborSet neighbors = hnsw.getNeighbors(level, newNode);
-    neighbors.backlink(i -> hnsw.getNeighbors(level, i), 1.5f);
+    return scratch;
   }
 
   protected float scoreBetween(T v1, T v2) {

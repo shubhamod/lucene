@@ -127,57 +127,92 @@ public class ConcurrentNeighborSet {
    * were selected by this method, or were added as a "backlink" to a node inserted concurrently
    * that chose this one as a neighbor.
    */
-  public void insertDiverse(NeighborArray candidates) {
-    if (candidates.size() == 0) {
+  public void insertDiverse(NeighborArray natural, NeighborArray concurrent) {
+    if (natural.size() == 0 && concurrent.size() == 0) {
       return;
     }
-    assert candidates.scoresDescOrder;
+    assert natural.scoresDescOrder;
+    assert concurrent.scoresDescOrder;
 
     neighborsRef.getAndUpdate(
         current -> {
-          // merge candidates and current neighbors into a single array and compute the
-          // diverse ones to keep from that.
-          NeighborArray merged = mergeCandidates(candidates, current);
+          // We don't want to over-prune the neighbors, which can
+          // happen if we group the concurrent candidates and the natural candidates together.
+          //
+          // Consider the following graph with "circular" test vectors:
+          //
+          // 0 -> 1
+          // 1 <- 0
+          // At this point we insert nodes 2 and 3 concurrently, denoted T1 and T2 for threads 1 and 2
+          //   T1  T2
+          //       insert 2 to L1 [2 is marked "in progress"]
+          //   insert 3 to L1
+          //   3 considers as neighbors 0, 1, 2; 0 and 1 are not diverse wrt 2
+          // 3 -> 2 is added to graph
+          //   3 is marked entry node
+          //        2 follows 3 to L0, where 3 only has 2 as a neighbor
+          // 2 -> 3 is added to graph
+          // all further nodes will only be added to the 2/3 subgraph; 0/1 are partitioned forever
+          //
+          // Considering concurrent inserts separately from natural candidates solves this problem;
+          // both 1 and 2 will be added as neighbors to 3, avoiding the partition, and 2 will then
+          // pick up the connection to 1 that it's supposed to have as well.
 
-          // select diverse candidates from the merged set
-          BitSet selected = new FixedBitSet(merged.size());
-          int nSelected = 0;
-          for (float a = 1.0f; a <= alpha + 1E-6 && nSelected < maxConnections; a += 0.2f) {
-            for (int i = 0; i < merged.size() && nSelected < maxConnections; i++) {
-              if (selected.get(i)) {
-                continue;
-              }
-
-              int cNode = merged.node()[i];
-              float cScore = merged.score()[i];
-              if (isDiverse(cNode, cScore, merged, selected, a)) {
-                selected.set(i);
-                nSelected++;
-              }
-            }
+          if (size() + natural.size() + concurrent.size() <= maxConnections) {
+            // compute diversity separately, as above
+            ConcurrentNeighborArray diverseNatural = copyDiverse(natural, selectDiverse(natural));
+            ConcurrentNeighborArray diverseConcurrent = copyDiverse(concurrent, selectDiverse(concurrent));
+            var raw = mergeNeighbors(current, mergeNeighbors(diverseNatural, diverseConcurrent));
+            return new ConcurrentNeighborArray(maxConnections, raw);
+          } else {
+            // merge all the candidates into a single array and compute the diverse ones to keep from that.
+            // (this is significantly more efficient than the above approach since we'd be adding
+            //  extra edges, only to prune them back later; pruning is expensive)
+            NeighborArray merged = mergeNeighbors(mergeNeighbors(natural, current), concurrent);
+            BitSet selected = selectDiverse(merged);
+            return copyDiverse(merged, selected);
           }
-
-          // copy the diverse candidates into a new array
-          ConcurrentNeighborArray next = new ConcurrentNeighborArray(maxConnections, true);
-          for (int i = 0; i < merged.size(); i++) {
-            if (!selected.get(i)) {
-              continue;
-            }
-            int node = merged.node()[i];
-            float score = merged.score()[i];
-            next.addInOrder(node, score);
-          }
-
-          // we're done!  don't need to call enforceMaxConnLimit because we made sure to only select that many
-          return next;
         });
+  }
+
+  private ConcurrentNeighborArray copyDiverse(NeighborArray merged, BitSet selected) {
+    ConcurrentNeighborArray next = new ConcurrentNeighborArray(maxConnections, true);
+    for (int i = 0; i < merged.size(); i++) {
+      if (!selected.get(i)) {
+        continue;
+      }
+      int node = merged.node()[i];
+      float score = merged.score()[i];
+      next.addInOrder(node, score);
+    }
+    return next;
+  }
+
+  private BitSet selectDiverse(NeighborArray neighbors) {
+    BitSet selected = new FixedBitSet(neighbors.size());
+    int nSelected = 0;
+    for (float a = 1.0f; a <= alpha + 1E-6 && nSelected < maxConnections; a += 0.2f) {
+      for (int i = 0; i < neighbors.size() && nSelected < maxConnections; i++) {
+        if (selected.get(i)) {
+          continue;
+        }
+
+        int cNode = neighbors.node()[i];
+        float cScore = neighbors.score()[i];
+        if (isDiverse(cNode, cScore, neighbors, selected, a)) {
+          selected.set(i);
+          nSelected++;
+        }
+      }
+    }
+    return selected;
   }
 
   public ConcurrentNeighborArray getCurrent() {
     return neighborsRef.get();
   }
 
-  static NeighborArray mergeCandidates(NeighborArray a1, NeighborArray a2) {
+  static NeighborArray mergeNeighbors(NeighborArray a1, NeighborArray a2) {
     assert a1.scoresDescOrder;
     assert a2.scoresDescOrder;
 
