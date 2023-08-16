@@ -22,7 +22,6 @@ import org.apache.lucene.index.VectorSimilarityFunction;
 import org.apache.lucene.util.Bits;
 import org.apache.lucene.util.InfoStream;
 import org.apache.lucene.util.ThreadInterruptedException;
-import org.apache.lucene.util.hnsw.ConcurrentNeighborSet.NeighborSimilarity;
 import org.apache.lucene.util.hnsw.ConcurrentOnHeapHnswGraph.NodeAtLevel;
 
 import java.io.IOException;
@@ -45,7 +44,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 /**
  * Builder for Concurrent HNSW graph. See {@link HnswGraph} for a high level overview, and the
@@ -70,7 +68,6 @@ public class VamanaGraphBuilder<T> {
   private final ExplicitThreadLocal<NeighborArray> scratchNeighbors;
 
   private final VectorSimilarityFunction similarityFunction;
-  private final float alpha;
   private final VectorEncoding vectorEncoding;
   private final ExplicitThreadLocal<RandomAccessVectorValues<T>> vectors;
   private final ExplicitThreadLocal<VamanaSearcher<T>> graphSearcher;
@@ -118,7 +115,6 @@ public class VamanaGraphBuilder<T> {
     this.vectorsCopy = createThreadSafeVectors(vectorValues);
     this.vectorEncoding = Objects.requireNonNull(vectorEncoding);
     this.similarityFunction = Objects.requireNonNull(similarityFunction);
-    this.alpha = alpha;
     this.beamWidth = beamWidth;
 
     NeighborSimilarity similarity =
