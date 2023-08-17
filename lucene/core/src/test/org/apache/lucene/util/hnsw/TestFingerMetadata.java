@@ -22,6 +22,7 @@ import static org.apache.lucene.search.DocIdSetIterator.NO_MORE_DOCS;
 import static org.apache.lucene.util.hnsw.HnswGraphTestCase.createRandomFloatVectors;
 
 public class TestFingerMetadata extends LuceneTestCase {
+  // check that our basis matches what scikit PCA thinks it should be for a tiny example
   public void testSimpleBasis() {
     List<float[]> vectors = List.of(new float[]{1, 2, 3}, new float[]{2, 3, 4});
     var lsh = LshBasis.computeFromResiduals(vectors.iterator(), 3, 2);
@@ -29,6 +30,8 @@ public class TestFingerMetadata extends LuceneTestCase {
     assertArrayEquals(new float[] {0.84795222f,  0.17354729f, -0.50085764f}, lsh.basis[1], 0.01f);
   }
 
+  // check that the properties of the basis vectors match what we expect from principle
+  // component analysis
   public void testLshSanity() {
     List<float[]> data = generateTestData(1000, 50);
     LshBasis lsh = LshBasis.computeFromResiduals(data.iterator(), 50, 8);
@@ -77,6 +80,26 @@ public class TestFingerMetadata extends LuceneTestCase {
       double randomError = computeReconstructionError(basis, rvData, randomProjectedData);
       assert randomError > lshError : "Random reconstruction error " + randomError + " is not greater than LSH error " + lshError;
     }
+  }
+
+  // compare the accuracy of the LSH approximation to the actual similarity
+  // this checks for regressions, but I don't think the accuracy is actually Good Enough
+  public void testAccuracy() throws IOException {
+    var similarityFunction = VectorSimilarityFunction.DOT_PRODUCT;
+    var encoding = VectorEncoding.FLOAT32;
+    var size = 10000;
+    var dimension = 50;
+    AbstractMockVectorValues<float[]> vectors = MockVectorValues.fromValues(createRandomFloatVectors(size, dimension, random()));
+    HnswGraphBuilder<float[]> builder =
+        HnswGraphBuilder.create(
+            vectors, encoding, similarityFunction, 10, 30, random().nextLong());
+    OnHeapHnswGraph hnsw = builder.build(vectors.copy());
+
+    testAccuracy(similarityFunction, encoding, vectors, hnsw, 4, 0.15);
+    testAccuracy(similarityFunction, encoding, vectors, hnsw, 8, 0.10);
+    testAccuracy(similarityFunction, encoding, vectors, hnsw, 16, 0.05);
+    testAccuracy(similarityFunction, encoding, vectors, hnsw, 32, 0.044);
+    testAccuracy(similarityFunction, encoding, vectors, hnsw, 49, 0.039);
   }
 
   private RealMatrix toRealMatrix(float[][] basis) {
@@ -155,24 +178,6 @@ public class TestFingerMetadata extends LuceneTestCase {
       sumSquaredDeviations += deviation * deviation;
     }
     return sumSquaredDeviations / (m - 1);
-  }
-
-  public void testAccuracy() throws IOException {
-    var similarityFunction = VectorSimilarityFunction.DOT_PRODUCT;
-    var encoding = VectorEncoding.FLOAT32;
-    var size = 10000;
-    var dimension = 50;
-    AbstractMockVectorValues<float[]> vectors = MockVectorValues.fromValues(createRandomFloatVectors(size, dimension, random()));
-    HnswGraphBuilder<float[]> builder =
-        HnswGraphBuilder.create(
-            vectors, encoding, similarityFunction, 10, 30, random().nextLong());
-    OnHeapHnswGraph hnsw = builder.build(vectors.copy());
-
-    testAccuracy(similarityFunction, encoding, vectors, hnsw, 4, 0.15);
-    testAccuracy(similarityFunction, encoding, vectors, hnsw, 8, 0.10);
-    testAccuracy(similarityFunction, encoding, vectors, hnsw, 16, 0.05);
-    testAccuracy(similarityFunction, encoding, vectors, hnsw, 32, 0.044);
-    testAccuracy(similarityFunction, encoding, vectors, hnsw, 49, 0.039);
   }
 
   private static void testAccuracy(VectorSimilarityFunction similarityFunction,
