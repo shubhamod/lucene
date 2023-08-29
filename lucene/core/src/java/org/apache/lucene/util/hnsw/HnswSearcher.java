@@ -39,6 +39,7 @@ import org.apache.lucene.util.GrowableBitSet;
 public class HnswSearcher<T> {
   private final VectorSimilarityFunction similarityFunction;
   private final HnswGraph graph;
+  private final int searchRadius;
   private final RandomAccessVectorValues<T> vectors;
   private final VectorEncoding vectorEncoding;
   private SimilarityProvider similarityProvider;
@@ -81,12 +82,14 @@ public class HnswSearcher<T> {
    */
   HnswSearcher(
       HnswGraph graph,
+      int searchRadius,
       RandomAccessVectorValues<T> vectors,
       VectorEncoding vectorEncoding,
       VectorSimilarityFunction similarityFunction,
       FingerMetadata fingerMetadata,
       BitSet visited) {
     this.graph = graph;
+    this.searchRadius = searchRadius;
     this.vectors = vectors;
     this.vectorEncoding = vectorEncoding;
     this.similarityFunction = similarityFunction;
@@ -97,6 +100,7 @@ public class HnswSearcher<T> {
 
   public static class Builder<T> {
     private final HnswGraph graph;
+    private final int searchRadius;
     private final RandomAccessVectorValues<T> vectors;
     private final VectorEncoding vectorEncoding;
     private final VectorSimilarityFunction similarityFunction;
@@ -104,10 +108,12 @@ public class HnswSearcher<T> {
     private boolean concurrent;
 
     public Builder(HnswGraph graph,
+                   int searchRadius,
                    RandomAccessVectorValues<T> vectors,
                    VectorEncoding vectorEncoding,
                    VectorSimilarityFunction similarityFunction) {
       this.graph = graph;
+      this.searchRadius = searchRadius;
       this.vectors = vectors;
       this.vectorEncoding = vectorEncoding;
       this.similarityFunction = similarityFunction;
@@ -125,7 +131,7 @@ public class HnswSearcher<T> {
 
     public HnswSearcher<T> build() {
       BitSet bits = concurrent ? new GrowableBitSet(vectors.size()) : new FixedBitSet(vectors.size());
-      return new HnswSearcher<>(graph, vectors, vectorEncoding, similarityFunction, fingerMetadata, bits);
+      return new HnswSearcher<>(graph, searchRadius, vectors, vectorEncoding, similarityFunction, fingerMetadata, bits);
     }
   }
 
@@ -147,7 +153,7 @@ public class HnswSearcher<T> {
     int numVisited = 0;
     for (int level = graph.numLevels() - 1; level >= 1; level--) {
       results.clear();
-      searchLevel(results, 1, level, eps, null, visitedLimit);
+      searchLevel(results, 1, level, eps, null, visitedLimit, false);
 
       numVisited += results.visitedCount();
       visitedLimit -= results.visitedCount();
@@ -158,9 +164,13 @@ public class HnswSearcher<T> {
       }
       eps[0] = results.pop();
     }
-    results = new NeighborQueue(topK, false);
+    results = new NeighborQueue(Math.max(topK, searchRadius), false);
     searchLevel(
-        results, topK, 0, eps, acceptOrds, visitedLimit);
+        results, Math.max(topK, searchRadius), 0, eps, acceptOrds, visitedLimit, true);
+
+    while (results.size() > topK) {
+      results.pop();
+    }
     results.setVisitedCount(results.visitedCount() + numVisited);
     return results;
   }
@@ -197,7 +207,8 @@ public class HnswSearcher<T> {
       int level,
       final int[] eps,
       Bits acceptOrds,
-      int visitedLimit)
+      int visitedLimit,
+      boolean allowFinger)
       throws IOException {
     assert results.isMinHeap();
 
@@ -234,10 +245,12 @@ public class HnswSearcher<T> {
       }
 
       int topCandidateNode = candidates.pop();
-      boolean useFinger = fingerMetadata != null && (numVisited > 5 || level < graph.numLevels() - 2);
+
+      boolean useFinger = allowFinger && fingerMetadata != null && (numVisited > 5 || level < graph.numLevels() - 2);
       SimilarityProvider.SimilarityFunction localDistances = useFinger
           ? similarityProvider.approximateSimilarityNear(topCandidateNode, topCandidateSimilarity)
           : similarityProvider::exactSimilarityTo;
+
       graphSeek(graph, level, topCandidateNode);
       int friendOrd;
       while ((friendOrd = graphNextNeighbor(graph)) != NO_MORE_DOCS) {
@@ -249,6 +262,7 @@ public class HnswSearcher<T> {
           results.markIncomplete();
           break;
         }
+
         float friendSimilarity = localDistances.apply(friendOrd);
         (useFinger ? approxSimilarityCalls : exactSimilarityCalls).increment();
         numVisited++;
@@ -268,9 +282,6 @@ public class HnswSearcher<T> {
           }
         }
       }
-    }
-    while (results.size() > topK) {
-      results.pop();
     }
     results.setVisitedCount(numVisited);
   }
