@@ -209,6 +209,13 @@ public class TestConcurrentHnswFloatVectorGraph extends ConcurrentHnswGraphTestC
 
     Path vectorPath = LuceneTestCase.createTempFile();
     var segmentId = writeGraph(vectorPath, rawVectors, hnsw);
+
+    // need to rebuild it now since writing modifies the neighbor lists (!)
+    // TODO this doesn't actually work, i would think it would be deterministic for something
+    // so small, but it's not
+    builder = new ConcurrentHnswGraphBuilder<>(vectors, vectorEncoding, similarityFunction, 16, 100);
+    hnsw = buildParallel(builder, vectors);
+
     try (var reader = openReader(vectorPath, similarityFunction, rawVectors.size(), segmentId)) {
       var graph = reader.getGraph("MockName");
       assertGraphEqual(hnsw.getView(), graph);
