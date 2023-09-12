@@ -20,17 +20,41 @@ package org.apache.lucene.util.hnsw;
 import static org.apache.lucene.search.DocIdSetIterator.NO_MORE_DOCS;
 
 import com.carrotsearch.randomizedtesting.RandomizedTest;
+
 import java.io.IOException;
+import java.nio.file.Path;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.lucene.codecs.KnnVectorsReader;
+import org.apache.lucene.codecs.lucene95.Lucene95Codec;
+import org.apache.lucene.codecs.lucene95.Lucene95HnswVectorsFormat;
+import org.apache.lucene.codecs.lucene95.Lucene95HnswVectorsWriter;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.KnnFloatVectorField;
+import org.apache.lucene.index.DocValuesType;
+import org.apache.lucene.index.FieldInfo;
+import org.apache.lucene.index.FieldInfos;
 import org.apache.lucene.index.FloatVectorValues;
+import org.apache.lucene.index.IndexOptions;
 import org.apache.lucene.index.LeafReader;
+import org.apache.lucene.index.SegmentInfo;
+import org.apache.lucene.index.SegmentReadState;
+import org.apache.lucene.index.SegmentWriteState;
 import org.apache.lucene.index.VectorEncoding;
 import org.apache.lucene.index.VectorSimilarityFunction;
 import org.apache.lucene.search.KnnFloatVectorQuery;
 import org.apache.lucene.search.Query;
+import org.apache.lucene.store.Directory;
+import org.apache.lucene.store.FSDirectory;
+import org.apache.lucene.store.IOContext;
+import org.apache.lucene.tests.util.LuceneTestCase;
 import org.apache.lucene.util.ArrayUtil;
 import org.apache.lucene.util.FixedBitSet;
+import org.apache.lucene.util.InfoStream;
+import org.apache.lucene.util.StringHelper;
+import org.apache.lucene.util.Version;
 import org.junit.Before;
 
 /** Tests HNSW KNN graphs */
@@ -160,4 +184,81 @@ public class TestConcurrentHnswFloatVectorGraph extends ConcurrentHnswGraphTestC
     // are closest to the query vector: sum(500,509) = 5045
     assertTrue("sum(result docs)=" + sum, sum < 5100);
   }
+
+  public void testWriteRead() throws IOException {
+    similarityFunction = VectorSimilarityFunction.EUCLIDEAN;
+    var rawVectors = List.of(new float[] {1.1f, 2.2f},
+            new float[] {3.3f, 4.4f},
+            new float[] {5.5f, 6.6f},
+            new float[] {7.7f, 8.8f},
+            new float[] {9.9f, 10.10f});
+    RandomAccessVectorValues<float[]> vectors = new Lucene95HnswVectorsWriter.RAVectorValues<>(rawVectors, 2);
+    VectorEncoding vectorEncoding = getVectorEncoding();
+    random().nextInt();
+    ConcurrentHnswGraphBuilder<float[]> builder =
+            new ConcurrentHnswGraphBuilder<>(vectors, vectorEncoding, similarityFunction, 16, 100);
+    ConcurrentOnHeapHnswGraph hnsw = buildParallel(builder, vectors);
+
+    Path vectorPath = LuceneTestCase.createTempFile();
+    var segmentId = writeGraph(vectorPath, rawVectors, hnsw);
+    try (var reader = openReader(vectorPath, similarityFunction, rawVectors.size(), segmentId)) {
+      var topDocs = reader.search("MockName", new float[] {8.1f, 9.2f}, 100, null, Integer.MAX_VALUE);
+      for (var scoreDoc : topDocs.scoreDocs) {
+          System.out.println(scoreDoc.doc);
+      }
+    }
+  }
+
+  private static KnnVectorsReader openReader(Path vectorPath, VectorSimilarityFunction similarityFunction, int size, byte[] segmentId) throws IOException {
+    Directory directory = FSDirectory.open(vectorPath.getParent());
+
+    FieldInfo fieldInfo = createFieldInfoForVector(similarityFunction, 2);
+    FieldInfos fieldInfos = new FieldInfos(Collections.singletonList(fieldInfo).toArray(new FieldInfo[0]));
+    String segmentName = vectorPath.getFileName().toString();
+    SegmentInfo segmentInfo = new SegmentInfo(directory, Version.LATEST, Version.LATEST, segmentName, size, false, Lucene95Codec.getDefault(), Collections.emptyMap(), segmentId, Collections.emptyMap(), null);
+
+    SegmentReadState state = new SegmentReadState(directory, segmentInfo, fieldInfos, IOContext.DEFAULT);
+    return new Lucene95HnswVectorsFormat(16, 100).fieldsReader(state);
+  }
+
+  private byte[] writeGraph(Path vectorPath, List<float[]> rawVectors, ConcurrentOnHeapHnswGraph hnsw) throws IOException {
+    // table directory
+    Directory directory = FSDirectory.open(vectorPath.getParent());
+    // segment name in SAI naming pattern, e.g. ca-3g5d_1t56_18d8122br2d3mg6twm-bti-SAI+ba+table_00_val_idx+Vector.db
+    String segmentName = vectorPath.getFileName().toString();
+
+    var segmentId = StringHelper.randomId();
+    SegmentInfo segmentInfo = new SegmentInfo(directory, Version.LATEST, Version.LATEST, segmentName, -1, false, Lucene95Codec.getDefault(), Collections.emptyMap(), segmentId, Collections.emptyMap(), null);
+    SegmentWriteState state = new SegmentWriteState(InfoStream.getDefault(), directory, segmentInfo, null, null, IOContext.DEFAULT);
+    var fieldInfo = createFieldInfoForVector(similarityFunction, rawVectors.get(0).length);
+    try (var writer = new Lucene95HnswVectorsWriter(hnsw, rawVectors, state, 16, 100)) {
+      writer.addField(fieldInfo);
+      writer.flush(hnsw.size(), null);
+      writer.finish();
+    }
+    return segmentId;
+  }
+
+  private static FieldInfo createFieldInfoForVector(VectorSimilarityFunction similarityFunction, int dimension)
+  {
+    String name = "MockName";
+    int number = 0;
+    boolean storeTermVector = false;
+    boolean omitNorms = false;
+    boolean storePayloads = false;
+    IndexOptions indexOptions = IndexOptions.NONE;
+    DocValuesType docValues = DocValuesType.NONE;
+    long dvGen = -1;
+    Map<String, String> attributes = Map.of();
+    int pointDimensionCount = 0;
+    int pointIndexDimensionCount = 0;
+    int pointNumBytes = 0;
+    VectorEncoding vectorEncoding = VectorEncoding.FLOAT32;
+    boolean softDeletesField = false;
+
+    return new FieldInfo(name, number, storeTermVector, omitNorms, storePayloads, indexOptions, docValues,
+            dvGen, attributes, pointDimensionCount, pointIndexDimensionCount, pointNumBytes,
+            dimension, vectorEncoding, similarityFunction, softDeletesField);
+  }
+
 }

@@ -370,7 +370,7 @@ public class ConcurrentNeighborSet {
   }
 
   /** A NeighborArray that knows how to copy itself and that checks for duplicate entries */
-  static class ConcurrentNeighborArray extends NeighborArray {
+  public static class ConcurrentNeighborArray extends NeighborArray {
     public ConcurrentNeighborArray(int maxSize, boolean descOrder) {
       super(maxSize, descOrder);
     }

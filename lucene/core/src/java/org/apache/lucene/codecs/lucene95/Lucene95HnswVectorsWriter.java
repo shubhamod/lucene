@@ -41,6 +41,7 @@ import org.apache.lucene.search.DocIdSetIterator;
 import org.apache.lucene.store.IndexInput;
 import org.apache.lucene.store.IndexOutput;
 import org.apache.lucene.util.*;
+import org.apache.lucene.util.hnsw.ConcurrentOnHeapHnswGraph;
 import org.apache.lucene.util.hnsw.HnswGraph;
 import org.apache.lucene.util.hnsw.HnswGraph.NodesIterator;
 import org.apache.lucene.util.hnsw.HnswGraphBuilder;
@@ -62,7 +63,9 @@ public final class Lucene95HnswVectorsWriter extends KnnVectorsWriter {
   private final int beamWidth;
 
   private final List<FieldWriter<?>> fields = new ArrayList<>();
+  private ConcurrentOnHeapHnswGraph graph;
   private boolean finished;
+  private List<float[]> vectors;
 
   Lucene95HnswVectorsWriter(SegmentWriteState state, int M, int beamWidth) throws IOException {
     this.M = M;
@@ -113,6 +116,12 @@ public final class Lucene95HnswVectorsWriter extends KnnVectorsWriter {
         IOUtils.closeWhileHandlingException(this);
       }
     }
+  }
+
+  public Lucene95HnswVectorsWriter(ConcurrentOnHeapHnswGraph graph, List<float[]> vectors, SegmentWriteState state, int M, int beamWidth) throws IOException {
+    this(state, M, beamWidth);
+    this.graph = graph;
+    this.vectors = vectors;
   }
 
   @Override
@@ -172,7 +181,6 @@ public final class Lucene95HnswVectorsWriter extends KnnVectorsWriter {
 
     // write graph
     long vectorIndexOffset = vectorIndex.getFilePointer();
-    OnHeapHnswGraph graph = fieldData.getGraph();
     int[][] graphLevelNodeOffsets = writeGraph(graph);
     long vectorIndexLength = vectorIndex.getFilePointer() - vectorIndexOffset;
 
@@ -191,7 +199,7 @@ public final class Lucene95HnswVectorsWriter extends KnnVectorsWriter {
   private void writeFloat32Vectors(FieldWriter<?> fieldData) throws IOException {
     final ByteBuffer buffer =
         ByteBuffer.allocate(fieldData.dim * Float.BYTES).order(ByteOrder.LITTLE_ENDIAN);
-    for (Object v : fieldData.vectors) {
+    for (Object v : vectors) {
       buffer.asFloatBuffer().put((float[]) v);
       vectorData.writeBytes(buffer.array(), buffer.array().length);
     }
@@ -670,7 +678,7 @@ public final class Lucene95HnswVectorsWriter extends KnnVectorsWriter {
    * @return The non-cumulative offsets for the nodes. Should be used to create cumulative offsets.
    * @throws IOException if writing to vectorIndex fails
    */
-  private int[][] writeGraph(OnHeapHnswGraph graph) throws IOException {
+  private int[][] writeGraph(HnswGraph graph) throws IOException {
     if (graph == null) return new int[0][0];
     // write vectors' neighbours on each level into the vectorIndex file
     int countOnLevel0 = graph.size();
@@ -680,13 +688,13 @@ public final class Lucene95HnswVectorsWriter extends KnnVectorsWriter {
       offsets[level] = new int[sortedNodes.length];
       int nodeOffsetId = 0;
       for (int node : sortedNodes) {
-        NeighborArray neighbors = graph.getNeighbors(level, node);
+        var neighbors = ((ConcurrentOnHeapHnswGraph) graph).getNeighbors(level, node);
         int size = neighbors.size();
         // Write size in VInt as the neighbors list is typically small
         long offsetStart = vectorIndex.getFilePointer();
         vectorIndex.writeVInt(size);
         // Destructively modify; it's ok we are discarding it after this
-        int[] nnodes = neighbors.node();
+        int[] nnodes = neighbors.getCurrent().node();
         Arrays.sort(nnodes, 0, size);
         // Now that we have sorted, do delta encoding to minimize the required bits to store the
         // information
@@ -734,7 +742,7 @@ public final class Lucene95HnswVectorsWriter extends KnnVectorsWriter {
     meta.writeVInt(field.getVectorDimension());
 
     // write docIDs
-    int count = docsWithField.cardinality();
+    int count = graph.size();
     meta.writeInt(count);
     if (count == 0) {
       meta.writeLong(-2); // docsWithFieldOffset
@@ -946,11 +954,12 @@ public final class Lucene95HnswVectorsWriter extends KnnVectorsWriter {
     }
   }
 
-  private static class RAVectorValues<T> implements RandomAccessVectorValues<T> {
+  /** asdf */
+  public static class RAVectorValues<T> implements RandomAccessVectorValues<T> {
     private final List<T> vectors;
     private final int dim;
 
-    RAVectorValues(List<T> vectors, int dim) {
+    public RAVectorValues(List<T> vectors, int dim) {
       this.vectors = vectors;
       this.dim = dim;
     }
