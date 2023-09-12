@@ -128,6 +128,7 @@ public abstract class KnnVectorsReader implements Closeable, Accountable {
     return this;
   }
 
+  /** asdf */
   public HnswGraph getGraph(String fieldName) throws IOException {
     throw new UnsupportedOperationException();
   }
