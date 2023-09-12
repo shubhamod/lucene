@@ -18,6 +18,7 @@
 package org.apache.lucene.util.hnsw;
 
 import static org.apache.lucene.search.DocIdSetIterator.NO_MORE_DOCS;
+import static org.apache.lucene.util.StringHelper.ID_LENGTH;
 
 import com.carrotsearch.randomizedtesting.RandomizedTest;
 
@@ -227,7 +228,7 @@ public class TestConcurrentHnswFloatVectorGraph extends ConcurrentHnswGraphTestC
     // segment name in SAI naming pattern, e.g. ca-3g5d_1t56_18d8122br2d3mg6twm-bti-SAI+ba+table_00_val_idx+Vector.db
     String segmentName = vectorPath.getFileName().toString();
 
-    var segmentId = StringHelper.randomId();
+    var segmentId = new byte[ID_LENGTH]; // I don't want to deal with reading and writing this
     SegmentInfo segmentInfo = new SegmentInfo(directory, Version.LATEST, Version.LATEST, segmentName, -1, false, Lucene95Codec.getDefault(), Collections.emptyMap(), segmentId, Collections.emptyMap(), null);
     SegmentWriteState state = new SegmentWriteState(InfoStream.getDefault(), directory, segmentInfo, null, null, IOContext.DEFAULT);
     var fieldInfo = createFieldInfoForVector(similarityFunction, rawVectors.get(0).length);
