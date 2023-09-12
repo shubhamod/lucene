@@ -31,15 +31,21 @@ import java.util.Map;
 import org.apache.lucene.codecs.KnnVectorsReader;
 import org.apache.lucene.codecs.lucene95.Lucene95Codec;
 import org.apache.lucene.codecs.lucene95.Lucene95HnswVectorsFormat;
+import org.apache.lucene.codecs.lucene95.Lucene95HnswVectorsReader;
 import org.apache.lucene.codecs.lucene95.Lucene95HnswVectorsWriter;
+import org.apache.lucene.codecs.perfield.PerFieldKnnVectorsFormat;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.KnnFloatVectorField;
+import org.apache.lucene.index.CodecReader;
+import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.DocValuesType;
 import org.apache.lucene.index.FieldInfo;
 import org.apache.lucene.index.FieldInfos;
 import org.apache.lucene.index.FloatVectorValues;
 import org.apache.lucene.index.IndexOptions;
+import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.LeafReader;
+import org.apache.lucene.index.LeafReaderContext;
 import org.apache.lucene.index.SegmentInfo;
 import org.apache.lucene.index.SegmentReadState;
 import org.apache.lucene.index.SegmentWriteState;
@@ -188,6 +194,7 @@ public class TestConcurrentHnswFloatVectorGraph extends ConcurrentHnswGraphTestC
 
   public void testWriteRead() throws IOException {
     similarityFunction = VectorSimilarityFunction.EUCLIDEAN;
+    // todo more vectors and make sure that we have the same graph after writing and reading
     var rawVectors = List.of(new float[] {1.1f, 2.2f},
             new float[] {3.3f, 4.4f},
             new float[] {5.5f, 6.6f},
@@ -202,12 +209,29 @@ public class TestConcurrentHnswFloatVectorGraph extends ConcurrentHnswGraphTestC
 
     Path vectorPath = LuceneTestCase.createTempFile();
     var segmentId = writeGraph(vectorPath, rawVectors, hnsw);
+    var onDiskGraph = readGraph(vectorPath);
+    assertGraphEqual(hnsw, onDiskGraph);
     try (var reader = openReader(vectorPath, similarityFunction, rawVectors.size(), segmentId)) {
       var topDocs = reader.search("MockName", new float[] {8.1f, 9.2f}, 100, null, Integer.MAX_VALUE);
       for (var scoreDoc : topDocs.scoreDocs) {
           System.out.println(scoreDoc.doc);
       }
     }
+  }
+
+  private HnswGraph readGraph(Path vectorPath) throws IOException {
+    try (IndexReader reader = DirectoryReader.open(FSDirectory.open(vectorPath.getParent()))) {
+      for (LeafReaderContext ctx : reader.leaves()) {
+        var values = vectorValues(ctx.reader(), "field");
+        return
+                ((Lucene95HnswVectorsReader)
+                        ((PerFieldKnnVectorsFormat.FieldsReader)
+                                ((CodecReader) ctx.reader()).getVectorReader())
+                                .getFieldReader("field"))
+                        .getGraph("field");
+      }
+    }
+    throw new IllegalStateException();
   }
 
   private static KnnVectorsReader openReader(Path vectorPath, VectorSimilarityFunction similarityFunction, int size, byte[] segmentId) throws IOException {
