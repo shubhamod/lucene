@@ -36,11 +36,6 @@ public abstract class KnnFieldVectorsWriter<T> implements Accountable {
    */
   public abstract void addValue(int docID, T vectorValue) throws IOException;
 
-  public void addValueForExistingGraph(int docID, float[] vectorValue) {
-    throw new UnsupportedOperationException();
-  }
-
-
   /**
    * Used to copy values being indexed to internal storage.
    *

@@ -28,7 +28,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.lucene.codecs.KnnFieldVectorsWriter;
 import org.apache.lucene.codecs.KnnVectorsReader;
 import org.apache.lucene.codecs.lucene95.Lucene95Codec;
 import org.apache.lucene.codecs.lucene95.Lucene95HnswVectorsFormat;
@@ -243,10 +242,7 @@ public class TestConcurrentHnswFloatVectorGraph extends ConcurrentHnswGraphTestC
     SegmentWriteState state = new SegmentWriteState(InfoStream.getDefault(), directory, segmentInfo, null, null, IOContext.DEFAULT);
     var fieldInfo = createFieldInfoForVector(similarityFunction, rawVectors.get(0).length);
     try (var writer = new Lucene95HnswVectorsWriter(hnsw, rawVectors, state, 16, 100)) {
-      var fw = writer.addField(fieldInfo);
-      for (var i = 0; i < rawVectors.size(); i++) {
-        fw.addValueForExistingGraph(i, rawVectors.get(i));
-      }
+      writer.addField(fieldInfo);
       writer.flush(hnsw.size(), null);
       writer.finish();
     }
