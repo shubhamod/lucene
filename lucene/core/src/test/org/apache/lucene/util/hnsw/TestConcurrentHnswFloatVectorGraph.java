@@ -209,29 +209,14 @@ public class TestConcurrentHnswFloatVectorGraph extends ConcurrentHnswGraphTestC
 
     Path vectorPath = LuceneTestCase.createTempFile();
     var segmentId = writeGraph(vectorPath, rawVectors, hnsw);
-    var onDiskGraph = readGraph(vectorPath);
-    assertGraphEqual(hnsw, onDiskGraph);
     try (var reader = openReader(vectorPath, similarityFunction, rawVectors.size(), segmentId)) {
+      var graph = reader.getGraph("MockName");
+      assertGraphEqual(hnsw.getView(), graph);
       var topDocs = reader.search("MockName", new float[] {8.1f, 9.2f}, 100, null, Integer.MAX_VALUE);
       for (var scoreDoc : topDocs.scoreDocs) {
           System.out.println(scoreDoc.doc);
       }
     }
-  }
-
-  private HnswGraph readGraph(Path vectorPath) throws IOException {
-    try (IndexReader reader = DirectoryReader.open(FSDirectory.open(vectorPath.getParent()))) {
-      for (LeafReaderContext ctx : reader.leaves()) {
-        var values = vectorValues(ctx.reader(), "field");
-        return
-                ((Lucene95HnswVectorsReader)
-                        ((PerFieldKnnVectorsFormat.FieldsReader)
-                                ((CodecReader) ctx.reader()).getVectorReader())
-                                .getFieldReader("field"))
-                        .getGraph("field");
-      }
-    }
-    throw new IllegalStateException();
   }
 
   private static KnnVectorsReader openReader(Path vectorPath, VectorSimilarityFunction similarityFunction, int size, byte[] segmentId) throws IOException {

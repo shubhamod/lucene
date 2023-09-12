@@ -27,6 +27,7 @@ import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.TotalHits;
 import org.apache.lucene.util.Accountable;
 import org.apache.lucene.util.Bits;
+import org.apache.lucene.util.hnsw.HnswGraph;
 
 /** Reads vectors from an index. */
 public abstract class KnnVectorsReader implements Closeable, Accountable {
@@ -125,5 +126,9 @@ public abstract class KnnVectorsReader implements Closeable, Accountable {
    */
   public KnnVectorsReader getMergeInstance() {
     return this;
+  }
+
+  public HnswGraph getGraph(String fieldName) throws IOException {
+    throw new UnsupportedOperationException();
   }
 }
