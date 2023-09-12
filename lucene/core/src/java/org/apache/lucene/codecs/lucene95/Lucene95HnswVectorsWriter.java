@@ -933,6 +933,21 @@ public final class Lucene95HnswVectorsWriter extends KnnVectorsWriter {
       lastDocID = docID;
     }
 
+    @Override
+    public void addValueForExistingGraph(int docID, float[] vectorValue) {
+      if (docID == lastDocID) {
+        throw new IllegalArgumentException(
+                "VectorValuesField \""
+                        + fieldInfo.name
+                        + "\" appears more than once in this document (only one value is allowed per field)");
+      }
+      assert docID > lastDocID;
+      docsWithField.add(docID);
+      vectors.add(copyValue((T) vectorValue));
+      node++;
+      lastDocID = docID;
+    }
+
     OnHeapHnswGraph getGraph() {
       if (vectors.size() > 0) {
         return hnswGraphBuilder.getGraph();
