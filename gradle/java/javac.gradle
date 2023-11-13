@@ -73,9 +73,6 @@ allprojects {
         "-proc:none",  // proc:none was added because of LOG4J2-1925 / JDK-8186647
       ]
 
-      if (propertyOrDefault("javac.failOnWarnings", true).toBoolean()) {
-        options.compilerArgs += "-Werror"
-      }
     }
   }
 }

@@ -17,44 +17,27 @@
 
 package org.apache.lucene.search;
 
-import java.util.Collection;
 import java.util.concurrent.ThreadPoolExecutor;
 
 /**
- * Derivative of SliceExecutor that controls the number of active threads that are used for a single
+ * Derivative of TaskExecutor that controls the number of active threads that are used for a single
  * query. At any point, no more than (maximum pool size of the executor * LIMITING_FACTOR) tasks
  * should be active. If the limit is exceeded, further segments are searched on the caller thread
  */
-class QueueSizeBasedExecutor extends SliceExecutor {
+class QueueSizeBasedExecutor extends TaskExecutor {
   private static final double LIMITING_FACTOR = 1.5;
 
   private final ThreadPoolExecutor threadPoolExecutor;
 
-  public QueueSizeBasedExecutor(ThreadPoolExecutor threadPoolExecutor) {
+  QueueSizeBasedExecutor(ThreadPoolExecutor threadPoolExecutor) {
     super(threadPoolExecutor);
     this.threadPoolExecutor = threadPoolExecutor;
   }
 
   @Override
-  public void invokeAll(Collection<? extends Runnable> tasks) {
-    int i = 0;
-
-    for (Runnable task : tasks) {
-      boolean shouldExecuteOnCallerThread = false;
-
-      // Execute last task on caller thread
-      if (i == tasks.size() - 1) {
-        shouldExecuteOnCallerThread = true;
-      }
-
-      if (threadPoolExecutor.getQueue().size()
-          >= (threadPoolExecutor.getMaximumPoolSize() * LIMITING_FACTOR)) {
-        shouldExecuteOnCallerThread = true;
-      }
-
-      processTask(task, shouldExecuteOnCallerThread);
-
-      ++i;
-    }
+  boolean shouldExecuteOnCallerThread(int index, int numTasks) {
+    return super.shouldExecuteOnCallerThread(index, numTasks)
+        || threadPoolExecutor.getQueue().size()
+            >= (threadPoolExecutor.getMaximumPoolSize() * LIMITING_FACTOR);
   }
 }

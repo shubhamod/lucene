@@ -33,6 +33,12 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 import org.apache.lucene.codecs.KnnVectorsFormat;
 import org.apache.lucene.codecs.lucene95.Lucene95Codec;
@@ -67,6 +73,7 @@ import org.apache.lucene.util.ArrayUtil;
 import org.apache.lucene.util.BitSet;
 import org.apache.lucene.util.Bits;
 import org.apache.lucene.util.FixedBitSet;
+import org.apache.lucene.util.NamedThreadFactory;
 import org.apache.lucene.util.RamUsageEstimator;
 import org.apache.lucene.util.VectorUtil;
 import org.apache.lucene.util.hnsw.HnswGraph.NodesIterator;
@@ -989,6 +996,173 @@ abstract class HnswGraphTestCase<T> extends LuceneTestCase {
     double overlap = totalMatches / (double) (100 * topK);
     System.out.println("overlap=" + overlap + " totalMatches=" + totalMatches);
     assertTrue("overlap=" + overlap, overlap > 0.9);
+  }
+
+  @SuppressWarnings("unchecked")
+  private void testFingerInternal(int lhsBasis, int size, int dim, int topK) throws IOException, ExecutionException, InterruptedException {
+    similarityFunction = VectorSimilarityFunction.DOT_PRODUCT;
+    AbstractMockVectorValues<T> vectors = vectorValues(size, dim);
+    int buildThreads = 24;
+    var es = Executors.newFixedThreadPool(
+        buildThreads, new NamedThreadFactory("Concurrent HNSW builder"));
+
+    // todo disable keeping extra connections for the raw version
+    var builder = ConcurrentHnswGraphBuilder.create(vectors, VectorEncoding.FLOAT32, VectorSimilarityFunction.DOT_PRODUCT, 16, 100);
+    var rawHnsw = builder.buildAsync(vectors.copy(), es, buildThreads).get();
+
+    builder = ConcurrentHnswGraphBuilder.create(vectors, VectorEncoding.FLOAT32, VectorSimilarityFunction.DOT_PRODUCT, 16, 100);
+    var fingerHnsw = builder.buildAsync(vectors.copy(), es, buildThreads).get();
+
+    es.shutdown();
+    Bits acceptOrds = random().nextBoolean() ? null : createRandomAcceptOrds(0, size);
+
+    HnswSearcher<T> rawSearcher = new HnswSearcher.Builder<>(rawHnsw.getView(), vectors, getVectorEncoding(), similarityFunction).build();
+    FingerMetadata<T> fm = new FingerMetadata<>(fingerHnsw.getView(), vectors, getVectorEncoding(), similarityFunction, lhsBasis);
+    HnswSearcher<T> fingerSearcher = new HnswSearcher.Builder<>(fingerHnsw.getView(), vectors, getVectorEncoding(), similarityFunction).withFinger(fm).build();
+
+    int rawOverlap = 0;
+    int fingerOverlap = 0;
+    for (int i = 0; i < 100; i++) {
+      T query = randomVector(dim);
+      NeighborQueue rawResults = rawSearcher.search(query, 100, acceptOrds, Integer.MAX_VALUE);
+      NeighborQueue fingerResults = fingerSearcher.search(query, 100, acceptOrds, Integer.MAX_VALUE);
+
+      NeighborQueue expected = new NeighborQueue(topK, false);
+      for (int j = 0; j < size; j++) {
+        if (vectors.vectorValue(j) != null && (acceptOrds == null || acceptOrds.get(j))) {
+          if (getVectorEncoding() == VectorEncoding.BYTE) {
+            assert query instanceof byte[];
+            expected.add(
+                j, similarityFunction.compare((byte[]) query, (byte[]) vectors.vectorValue(j)));
+          } else {
+            assert query instanceof float[];
+            expected.add(
+                j, similarityFunction.compare((float[]) query, (float[]) vectors.vectorValue(j)));
+          }
+          if (expected.size() > topK) {
+            expected.pop();
+          }
+        }
+      }
+      rawOverlap += computeOverlap(rawResults.nodes(), expected.nodes());
+      fingerOverlap += computeOverlap(fingerResults.nodes(), expected.nodes());
+    }
+
+    assert fingerOverlap >= 0.99 * rawOverlap : "fingerOverlap=" + fingerOverlap + " rawOverlap=" + rawOverlap;
+  }
+
+  @SuppressWarnings("unchecked")
+  public void testFingerSmall() throws IOException, ExecutionException, InterruptedException {
+    testFingerInternal(16, atLeast(100), atLeast(20), 5);
+  }
+
+  @SuppressWarnings("unchecked")
+  public void testFingerMid() throws IOException, ExecutionException, InterruptedException {
+    testFingerInternal(32, atLeast(10_000), atLeast(50), atLeast(10));
+  }
+
+  @SuppressWarnings("unchecked")
+  public void testFingerLarge() throws IOException, ExecutionException, InterruptedException {
+    testFingerInternal(64, 100_000, 128, atLeast(50));
+  }
+
+  /* test thread-safety of searching OnHeapHnswGraph */
+  @SuppressWarnings("unchecked")
+  public void testOnHeapHnswGraphSearch()
+      throws IOException, ExecutionException, InterruptedException, TimeoutException {
+    int size = atLeast(100);
+    int dim = atLeast(10);
+    AbstractMockVectorValues<T> vectors = vectorValues(size, dim);
+    int topK = 5;
+    HnswGraphBuilder<T> builder =
+        HnswGraphBuilder.create(
+            vectors, getVectorEncoding(), similarityFunction, 10, 30, random().nextLong());
+    OnHeapHnswGraph hnsw = builder.build(vectors.copy());
+    Bits acceptOrds = random().nextBoolean() ? null : createRandomAcceptOrds(0, size);
+
+    List<T> queries = new ArrayList<>();
+    List<NeighborQueue> expects = new ArrayList<>();
+    for (int i = 0; i < 100; i++) {
+      NeighborQueue expect;
+      T query = randomVector(dim);
+      queries.add(query);
+      expect =
+          switch (getVectorEncoding()) {
+            case BYTE -> HnswGraphSearcher.search(
+                (byte[]) query,
+                100,
+                (RandomAccessVectorValues<byte[]>) vectors,
+                getVectorEncoding(),
+                similarityFunction,
+                hnsw,
+                acceptOrds,
+                Integer.MAX_VALUE);
+            case FLOAT32 -> HnswGraphSearcher.search(
+                (float[]) query,
+                100,
+                (RandomAccessVectorValues<float[]>) vectors,
+                getVectorEncoding(),
+                similarityFunction,
+                hnsw,
+                acceptOrds,
+                Integer.MAX_VALUE);
+          };
+
+      while (expect.size() > topK) {
+        expect.pop();
+      }
+      expects.add(expect);
+    }
+
+    ExecutorService exec =
+        Executors.newFixedThreadPool(4, new NamedThreadFactory("onHeapHnswSearch"));
+    List<Future<NeighborQueue>> futures = new ArrayList<>();
+    for (T query : queries) {
+      futures.add(
+          exec.submit(
+              () -> {
+                NeighborQueue actual;
+                try {
+                  actual =
+                      switch (getVectorEncoding()) {
+                        case BYTE -> HnswGraphSearcher.search(
+                            (byte[]) query,
+                            100,
+                            (RandomAccessVectorValues<byte[]>) vectors.copy(),
+                            getVectorEncoding(),
+                            similarityFunction,
+                            hnsw,
+                            acceptOrds,
+                            Integer.MAX_VALUE);
+                        case FLOAT32 -> HnswGraphSearcher.search(
+                            (float[]) query,
+                            100,
+                            (RandomAccessVectorValues<float[]>) vectors.copy(),
+                            getVectorEncoding(),
+                            similarityFunction,
+                            hnsw,
+                            acceptOrds,
+                            Integer.MAX_VALUE);
+                      };
+                } catch (IOException ioe) {
+                  throw new RuntimeException(ioe);
+                }
+                while (actual.size() > topK) {
+                  actual.pop();
+                }
+                return actual;
+              }));
+    }
+    List<NeighborQueue> actuals = new ArrayList<>();
+    for (Future<NeighborQueue> future : futures) {
+      actuals.add(future.get(10, TimeUnit.SECONDS));
+    }
+    exec.shutdownNow();
+    for (int i = 0; i < expects.size(); i++) {
+      NeighborQueue expect = expects.get(i);
+      NeighborQueue actual = actuals.get(i);
+      assertArrayEquals(expect.nodes(), actual.nodes());
+    }
   }
 
   private int computeOverlap(int[] a, int[] b) {

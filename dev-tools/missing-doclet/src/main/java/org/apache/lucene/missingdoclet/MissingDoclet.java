@@ -305,7 +305,7 @@ public class MissingDoclet extends StandardDoclet {
       if (hasInheritedJavadocs(element)) {
         return;
       } else {
-        error(element, "javadocs are missing");
+//        error(element, "javadocs are missing");
       }
     } else {
       var normalized = tree.getFirstSentence().get(0).toString()

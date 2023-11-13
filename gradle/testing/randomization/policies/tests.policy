@@ -30,6 +30,7 @@ grant {
   permission java.io.FilePermission "${tests.linedocsfile}", "read";
   permission java.io.FilePermission "${java.io.tmpdir}", "read,write";
   permission java.io.FilePermission "${java.io.tmpdir}${/}-", "read,write,delete";
+  permission java.io.FilePermission "/tmp/-", "read,write";
 
   // misc HardlinkCopyDirectoryWrapper needs this to test if hardlinks can be created
   permission java.nio.file.LinkPermission "hard";

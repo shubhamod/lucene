@@ -89,6 +89,13 @@ for the currently-positioned document (doing so will result in undefined behavio
 `IOContext.READONCE` for opening internally, as that's the only valid usage pattern for checksum input.
 Callers should remove the parameter when calling this method.
 
+
+### DaciukMihovAutomatonBuilder is renamed to StringsToAutomaton and made package-private
+
+The former `DaciukMihovAutomatonBuilder#build` functionality is exposed through `Automata#makeStringUnion`.
+Users should be able to directly migrate to the `Automata` static method as a 1:1 replacement.
+
+
 ## Migration from Lucene 9.0 to Lucene 9.1
 
 ### Test framework package migration and module (LUCENE-10301)
@@ -135,6 +142,18 @@ also when using the now deprecated ctors, so users are advised to upgrade to
 Lucene 9.2 or stay with 9.0.
 
 See LUCENE-10558 for more details and workarounds.
+
+### Removed Scorable#docID() (GITHUB#12407)
+
+This method has been removed in order to enable more search-time optimizations.
+Use the doc ID passed to `LeafCollector#collect` to know which doc ID is being
+collected.
+
+### ScoreCachingWrappingScorer now wraps a LeafCollector instead of a Scorable (GITHUB#12407)
+
+In order to adapt to the removal of `Scorable#docID()`,
+`ScoreCachingWrappingScorer` now wraps a `LeafCollector` rather than a
+`Scorable`.
 
 ## Migration from Lucene 8.x to Lucene 9.0
 

@@ -156,6 +156,7 @@ public class NeighborQueue {
   public void clear() {
     heap.clear();
     visitedCount = 0;
+    incomplete = false;
   }
 
   public int visitedCount() {
@@ -172,6 +173,10 @@ public class NeighborQueue {
 
   public void markIncomplete() {
     this.incomplete = true;
+  }
+
+  boolean isMinHeap() {
+    return order == Order.MIN_HEAP;
   }
 
   @Override
